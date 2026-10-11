@@ -107,6 +107,9 @@ var _panning: bool = false
 func _ready() -> void:
 	for i: int in range(KINDS.size()):
 		_catalog[KINDS[i]] = SCENES[i]
+	_catalog["house:roof_gable"] = HOUSE
+	_catalog["house:roof_flat"] = HOUSE_FLAT
+	_catalog["house:roof_hip"] = HOUSE_HIP
 	_roof_catalog = _build_roof_catalog()
 	_history.max_actions = 24
 	_history.max_snapshot_bytes = WORLD_DOCUMENT.MAX_FILE_BYTES
