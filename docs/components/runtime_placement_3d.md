@@ -1,3 +1,48 @@
+## Optional related asset variants
+
+Use `NucleusPlacementVariantSet3D` to group alternatives such as different
+windows, walls or roofs. Each `NucleusPlacementVariant3D` entry contains a
+unique `variant_id` and a `PackedScene` rooted at a valid 3D placeable.
+
+Assign the catalog to the placement session (or pass it to
+`begin_variants(catalog, optional_variant_id)`). The first entry is used
+by default unless `default_variant_id` selects another.
+
+```gdscript
+@onready var placement: NucleusPlacementSession3D = $PlacementSession
+
+func select_roof(catalog: NucleusPlacementVariantSet3D) -> void:
+    var error := placement.begin_variants(catalog)
+    if error != OK:
+        push_warning(error_string(error))
+
+func next_roof() -> void:
+    placement.cycle_variant(1)
+
+func previous_roof() -> void:
+    placement.cycle_variant(-1)
+
+func choose_roof(variant_id: StringName) -> void:
+    placement.select_variant(variant_id)
+```
+
+The game owns input bindings, selection UI, costs, permissions and save schema.
+`variant_changed(variant_id, index)` can refresh a HUD. The confirmed
+`NucleusPlaceable3D.variant_id` records the chosen stable identifier.
+A consuming game should persist this identifier together with its own asset
+catalog identifier, stable instance ID and transform, not a transient index.
+
+**Safety and compatibility:** This is opt-in and currently limited to SINGLE
+(new-placement) previews; edit groups, duplication and chains retain existing
+behavior. Each replacement instantiates a different scene while preserving
+the preview pose and rotation, disables its collision during preview, and
+revalidates the new scene's clearance/support constraints. Switching during
+an outstanding confirmation is refused. Invalid replacement scenes leave the
+existing preview untouched. A variant might be selected while its position is
+invalid; `confirm()` still performs the existing final physical validation.
+Keep the catalog on the session/UI rather than embedding a self-referencing
+catalog inside the PackedScenes it contains.
+
 # Runtime Placement 3D Contract
 
 ## Purpose and ownership
