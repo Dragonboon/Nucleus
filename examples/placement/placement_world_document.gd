@@ -16,11 +16,14 @@ static func capture(roots: Array[Node3D]) -> Dictionary:
 		var placeable := NucleusPlaceable3D.find_in(root)
 		if placeable == null or placeable.profile == null:
 			continue
-		objects.append({
+		var entry := {
 			"id": str(placeable.stable_id),
 			"kind": str(placeable.profile.kind),
 			"transform": encode_transform(root.global_transform),
-		})
+		}
+		if placeable.variant_id != &"":
+			entry["variant"] = str(placeable.variant_id)
+		objects.append(entry)
 	return {"schema_version": SCHEMA_VERSION, "objects": objects}
 
 
@@ -78,8 +81,16 @@ static func validate(document: Variant, catalog: Dictionary) -> Dictionary:
 		if typeof(piece.get("kind")) != TYPE_STRING:
 			return _failure("Tipo de pieza invalido.")
 		var kind: String = piece["kind"]
-		if not catalog.has(kind) or not catalog[kind] is PackedScene:
-			return _failure("Tipo de pieza no autorizado: " + kind)
+		var variant: String = ""
+		if piece.has("variant"):
+			if typeof(piece["variant"]) != TYPE_STRING:
+				return _failure("Identificador de variante invalido.")
+			variant = piece["variant"]
+			if variant.is_empty() or variant.length() > 64:
+				return _failure("Identificador de variante no permitido.")
+		var scene_key: String = kind + ":" + variant if not variant.is_empty() else kind
+		if not catalog.has(scene_key) or not catalog[scene_key] is PackedScene:
+			return _failure("Tipo o variante no autorizados: " + scene_key)
 		if not piece.get("transform") is Array:
 			return _failure("Transformacion ausente.")
 		var values := piece["transform"] as Array
@@ -109,7 +120,11 @@ static func validate(document: Variant, catalog: Dictionary) -> Dictionary:
 			or absf(point.z) > MAX_COORDINATE
 		):
 			return _failure("Una pieza esta fuera de los limites de autoría.")
-		normalized.append({"id": id, "kind": kind, "transform": values.duplicate()})
+		var normalized_entry := {"id": id, "kind": kind,
+			"transform": values.duplicate()}
+		if not variant.is_empty():
+			normalized_entry["variant"] = variant
+		normalized.append(normalized_entry)
 	return {"error": OK, "message": "", "objects": normalized}
 
 
@@ -121,7 +136,10 @@ static func instantiate_validated(document: Variant, catalog: Dictionary) -> Dic
 		return result
 	var prepared: Array[Node3D] = []
 	for entry: Dictionary in result["objects"]:
-		var packed := catalog[entry["kind"]] as PackedScene
+		var scene_key: String = str(entry["kind"])
+		if entry.has("variant"):
+			scene_key += ":" + str(entry["variant"])
+		var packed := catalog[scene_key] as PackedScene
 		var candidate: Node = packed.instantiate()
 		if not candidate is Node3D:
 			if candidate != null:
@@ -139,6 +157,7 @@ static func instantiate_validated(document: Variant, catalog: Dictionary) -> Dic
 			_free_prepared(prepared)
 			return _failure("El asset no coincide con su perfil autorizado.")
 		placeable.stable_id = StringName(entry["id"])
+		placeable.variant_id = StringName(entry.get("variant", ""))
 		root.transform = decode_transform(entry["transform"])
 		prepared.append(root)
 	return {"error": OK, "message": "", "roots": prepared}
