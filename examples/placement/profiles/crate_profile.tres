@@ -1,6 +1,6 @@
-[gd_resource type="Resource" script_class="NucleusPlacementProfile3D" load_steps=3 format=3]
+[gd_resource type="Resource" script_class="NucleusPlacementProfile3D" format=3 uid="uid://blo3rotk6dq50"]
 
-[ext_resource type="Script" path="res://components/gameplay/movement/placement_3d/placement_profile_3d.gd" id="1_profile"]
+[ext_resource type="Script" uid="uid://b6u3ekuxsiurm" path="res://components/gameplay/movement/placement_3d/placement_profile_3d.gd" id="1_profile"]
 
 [sub_resource type="BoxShape3D" id="Clearance"]
 size = Vector3(0.98, 0.93, 0.98)
@@ -11,16 +11,12 @@ kind = &"crate"
 supported_by_kinds = Array[StringName]([&"platform", &"crate"])
 accepts_on_top_kinds = Array[StringName]([&"crate"])
 support_mask = 3
-max_slope_degrees = 21
-align_to_surface = false
+max_slope_degrees = 21.0
 surface_offset = 0.025
 support_half_extents = Vector2(0.32, 0.32)
 max_height_spread = 0.16
 clearance_shape = SubResource("Clearance")
 clearance_offset = Vector3(0, 0.49, 0)
 obstacle_mask = 6
-rotation_increment_degrees = 15
 snap_mode = 1
 use_custom_snap_grid = true
-grid_step = Vector2(1, 1)
-allow_chains = false

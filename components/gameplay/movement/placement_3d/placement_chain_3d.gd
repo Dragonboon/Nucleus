@@ -40,88 +40,117 @@ static func _finite(value: Vector3) -> bool:
 	return is_finite(value.x) and is_finite(value.y) and is_finite(value.z)
 
 
-## Pure equal-distance samples along a smoothed X/Z route. The Y of each
-## control point is only a hint; the placement solver re-samples every support.
-## Returns [{"position": Vector3, "yaw": float}]. A two-point route is linear.
-## Rejected input returns [] rather than silently truncating a structure.
+## Equal arc-length spacing on a bounded centripetal Catmull-Rom route.
+## Positions are centres of rigid pieces (not their endpoints). Orient a piece
+## using the chord joining nearby arc positions, rather than a sparse polygon
+## edge: long fence sections fit the physical centreline more faithfully.
+## Tension 0 follows a polyline; tension 1 uses the smooth centripetal spline.
 static func path_layout(
 	controls: Array[Vector3],
 	spacing: float,
 	maximum_count: int,
 	subdivisions: int = 10,
+	tension: float = 0.7,
 ) -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
 	if controls.size() < 2 or controls.size() > 32:
 		return result
 	if not is_finite(spacing) or spacing <= 0.0 or maximum_count < 1:
 		return result
-	if subdivisions < 2 or subdivisions > 32:
+	if subdivisions < 2 or subdivisions > 32 or not is_finite(tension):
+		return result
+	if tension < 0.0 or tension > 1.0:
 		return result
 	for point: Vector3 in controls:
 		if not _finite(point):
 			return result
-
 	var sampled: Array[Vector3] = [controls[0]]
 	var lengths: Array[float] = [0.0]
-	var total: float = 0.0
+	var total := 0.0
 	for segment: int in range(controls.size() - 1):
-		for step: int in range(1, subdivisions + 1):
-			var position: Vector3 = _curve_point(
-				controls, segment, float(step) / float(subdivisions)
-			)
-			var previous: Vector3 = sampled.back()
-			var advance := Vector2(position.x - previous.x, position.z - previous.z).length()
-			if advance <= 0.00001:
+		var start := controls[segment]
+		var end := controls[segment + 1]
+		var chord := Vector2(end.x - start.x, end.z - start.z).length()
+		if chord <= 0.00001:
+			return []
+		# Enough samples for short segments and sharply curved routes, but a
+		# strict per-segment bound prevents unbounded editing-frame CPU cost.
+		var steps := mini(128, maxi(subdivisions, ceili(chord / (spacing * 0.12))))
+		for step: int in range(1, steps + 1):
+			var point := _curve_point(controls, segment, float(step) / float(steps), tension)
+			var last: Vector3 = sampled[sampled.size() - 1]
+			var advance := Vector2(point.x - last.x, point.z - last.z).length()
+			if advance <= 0.000001:
 				continue
 			total += advance
 			if not is_finite(total) or total / spacing >= float(maximum_count):
 				return []
-			sampled.append(position)
+			sampled.append(point)
 			lengths.append(total)
-
 	if sampled.size() < 2:
-		return result
+		return []
 	var count := floori(total / spacing) + 1
 	if count > maximum_count:
-		return result
-	var cursor := 1
+		return []
 	for index: int in range(count):
-		var distance := float(index) * spacing
-		while cursor < lengths.size() - 1 and lengths[cursor] < distance:
-			cursor += 1
-		var span := lengths[cursor] - lengths[cursor - 1]
-		var ratio := (distance - lengths[cursor - 1]) / span
-		var position := sampled[cursor - 1].lerp(sampled[cursor], ratio)
-		var incoming := sampled[cursor] - sampled[cursor - 1]
-		var direction := Vector3(incoming.x, 0.0, incoming.z).normalized()
-		if cursor < sampled.size() - 1:
-			var outgoing := sampled[cursor + 1] - sampled[cursor]
-			var tangent := Vector3(outgoing.x, 0.0, outgoing.z).normalized()
-			if not (direction + tangent).is_zero_approx():
-				direction = (direction + tangent).normalized()
+		var arc := float(index) * spacing
+		var position := _at_distance(sampled, lengths, arc)
+		# An oriented rigid section follows a chord spanning a representative
+		# portion of its own length; this suppresses wobble at tight knots.
+		var half := minf(spacing * 0.45, total * 0.5)
+		var behind := _at_distance(sampled, lengths, maxf(0.0, arc - half))
+		var ahead := _at_distance(sampled, lengths, minf(total, arc + half))
+		var tangent := ahead - behind
+		if Vector2(tangent.x, tangent.z).length_squared() <= 0.000001:
+			return []
 		result.append({
 			"position": position,
-			"yaw": heading(Vector3.ZERO, direction),
+			"yaw": heading(Vector3.ZERO, tangent),
 		})
 	return result
 
 
-static func _curve_point(controls: Array[Vector3], segment: int, t: float) -> Vector3:
-	var p1 := controls[segment]
-	var p2 := controls[segment + 1]
-	if controls.size() == 2:
-		return p1.lerp(p2, t)
-	var p0 := controls[maxi(segment - 1, 0)]
-	var p3 := controls[mini(segment + 2, controls.size() - 1)]
-	# Catmull-Rom with clamped endpoint control points.
-	var t2 := t * t
-	var t3 := t2 * t
-	return (
-		p1 * 2.0
-		+ (p2 - p0) * t
-		+ (p0 * 2.0 - p1 * 5.0 + p2 * 4.0 - p3) * t2
-		+ (-p0 + p1 * 3.0 - p2 * 3.0 + p3) * t3
-	) * 0.5
+static func _at_distance(
+	sampled: Array[Vector3], lengths: Array[float], distance: float,
+) -> Vector3:
+	if distance <= 0.0:
+		return sampled[0]
+	if distance >= lengths.back():
+		return sampled[sampled.size() - 1]
+	var lo := 0
+	var hi := lengths.size() - 1
+	while hi - lo > 1:
+		var mid := int(float(lo + hi) * 0.5)
+		if lengths[mid] < distance:
+			lo = mid
+		else:
+			hi = mid
+	var fraction := (distance - lengths[lo]) / (lengths[hi] - lengths[lo])
+	return sampled[lo].lerp(sampled[hi], fraction)
+
+
+static func _curve_point(
+	controls: Array[Vector3], segment: int, t: float, tension: float = 0.7,
+) -> Vector3:
+	var b := controls[segment]
+	var c := controls[segment + 1]
+	var linear := b.lerp(c, t)
+	if controls.size() == 2 or tension <= 0.0:
+		return linear
+	var a := controls[segment - 1] if segment > 0 else b + (b - c)
+	var d := controls[segment + 2] if segment + 2 < controls.size() else c + (c - b)
+	var t0 := 0.0
+	var t1 := t0 + maxf(a.distance_to(b), 0.0001) ** 0.5
+	var t2 := t1 + maxf(b.distance_to(c), 0.0001) ** 0.5
+	var t3 := t2 + maxf(c.distance_to(d), 0.0001) ** 0.5
+	var u := lerpf(t1, t2, t)
+	var a1 := a.lerp(b, (u - t0) / (t1 - t0))
+	var a2 := b.lerp(c, (u - t1) / (t2 - t1))
+	var a3 := c.lerp(d, (u - t2) / (t3 - t2))
+	var b1 := a1.lerp(a2, (u - t0) / (t2 - t0))
+	var b2 := a2.lerp(a3, (u - t1) / (t3 - t1))
+	var curved := b1.lerp(b2, (u - t1) / (t2 - t1))
+	return linear.lerp(curved, tension)
 
 
 ## Conservatively prevent self-overlap between neighboring chain segments.

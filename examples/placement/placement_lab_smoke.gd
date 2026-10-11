@@ -95,6 +95,13 @@ func _run() -> void:
 	_check(bend.size() >= 4, "Curved chain samples multiple independently editable segments")
 	_check(session != null and session.max_checks_per_tick == 3,
 		"Live preview enforces a per-frame validation budget")
+	_check(session != null and session.max_group_count == WORLD_DOCUMENT.MAX_PIECES,
+		"Select-all can enter one group edit beyond the previous 32-piece cap")
+	_check(session != null and session.max_pairs_per_tick == 512,
+		"Large group clearance has a per-frame bound")
+	var repeat_button := lab.find_child("RepeatPlacement", true, false) as CheckButton
+	_check(repeat_button != null and repeat_button.button_pressed,
+		"Continuous single-asset placement is selectable and enabled by default")
 	_check(session != null and not session.snap_enabled_by_default,
 		"Snap is opt-in for inheriting placeables")
 	_check(session != null and session.force_free_placement,
@@ -142,6 +149,7 @@ func _run() -> void:
 		"Pillar/platform support is explicitly mutual")
 
 	_test_authored_world_document(lab)
+	_test_workflow_and_persistence(lab)
 	lab.free()
 	_finish()
 
@@ -214,6 +222,61 @@ func _test_authored_world_document(lab: Node3D) -> void:
 		"Redo reconstructs the exact later world")
 	_check(lab.call("_restore_document", original) == OK,
 		"The smoke test clears the authored world before exiting")
+
+
+func _test_workflow_and_persistence(lab: Node3D) -> void:
+	var session := lab.get_node("RuntimePlacementSession") as NucleusPlacementSession3D
+	lab.call("_select_asset", 4)
+	_check(session.mode == NucleusPlacementSession3D.Mode.SINGLE,
+		"Choosing a brush begins continuous placement")
+	var chosen: PackedScene = lab.get("_brush_scene")
+	session.cancel()
+	lab.call("_resume_brush", chosen)
+	_check(session.mode == NucleusPlacementSession3D.Mode.SINGLE,
+		"Continuous brush creates the next preview without menu input")
+	lab.call("_select_all")
+	_check(session.mode == NucleusPlacementSession3D.Mode.IDLE,
+		"Select All switches out of the continuous brush")
+
+	var saved_before: Dictionary = lab.call("_capture_document")
+	var piece: Dictionary = {
+		"id": "p_501", "kind": "crate",
+		"transform": WORLD_DOCUMENT.encode_transform(
+			Transform3D(Basis.IDENTITY, Vector3(2, 0.03, 2)),
+		),
+	}
+	_check(lab.call("_restore_document", {"schema_version": 1, "objects": [piece]}) == OK,
+		"Duplication fixture creates a known approved piece")
+	# Root path is not a save contract; use authored placed-list instead.
+	var placed_list: Array = lab.get("_placed")
+	if not placed_list.is_empty():
+		var component := NucleusPlaceable3D.find_in(placed_list[0])
+		lab.call("_set_selected", component)
+		lab.call("_duplicate_selection")
+		_check(session.mode == NucleusPlacementSession3D.Mode.DUPLICATE,
+			"Ctrl+D opens a movable duplicate preview before committing a piece")
+		_check((lab.call("_capture_document") as Dictionary)["objects"].size() == 1,
+			"A duplicate preview is not recorded in persisted world data")
+		lab.call("_cancel_operation")
+		_check((lab.call("_capture_document") as Dictionary)["objects"].size() == 1,
+			"Cancel leaves no duplicated world object behind")
+	_check(lab.call("_restore_document", saved_before) == OK,
+		"Workflow fixture restores the original world")
+
+	if NucleusSave.is_initialized():
+		var slot := "placement_lab_smoke_%d" % Time.get_ticks_usec()
+		var world_data: Dictionary = lab.call("_capture_document")
+		var stored := NucleusSave.save_manual(slot, {"world": world_data})
+		_check(stored.succeeded(), "NucleusSave accepts the authored world payload")
+		if stored.succeeded():
+			var loaded := NucleusSave.load_manual(slot)
+			_check(loaded.succeeded(), "NucleusSave returns an integrity-checked world")
+			if loaded.succeeded():
+				_check(loaded.document.payload.get("world") == world_data,
+					"Persistence returns identical stable IDs and transforms")
+		NucleusSave.delete_slot(slot)
+	else:
+		_check(false, "Placement Lab project must initialize NucleusSave")
 
 
 func _check(condition: bool, description: String) -> void:

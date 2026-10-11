@@ -9,7 +9,7 @@ signal placement_cancelled(was_edit: bool)
 signal placement_rejected(reason: StringName)
 signal removal_requested(root: Node3D)
 
-enum Mode { IDLE, SINGLE, CHAIN, EDIT, PATH, EDIT_GROUP }
+enum Mode { IDLE, SINGLE, CHAIN, EDIT, PATH, EDIT_GROUP, DUPLICATE, DUPLICATE_GROUP }
 
 @export var world_parent: Node3D
 @export var camera: Camera3D
@@ -25,7 +25,9 @@ enum Mode { IDLE, SINGLE, CHAIN, EDIT, PATH, EDIT_GROUP }
 @export_range(0, 250, 1) var preview_interval_ms: int = 60
 ## Tiny cursor jitter should not invalidate expensive physics work.
 @export_range(0.0, 1.0, 0.01) var cursor_tolerance: float = 0.04
-@export_range(1, 128, 1) var max_group_count: int = 32
+@export_range(1, 512, 1) var max_group_count: int = 32
+## Limits pairwise clearance checks after physical placement checks finish.
+@export_range(1, 8192, 1) var max_pairs_per_tick: int = 512
 
 @export_group("Default snap")
 ## Applied only when the asset inherits snapping. The asset can force ON/OFF.
@@ -47,6 +49,7 @@ var _roots: Array[Node3D] = []
 var _placeables: Array[NucleusPlaceable3D] = []
 var _saved_visuals: Array[Array] = []
 var _previous_transforms: Array[Transform3D] = []
+var _internal_supports: Dictionary[int, int] = {}
 var _chain_anchor: Vector3 = Vector3.ZERO
 var _path_controls: Array[Vector3] = []
 var _yaw: float = 0.0
@@ -59,6 +62,8 @@ var _preview_feedback_state: int = -1
 var _pending_entries: Array[Dictionary] = []
 var _pending_transforms: Array[Transform3D] = []
 var _pending_index: int = 0
+var _pair_i: int = 0
+var _pair_j: int = 1
 var _validation_pending: bool = false
 var _confirm_pending: bool = false
 var _last_batch_usec: int = -1
@@ -219,18 +224,28 @@ func begin_edit_many(items: Array[NucleusPlaceable3D]) -> Error:
 		if root != component and not root.is_ancestor_of(component):
 			return ERR_INVALID_PARAMETER
 		roots.append(root)
-	if roots.size() > 1 and _group_contains_support_stack(roots):
-		# Currently group validation excludes all member colliders. Reject
-		# internal support dependencies rather than approving unsupported items.
+	# Lower origins first so a member resting on another selected member
+	# can use the already validated support transform during group movement.
+	var ordered_items := items.duplicate()
+	ordered_items.sort_custom(
+		func(a: NucleusPlaceable3D, b: NucleusPlaceable3D) -> bool:
+			return a.get_root().global_position.y < b.get_root().global_position.y
+	)
+	roots.clear()
+	for component: NucleusPlaceable3D in ordered_items:
+		roots.append(component.get_root())
+	var supports := _find_internal_supports(roots)
+	if not bool(supports.get("valid", false)):
 		return ERR_UNAVAILABLE
 	cancel()
+	_internal_supports = supports["indices"]
 	var pivot := Vector3.ZERO
 	for root: Node3D in roots:
 		pivot += root.global_position
 	_group_pivot = pivot / float(roots.size())
-	for index: int in range(items.size()):
+	for index: int in range(ordered_items.size()):
 		_roots.append(roots[index])
-		_placeables.append(items[index])
+		_placeables.append(ordered_items[index])
 		_previous_transforms.append(roots[index].global_transform)
 		_saved_visuals.append(_preview_on(roots[index]))
 	_initial_heading = _heading_of(_previous_transforms[0].basis)
@@ -238,6 +253,96 @@ func begin_edit_many(items: Array[NucleusPlaceable3D]) -> Error:
 	mode = Mode.EDIT if roots.size() == 1 else Mode.EDIT_GROUP
 	set_physics_process(camera != null)
 	return OK
+
+
+## Starts a movable preview of detached, already instantiated PackedScene roots.
+## The caller retains ownership if validation fails. On success the session owns
+## every preview until confirm() or cancel(). Stable IDs are assigned by the game
+## only after a confirmed placement. Original world objects are never moved.
+func begin_duplicate(detached_roots: Array[Node3D]) -> Error:
+	if not _valid_world() or detached_roots.is_empty():
+		return ERR_INVALID_PARAMETER
+	if detached_roots.size() > maxi(max_group_count, 1):
+		return ERR_OUT_OF_MEMORY
+	for root: Node3D in detached_roots:
+		if root == null or not is_instance_valid(root) or root.get_parent() != null:
+			return ERR_INVALID_PARAMETER
+		var component := NucleusPlaceable3D.find_in(root)
+		if component == null or component.profile == null:
+			return ERR_INVALID_DATA
+		if not component.profile.validate().is_empty() or not component.profile.can_move:
+			return ERR_UNAVAILABLE
+		if component.target != null and component.target != root:
+			return ERR_INVALID_DATA
+	cancel()
+	var sum := Vector3.ZERO
+	for root: Node3D in detached_roots:
+		var authored := root.transform
+		world_parent.add_child(root)
+		root.global_transform = authored
+		_roots.append(root)
+		_placeables.append(NucleusPlaceable3D.find_in(root))
+		_previous_transforms.append(root.global_transform)
+		_saved_visuals.append(_preview_on(root))
+		sum += root.global_position
+	_group_pivot = sum / float(_roots.size())
+	_initial_heading = _heading_of(_previous_transforms[0].basis)
+	_yaw = _initial_heading
+	mode = Mode.DUPLICATE if _roots.size() == 1 else Mode.DUPLICATE_GROUP
+	set_physics_process(camera != null)
+	return OK
+
+## Detect dependencies within a selection without requiring game-specific
+## object hierarchies. Each supported child keeps its original relative pose.
+func _find_internal_supports(roots: Array[Node3D]) -> Dictionary:
+	var indices: Dictionary[int, int] = {}
+	for i: int in range(roots.size()):
+		var root := roots[i]
+		var component := NucleusPlaceable3D.find_in(root)
+		var profile := component.profile
+		# Most selected items are independent. A cheap X/Z broadphase avoids
+		# issuing hundreds of physics raycasts for distant ground pieces.
+		var potential := false
+		for j: int in range(i):
+			var below := roots[j]
+			var below_profile := NucleusPlaceable3D.find_in(below).profile
+			var reach := maxf(
+				maxf(below_profile.support_half_extents.x,
+					below_profile.support_half_extents.y),
+				maxf(profile.support_half_extents.x, profile.support_half_extents.y),
+			) + 1.0
+			if (
+				root.global_position.y > below.global_position.y + 0.1
+				and absf(root.global_position.x - below.global_position.x) <= reach
+				and absf(root.global_position.z - below.global_position.z) <= reach
+			):
+				potential = true
+				break
+		if not potential:
+			continue
+		var query := PhysicsRayQueryParameters3D.create(
+			root.global_position + Vector3.UP * 0.12,
+			root.global_position - Vector3.UP * profile.support_cast_below,
+			profile.support_mask,
+			NucleusPlaceable3D.collision_rids(root),
+		)
+		query.collide_with_areas = false
+		var hit := root.get_world_3d().direct_space_state.intersect_ray(query)
+		if hit.is_empty():
+			continue
+		var underneath := NucleusPlaceable3D.find_for_collider(hit.get("collider"))
+		if underneath == null or underneath.get_root() not in roots:
+			continue
+		var j := roots.find(underneath.get_root())
+		if j >= i:
+			return {"valid": false}
+		if not (
+			underneath.profile.kind in profile.supported_by_kinds
+			and profile.kind in underneath.profile.accepts_on_top_kinds
+		):
+			return {"valid": false}
+		indices[i] = j
+	return {"valid": true, "indices": indices}
 
 
 ## Optional input wrapper. Raycast is cheap; support/collision tests are budgeted.
@@ -347,32 +452,19 @@ func request_removal(placeable: NucleusPlaceable3D) -> Error:
 	return OK
 
 
-func _group_contains_support_stack(roots: Array[Node3D]) -> bool:
-	for root: Node3D in roots:
-		var component := NucleusPlaceable3D.find_in(root)
-		if component == null or component.profile == null:
-			return true
-		var profile := component.profile
-		var ray := PhysicsRayQueryParameters3D.create(
-			root.global_position + Vector3.UP * 0.12,
-			root.global_position - Vector3.UP * profile.support_cast_below,
-			profile.support_mask,
-			NucleusPlaceable3D.collision_rids(root),
-		)
-		var hit := root.get_world_3d().direct_space_state.intersect_ray(ray)
-		if hit.is_empty():
-			continue
-		var owner := NucleusPlaceable3D.find_for_collider(hit.get("collider"))
-		if owner != null and owner.get_root() in roots:
-			return true
-	return false
-
-
 ## Lightweight HUD/debug readout; no new diagnostics owner or polling of physics.
 func get_validation_progress() -> Vector2i:
 	if not _validation_pending:
 		return Vector2i.ZERO
-	return Vector2i(_pending_index, _pending_entries.size())
+	var count := _pending_entries.size()
+	if _pending_index < count:
+		return Vector2i(_pending_index, count)
+	if mode in [Mode.CHAIN, Mode.PATH, Mode.EDIT_GROUP, Mode.DUPLICATE_GROUP]:
+		var pairs := int(float(count * (count - 1)) / 2.0)
+		var done := int(float(_pair_i * (2 * count - _pair_i - 1)) / 2.0)
+		done += maxi(0, _pair_j - _pair_i - 1)
+		return Vector2i(count + mini(done, pairs), count + pairs)
+	return Vector2i(count, count)
 
 
 func _refresh_from_current_hit() -> void:
@@ -392,7 +484,7 @@ func _continuous_free_preview() -> bool:
 	if bool(get_snap_settings(_placeables[0].profile).get("enabled", false)):
 		return false
 	return (
-		mode == Mode.SINGLE
+		mode in [Mode.SINGLE, Mode.DUPLICATE]
 		or mode == Mode.EDIT
 		or (mode == Mode.EDIT_GROUP and _roots.size() <= max_checks_per_tick)
 	)
@@ -419,6 +511,8 @@ func _schedule_validation(hit: Dictionary) -> void:
 	_pending_entries.clear()
 	_pending_transforms.clear()
 	_pending_index = 0
+	_pair_i = 0
+	_pair_j = 1
 	_validation_pending = false
 	_transforms.clear()
 	if hit.is_empty() or not hit.get("position") is Vector3:
@@ -469,13 +563,13 @@ func _layout_entries(hit: Dictionary) -> Array[Dictionary]:
 				return result
 			var layout := NucleusPlacementChain3D.path_layout(
 				controls, profile.chain_spacing, profile.chain_max_count,
-				profile.chain_curve_subdivisions,
+				profile.chain_curve_subdivisions, profile.chain_curve_tension,
 			)
 			for step: Dictionary in layout:
 				result.append({
 					"position": step["position"], "yaw": step["yaw"], "profile": profile,
 				})
-	elif mode == Mode.EDIT_GROUP:
+	elif mode in [Mode.EDIT_GROUP, Mode.DUPLICATE, Mode.DUPLICATE_GROUP]:
 		var rotation := Basis(Vector3.UP, _yaw - _initial_heading)
 		var first_origin := _previous_transforms[0].origin
 		var destination_pivot := point + (_group_pivot - first_origin)
@@ -519,7 +613,10 @@ func _pump_validation(limit: int = -1) -> void:
 		var placeable: NucleusPlaceable3D = _placeables[_pending_index]
 		var profile: NucleusPlacementProfile3D = placeable.profile
 		var snap := get_snap_settings(profile)
-		if mode == Mode.EDIT_GROUP or (mode == Mode.EDIT and not profile.can_move):
+		if (
+			mode in [Mode.EDIT_GROUP, Mode.DUPLICATE, Mode.DUPLICATE_GROUP]
+			or (mode == Mode.EDIT and not profile.can_move)
+		):
 			# Group positions already share one quantized pivot, retaining offsets.
 			# Rotation-only editing must not translate an existing object.
 			snap = {"enabled": false}
@@ -533,6 +630,23 @@ func _pump_validation(limit: int = -1) -> void:
 				result = NucleusPlacementSolver3D.evaluate_hit(
 					space, profile, _candidate_hit, entry["yaw"], exclusions, snap,
 				)
+		elif mode == Mode.EDIT_GROUP and _internal_supports.has(_pending_index):
+			# Reattach stacked members to their moved support, preserving exactly
+			# the relative transform, including vertical offset and orientation.
+			var parent_index: int = _internal_supports[_pending_index]
+			var relative: Transform3D = (
+				_previous_transforms[parent_index].affine_inverse()
+				* _previous_transforms[_pending_index]
+			)
+			var transformed: Transform3D = _pending_transforms[parent_index] * relative
+			var free := NucleusPlacementQueries3D.is_transform_free(
+				space, profile.clearance_shape,
+				transformed * Transform3D(Basis.IDENTITY, profile.clearance_offset),
+				profile.obstacle_mask, exclusions, true, profile.check_areas,
+				profile.collision_margin,
+			)
+			result = {"valid": free, "reason": &"" if free else &"occupied",
+				"transform": transformed}
 		else:
 			result = NucleusPlacementSolver3D.evaluate_at(
 				space, profile, entry["position"], entry["yaw"], exclusions, snap,
@@ -553,12 +667,13 @@ func _pump_validation(limit: int = -1) -> void:
 		work += 1
 	if _pending_index != count or _roots.size() != count:
 		return
-	if mode in [Mode.CHAIN, Mode.PATH] and not _chain_has_clearance():
-		_reject_batch(&"chain_self_overlap")
-		return
-	if mode == Mode.EDIT_GROUP and not _group_has_clearance():
-		_reject_batch(&"group_self_overlap")
-		return
+	if mode in [Mode.CHAIN, Mode.PATH, Mode.EDIT_GROUP, Mode.DUPLICATE_GROUP]:
+		var pair_result := _pump_pair_clearance(max_pairs_per_tick)
+		if pair_result == &"checking":
+			return
+		if pair_result != &"":
+			_reject_batch(pair_result)
+			return
 	_validation_pending = false
 	_transforms = _pending_transforms.duplicate()
 	is_candidate_valid = true
@@ -569,38 +684,49 @@ func _pump_validation(limit: int = -1) -> void:
 		_complete_confirm()
 
 
-func _chain_has_clearance() -> bool:
-	var shape := _placeables[0].profile.clearance_shape as BoxShape3D
-	if shape == null:
-		return true
-	var offset := _placeables[0].profile.clearance_offset
-	for i: int in range(_pending_transforms.size()):
-		for j: int in range(i + 1, _pending_transforms.size()):
-			if NucleusPlacementChain3D.box_footprints_overlap(
-				_pending_transforms[i], _pending_transforms[j], shape.size, offset,
-			):
-				return false
-	return true
-
-
-func _group_has_clearance() -> bool:
-	for i: int in range(_pending_transforms.size()):
+## Broadphase + SAT, spread over ticks so selecting hundreds of objects or
+## extending a long curved chain cannot create an unbounded final-frame spike.
+## A supporter and its supported child retain their original relative pose.
+func _pump_pair_clearance(budget: int) -> StringName:
+	var total := _pending_transforms.size()
+	var is_chain := mode in [Mode.CHAIN, Mode.PATH]
+	var done := 0
+	while _pair_i < total:
+		if _pair_j >= total:
+			_pair_i += 1
+			_pair_j = _pair_i + 1
+			continue
+		var i := _pair_i
+		var j := _pair_j
+		_pair_j += 1
+		done += 1
+		if not is_chain and _internal_supports.get(j, -1) == i:
+			if done >= budget:
+				return &"checking"
+			continue
 		var first := _placeables[i].profile
-		var first_box := first.clearance_shape as BoxShape3D
-		if first_box == null:
-			return false
-		for j: int in range(i + 1, _pending_transforms.size()):
-			var second := _placeables[j].profile
-			var second_box := second.clearance_shape as BoxShape3D
-			if second_box == null:
-				return false
+		var second := _placeables[j].profile
+		var a := first.clearance_shape as BoxShape3D
+		var b := second.clearance_shape as BoxShape3D
+		if a == null or b == null:
+			return &"group_self_overlap" if not is_chain else &"chain_self_overlap"
+		var xform_a := _pending_transforms[i]
+		var xform_b := _pending_transforms[j]
+		# Conservative horizontal bounding circles; cheap for distant pairs.
+		var radius_a := Vector2(a.size.x, a.size.z).length() * 0.5
+		var radius_b := Vector2(b.size.x, b.size.z).length() * 0.5
+		var delta := (xform_a * first.clearance_offset) - (
+			xform_b * second.clearance_offset
+		)
+		if Vector2(delta.x, delta.z).length_squared() <= (radius_a + radius_b) ** 2:
 			if NucleusPlacementChain3D.box_footprints_overlap(
-				_pending_transforms[i], _pending_transforms[j],
-				first_box.size, first.clearance_offset, 0.01,
-				second_box.size, second.clearance_offset,
+				xform_a, xform_b, a.size, first.clearance_offset, 0.01,
+				b.size, second.clearance_offset,
 			):
-				return false
-	return true
+				return &"chain_self_overlap" if is_chain else &"group_self_overlap"
+		if done >= budget:
+			return &"checking"
+	return &""
 
 
 func _reject_batch(reason: StringName) -> void:
@@ -756,10 +882,13 @@ func _clear_state() -> void:
 	_placeables.clear()
 	_saved_visuals.clear()
 	_previous_transforms.clear()
+	_internal_supports.clear()
 	_path_controls.clear()
 	_pending_entries.clear()
 	_pending_transforms.clear()
 	_pending_index = 0
+	_pair_i = 0
+	_pair_j = 1
 	_validation_pending = false
 	_confirm_pending = false
 	_last_batch_usec = -1

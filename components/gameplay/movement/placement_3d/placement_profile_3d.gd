@@ -61,6 +61,8 @@ enum SnapMode { INHERIT, ENABLED, DISABLED }
 ## Control-point limit for curved chains (at least start + end).
 @export_range(2, 32, 1) var chain_max_control_points: int = 12
 @export_range(2, 32, 1) var chain_curve_subdivisions: int = 12
+## 0 = straight corners; 1 = centripetal curved interpolation.
+@export_range(0.0, 1.0, 0.05) var chain_curve_tension: float = 0.7
 
 
 ## Small, side-effect-free policy resolution. No physics state or transform is changed.
@@ -105,7 +107,7 @@ func validate() -> PackedStringArray:
 		support_half_extents.x, support_half_extents.y,
 		clearance_offset.x, clearance_offset.y, clearance_offset.z,
 		grid_step.x, grid_step.y, grid_origin.x, grid_origin.y,
-		chain_spacing, rotation_increment_degrees,
+		chain_spacing, chain_curve_tension, rotation_increment_degrees,
 	]:
 		if not is_finite(number):
 			errors.append("Placement numeric settings must be finite.")
@@ -127,6 +129,8 @@ func validate() -> PackedStringArray:
 		errors.append("Chain spacing and count must be positive.")
 	if chain_max_control_points < 2 or chain_max_control_points > 32:
 		errors.append("Curve control-point limit must be in 2..32.")
+	if chain_curve_tension < 0.0 or chain_curve_tension > 1.0:
+		errors.append("Curve tension must be in 0..1.")
 	if chain_curve_subdivisions < 2 or chain_curve_subdivisions > 32:
 		errors.append("Curve subdivisions must be in 2..32.")
 	if allow_chains and chain_spacing < 2.0 * support_half_extents.y:

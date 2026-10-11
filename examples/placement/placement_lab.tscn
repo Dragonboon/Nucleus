@@ -1,20 +1,20 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene format=3 uid="uid://rkfcxvrxnh8i"]
 
-[ext_resource type="Script" path="res://examples/placement/placement_lab.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://dn6ih7v4ynqk6" path="res://examples/placement/placement_lab.gd" id="1_script"]
 
-[node name="PlacementLab" type="Node3D"]
+[node name="PlacementLab" type="Node3D" unique_id=1276042978]
 script = ExtResource("1_script")
 
-[node name="World" type="Node3D" parent="."]
+[node name="World" type="Node3D" parent="." unique_id=1404307309]
 
-[node name="LabCamera" type="Camera3D" parent="."]
+[node name="LabCamera" type="Camera3D" parent="." unique_id=2063717245]
 current = true
 fov = 58.0
 near = 0.1
 far = 300.0
 
-[node name="Sun" type="DirectionalLight3D" parent="."]
+[node name="Sun" type="DirectionalLight3D" parent="." unique_id=1094793323]
 light_energy = 1.1
 shadow_enabled = true
 
-[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1988923008]

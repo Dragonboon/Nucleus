@@ -241,14 +241,21 @@ from an ordered list of control points. `begin_path(scene, first_point)` starts
 one; `add_path_control(point)` inserts a bend; `remove_last_path_control()`
 removes the last bend. The current cursor hit is the live endpoint.
 `confirm()` validates and commits the entire sequence. Two controls form a
-straight line; three or more use sampled Catmull-Rom and near-constant arc
-length spacing. The result is a collection of rigid pieces; curved meshes,
+straight line; three or more use bounded, centripetal Catmull-Rom interpolation
+with near-constant arc length spacing and orientation based on each rigid
+segment's physical chord. Per-profile `chain_curve_tension` in 0..1 sets how
+smoothly corners transition (0 = polyline, 1 = full centripetal curvature).
+Sampling density adapts to the section length; the per-segment tessellation
+still has a cap to avoid unbounded CPU work. The result is a collection of rigid pieces; curved meshes,
 corner connectors, sockets and spline-mesh deformation are not generated.
 When a chain uses `BoxShape3D` clearance envelopes, their horizontal oriented
 box overlaps are rejected as `chain_self_overlap`. For non-box shapes, games
 must supply their own chain self-overlap policy before authorizing placement.
-Curvature can therefore leave small visible connector gaps: choose shorter
-segments or author game-owned joins for a finished fence appearance.
+A rigid straight mesh cannot cover an arbitrary spline perfectly: tight bends
+may still produce visible connector gaps or invalid overlaps. Set a realistic
+`chain_spacing` for the model length, adjust its collision shape and support
+footprint, and reduce section length at tight bends; author game-owned sockets,
+corner joints or deformable meshes for visually gap-free walls.
 
 MultiMesh is inappropriate for individual persistent editable instances, so
 this path uses independent PackedScene instances. Games may batch decorative,
@@ -263,10 +270,13 @@ and yaw rotates relative to its centroid while keeping individual orientations.
 `cancel()` restores **every** original transform and physics/visual state.
 `confirm()` revalidates and commits the complete group. A group edit currently
 requires all components to support movement and uses `BoxShape3D` clearance
-shapes for pairwise overlap checks. An internally stacked group is rejected:
-its preview temporarily disables the supporting member colliders, so it cannot
-be considered a valid support without a future virtual-support contract.
-Single-object editing remains available for such assets. `request_removal()` checks
+shapes for pairwise overlap checks. For group edits containing mutually permitted support relationships, the
+session identifies supports **before** disabling preview collision layers.
+Supported pieces preserve their relative transform to the already-validated
+support, and their new envelope is checked against unselected geometry.
+Only the **direct original support** is modeled: hinged assemblies, dynamic
+joints and previously invalid or partially supported stacks require a dedicated
+game-owned edit adapter. Group movement remains a single commit or cancellation. `request_removal()` checks
 `can_remove` and merely emits a
 request; the game decides whether to delete or undo. During preview, colliders
 are temporarily removed from collision layers; rigid bodies are frozen and
@@ -286,7 +296,10 @@ validation:
 
 - `max_checks_per_tick` (default **3**) bounds support + occupancy evaluations,
   instantiation and excess-preview removal per physics tick. `max_group_count`
-  (default **32**) bounds the pairwise group-overlap work.
+  (default **32**) caps group size independently (the lab configures up to
+  **384**). `max_pairs_per_tick` (default **512**) bounds the final
+  clearance comparisons so even large groups do not finish with one giant
+  frame spike.
 - `preview_interval_ms` (default **60 ms**) limits expensive new validation
   requests while the cursor moves. `cursor_tolerance` ignores tiny jitter.
 - While validating, `last_reason == &"checking"`, `is_candidate_valid == false`
@@ -328,8 +341,8 @@ uneven, obstructed and tiled terrain after physics has synchronized; test
 multiplayer race conditions and save/reload using its own content and rules.
 
 This release does not support surface-conforming mesh deformation, network
-replication, socket graphs, mesh extrusion along splines, internal-stack group
-editing, asset catalogs, cost systems, automated chunk-stream awareness or
+replication, socket graphs, mesh extrusion along splines, arbitrary articulated
+group edits, asset catalogs, cost systems, automated chunk-stream awareness or
 prefab ownership transfer.
 
 ## Game-owned chain and edit controls
@@ -369,10 +382,34 @@ de autoría alrededor de esta API **sin añadir un servicio global**:
 - **Multijugador:** los permisos de colocación, economía, propiedad, prevención
   de abuso y validación de servidor siguen siendo del producto. Ni el JSON
   local ni la previsualización del cliente conceden autoridad.
-- **Límites editoriales:** la duplicación de grupos apilados y la edición
-  simultánea de soportes dependientes no se admiten hasta disponer de una
-  validación de soporte del conjunto. No ocultar este rechazo.
+- **Límites editoriales:** la edición de conjuntos apilados con soporte directo
+  identificado puede mantener la estructura relativa; no supone un solver de
+  uniones, bisagras o sistemas físicos articulados. Las copias complejas
+  requieren que el juego compruebe también la validez interna del conjunto.
 
 La nueva herramienta de mundo se construye enteramente con Godot,
 `NucleusPlacementSession3D` y `NucleusValidatedActionHistory`. No introduce
 Autoload, un controlador de cámara genérico ni gestión paralela de escenas.
+
+## Authoring workflow improvements
+
+`NucleusPlacementSession3D.begin_duplicate(detached_roots)` accepts **detached**
+scenes staged by the consuming game's approved catalog, and owns their temporary
+preview only if the call succeeds. The game assigns new stable IDs **after**
+`placement_confirmed`, not while duplicating. Cancel frees copies and preserves
+the source; confirmed copies are a *new placement*, never an edit of the source.
+Do not pass already-parented or shared live world nodes to this method.
+
+Repeat placement is deliberately a **consumer interaction policy** implemented
+in `examples/placement/placement_lab.gd`: the lab observes a successful
+single-piece commit and starts a new session preview on a deferred call. This
+requires no separate Nucleus manager, button map or change to single-instance
+session semantics. `Esc` cancels, and `Ctrl+A` switches back to group selection.
+
+The example uses the existing `NucleusSave` service for versioned slots, backup
+rotation, integrity and codec selection. The example-owned
+`placement_world_document.gd` still validates the **application payload**
+(`id`, `kind`, rigid `transform`) and stages reconstruction atomically. This is
+not the same as `modules/world_state`: there is no persistent region or runtime
+spawning service in the lab. A real multi-scene game may use `WorldStateService`
+with `SaveSession`, and must recheck final placement on its authority.

@@ -201,18 +201,21 @@ escena, no desde punteros a nodos liberados. No se guarda el historial en disco.
 Una nueva operación después de deshacer descarta la rama de rehacer.
 
 **Duplicación:** solo se admiten grupos de hasta **8** piezas por operación.
-La herramienta revalida cada pieza contra terreno, soportes y obstáculos,
-y verifica los posibles solapes dentro del grupo antes de crear nada. Si no
-existe una posición admisible exactamente a 4 m a la derecha de la cámara,
-se rechaza la operación sin crear piezas parciales. Los conjuntos apilados entre
-sí no están soportados para copia conjunta: requieren una operación atómica de
-soportes relativos específica de un editor avanzado. El portapapeles es local
+`Ctrl+D` y `Ctrl+V` ahora preparan **copias fantasma** que siguen el cursor.
+No se confirman ni guardan hasta hacer clic en una posición validada; `Esc`
+descarta todas las copias pendientes. El solver revalida el terreno, los
+obstáculos y los solapes del grupo de forma incremental. La duplicación de un
+conjunto internamente apilado necesita un contrato de soportes relativo: no
+debe utilizarse como editor completo de estructuras articuladas. El portapapeles es local
 a esta sesión; no contiene rutas de archivos ejecutables ni se expone al SO.
 
-**Persistencia:** `Ctrl+S` escribe
-`user://placement_lab_world_1.json`, `_2.json` o `_3.json` (segun la ranura
-seleccionada) mediante un archivo temporal y sustitución;
-`Ctrl+O` lee la ranura seleccionada. Cambiar la ranura por si solo no
+**Persistencia:** `Ctrl+S` usa `NucleusSave.save_manual()` para guardar el
+payload `{"world": documento}` en la ranura `placement_lab_world_1`, `_2` o
+`_3`; `Ctrl+O` lo recupera mediante `NucleusSave.load_manual()`. Se reutilizan
+las copias de seguridad, la integridad y las migraciones del servicio. Los
+JSON antiguos `user://placement_lab_world_1.json`, `_2.json` y `_3.json` se
+pueden importar con `Ctrl+O` **solo cuando aún no existe la ranura NucleusSave**.
+Tras importar, `Ctrl+S` migra ese mundo al nuevo sistema. Cambiar la ranura por si solo no
 sustituye el mundo que se esta editando. La escena no se carga automáticamente al iniciar el
 laboratorio. El formato `schema_version = 1` almacena exclusivamente `{id,
 kind, transform}`: identidad estable, tipo cerrado del catálogo y 12 valores
@@ -259,3 +262,50 @@ El smoke incluye deserialización, denegaciones por esquema y seguridad,
 restauración atómica y operaciones de historial. La validación de colisiones,
 latencia de vista previa, render y usabilidad requieren además abrir la escena
 con F6 en Godot.
+
+## Flujo rápido de autoría (iteración actual)
+
+- **Colocación repetida, activada por defecto:** pulsa `1`–`5` una vez y coloca
+  cuantas piezas quieras. Tras cada confirmación aparece otro preview del mismo
+  asset, sin volver al ratón libre. `B` o el checkbox **Repetir tras colocar**
+  alterna la repetición; `Esc` abandona el pincel. `Ctrl+A` sale del pincel y
+  selecciona automáticamente todas las piezas confirmadas.
+- **Mover todo:** `Ctrl+A` y luego `E`. El máximo de edición del laboratorio es
+  384 piezas, igual que el límite del documento, y se comprueba en lotes. Los
+  soportes apilados **directos y compatibles** preservan su relación cuando el
+  objeto base también está seleccionado. Para estructuras articuladas o apoyos
+  ambiguos hay que diseñar una política de edición más específica.
+- **Duplicar para colocar:** selecciona una o varias piezas y pulsa `Ctrl+D`;
+  las copias se muestran en modo preview bajo el cursor. Muévelas, usa `Q/R`
+  para girarlas, clic izquierdo para confirmar o `Esc` para descartar. `Ctrl+V`
+  hace lo mismo con el portapapeles. El laboratorio conserva el límite de ocho
+  copias por operación y asigna IDs nuevos solo tras confirmar.
+- **Curvas precisas:** `C` y puntos de control con clic. `chain_curve_tension`
+  permite ajustar cuánto se suavizan las esquinas; la orientación se calcula
+  con la tangente física de cada segmento, no con el lado de una polilínea
+  gruesa. `chain_spacing` debe corresponder a la longitud real de la malla.
+  Los segmentos rígidos no pueden eliminar por completo las separaciones
+  visuales de giros cerrados: se necesitan piezas de esquina, sockets o malla
+  deformable si se quiere una continuidad perfecta.
+- **Guardar sin salir del pincel:** `Ctrl+S`, `Ctrl+Z` y `Ctrl+Y` suspenden
+  temporalmente el preview individual, ejecutan la operación y lo recuperan;
+  no almacenan el fantasma. Los mundos están protegidos por `NucleusSave`; la
+  validación y el catálogo de escenas siguen en el laboratorio.
+
+El módulo `modules/world_state` **no se utiliza** porque este laboratorio
+reconstruye un documento entero en una sola escena. Para un juego con regiones,
+objetos persistentes entre cargas y reaparición dinámica, `WorldStateService`
+es el consumidor adecuado y puede conectarse a `NucleusSaveSession`.
+
+### Comprobaciones manuales principales
+
+1. Con `B` activo, pulsa `5` y coloca tres cajas seguidas; solo debe hacer falta
+   elegir Caja una vez. `Esc` elimina únicamente el preview pendiente.
+2. Selecciona todo con `Ctrl+A`, mueve con `E`, comprueba la previsualización por
+   lotes, confirma y usa `Ctrl+Z`. La restauración debe conservar todas las piezas.
+3. Duplica una columna con `Ctrl+D`, muévela antes de hacer clic y cancela otra
+   duplicación con `Esc`: no deben aparecer duplicados hasta el commit.
+4. Crea una valla curva con puntos desigualmente espaciados; prueba tensiones
+   0 / 0.7 / 1 y confirma el rechazo si hay solapes.
+5. Guarda y vuelve a abrir un mundo con `Ctrl+S`/`Ctrl+O`, sin perder IDs ni
+   transforms; comprueba la carga de JSON legacy si vienes de la versión anterior.

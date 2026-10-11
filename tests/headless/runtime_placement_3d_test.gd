@@ -13,6 +13,10 @@ func run() -> Dictionary:
 	_test_snap_resolution()
 	_test_snap_horizontal()
 	_test_free_preview_tracking()
+	_test_duplicate_preview_cancel()
+	_test_large_group_selection()
+	_test_incremental_clearance()
+	_test_curve_tension_and_spacing()
 	return finish()
 
 
@@ -341,3 +345,118 @@ func _test_free_preview_tracking() -> void:
 	session._placeables.clear()
 	item.free()
 	session.free()
+
+
+func _test_duplicate_preview_cancel() -> void:
+	var world := Node3D.new()
+	var session := NucleusPlacementSession3D.new()
+	world.add_child(session)
+	var original := Node3D.new()
+	var original_component := NucleusPlaceable3D.new()
+	original_component.profile = _profile()
+	original_component.target = original
+	original.add_child(original_component)
+	world.add_child(original)
+	expect_true(attach_test_node(world), "Duplicate fixture has one world tree.")
+	var detached := Node3D.new()
+	var copy_component := NucleusPlaceable3D.new()
+	copy_component.profile = _profile()
+	copy_component.target = detached
+	detached.add_child(copy_component)
+	var pieces: Array[Node3D] = [detached]
+	expect_equal(session.begin_duplicate(pieces), OK,
+		"A detached staged copy becomes a movable placement preview.")
+	expect_equal(session.mode, NucleusPlacementSession3D.Mode.DUPLICATE,
+		"Duplication is a preview mode, not an immediate world commit.")
+	expect_true(detached.get_parent() == world,
+		"The scene-owned session attaches the preview under the authored world.")
+	session.cancel()
+	expect_false(is_instance_valid(detached),
+		"Cancelling a copied preview frees the copy, not the source.")
+	expect_true(is_instance_valid(original),
+		"Originals survive cancelled copy placement.")
+	free_test_node(world)
+
+
+func _test_large_group_selection() -> void:
+	var world := Node3D.new()
+	var session := NucleusPlacementSession3D.new()
+	session.max_group_count = 48
+	world.add_child(session)
+	var items: Array[NucleusPlaceable3D] = []
+	var roots: Array[Node3D] = []
+	for index: int in range(36):
+		var root := Node3D.new()
+		root.position = Vector3(float(index) * 6.0, 1.0, 0.0)
+		var component := NucleusPlaceable3D.new()
+		component.profile = _profile()
+		component.target = root
+		root.add_child(component)
+		world.add_child(root)
+		items.append(component)
+		roots.append(root)
+	expect_true(attach_test_node(world), "Large group fixture needs a live tree.")
+	expect_equal(session.begin_edit_many(items), OK,
+		"Group editing accepts more than the old 32-piece limit.")
+	expect_equal(session.mode, NucleusPlacementSession3D.Mode.EDIT_GROUP,
+		"Large selection is one bounded edit operation.")
+	session.cancel()
+	for root: Node3D in roots:
+		expect_true(is_instance_valid(root), "Cancel never removes selected authored objects.")
+	free_test_node(world)
+
+
+func _test_incremental_clearance() -> void:
+	var session := NucleusPlacementSession3D.new()
+	var p := _profile()
+	var items: Array[NucleusPlaceable3D] = []
+	for i: int in range(4):
+		var item := NucleusPlaceable3D.new()
+		item.profile = p
+		items.append(item)
+		session._placeables.append(item)
+		session._pending_transforms.append(Transform3D(
+			Basis.IDENTITY, Vector3(float(i) * 3.0, 0.0, 0.0),
+		))
+	session.mode = NucleusPlacementSession3D.Mode.PATH
+	expect_equal(session._pump_pair_clearance(2), &"checking",
+		"A limited pair budget defers the rest to another tick.")
+	var result := &"checking"
+	for _i: int in range(16):
+		if result != &"checking":
+			break
+		result = session._pump_pair_clearance(2)
+	expect_equal(result, &"", "Incremental nonoverlap checks eventually complete.")
+	session._pair_i = 0
+	session._pair_j = 1
+	session._pending_transforms[1] = Transform3D(Basis.IDENTITY, Vector3(0.1, 0.0, 0.0))
+	expect_equal(session._pump_pair_clearance(10), &"chain_self_overlap",
+		"Overlapping sections reject the entire pending chain.")
+	session._placeables.clear()
+	session.free()
+	for item: NucleusPlaceable3D in items:
+		item.free()
+
+
+func _test_curve_tension_and_spacing() -> void:
+	var route: Array[Vector3] = [
+		Vector3(0, 0, 0), Vector3(0, 0, -3),
+		Vector3(1, 0, -3.5), Vector3(8, 0, -4),
+	]
+	var smooth := NucleusPlacementChain3D.path_layout(route, 0.7, 30, 12, 1.0)
+	var straight := NucleusPlacementChain3D.path_layout(route, 0.7, 30, 12, 0.0)
+	expect_true(smooth.size() > 5 and straight.size() > 5,
+		"Smooth and polygonal layouts both produce usable sections.")
+	expect_true(smooth.size() <= 30, "Author maximum still applies to smooth curves.")
+	var saw_difference := false
+	for i: int in range(mini(smooth.size(), straight.size())):
+		var point: Vector3 = smooth[i]["position"]
+		var linear: Vector3 = straight[i]["position"]
+		if point.distance_squared_to(linear) > 0.0005:
+			saw_difference = true
+		var forward := Basis(Vector3.UP, smooth[i]["yaw"]) * Vector3.FORWARD
+		expect_true(is_finite(forward.x) and is_finite(forward.z),
+			"Smooth path keeps a usable tangent heading.")
+	expect_true(saw_difference, "Per-asset tension visibly changes curved distribution.")
+	expect_true(NucleusPlacementChain3D.path_layout(route, 1.0, 30, 12, -0.2).is_empty(),
+		"Invalid authored tension rejects instead of guessing geometry.")

@@ -1,6 +1,6 @@
-[gd_resource type="Resource" script_class="NucleusPlacementProfile3D" load_steps=3 format=3]
+[gd_resource type="Resource" script_class="NucleusPlacementProfile3D" format=3 uid="uid://wfhy5qtcq5v1"]
 
-[ext_resource type="Script" path="res://components/gameplay/movement/placement_3d/placement_profile_3d.gd" id="1_profile"]
+[ext_resource type="Script" uid="uid://b6u3ekuxsiurm" path="res://components/gameplay/movement/placement_3d/placement_profile_3d.gd" id="1_profile"]
 
 [sub_resource type="BoxShape3D" id="Clearance"]
 size = Vector3(3.2, 0.48, 3.2)
@@ -10,15 +10,13 @@ script = ExtResource("1_profile")
 kind = &"platform"
 accepts_on_top_kinds = Array[StringName]([&"pillar", &"crate"])
 support_mask = 3
-max_slope_degrees = 9
-align_to_surface = false
+max_slope_degrees = 9.0
 surface_offset = 0.025
 support_half_extents = Vector2(1.31, 1.31)
 max_height_spread = 0.12
 clearance_shape = SubResource("Clearance")
 clearance_offset = Vector3(0, 0.28, 0)
 obstacle_mask = 6
-rotation_increment_degrees = 45
-allow_chains = false
 snap_to_grid = true
 grid_step = Vector2(0.5, 0.5)
+rotation_increment_degrees = 45.0
