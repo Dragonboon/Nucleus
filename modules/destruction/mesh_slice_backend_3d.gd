@@ -106,6 +106,9 @@ static func slice(
 	var ring: Array[Vector3] = _single_ring(segments, epsilon)
 	if ring.size() < 3:
 		return _failure(&"open_or_complex_contour")
+	ring = _remove_collinear(ring, epsilon)
+	if ring.size() < 3:
+		return _failure(&"degenerate_contour")
 
 	var axis_u: Vector3 = normal.cross(Vector3.UP)
 	if axis_u.length_squared() < 0.001:
@@ -269,6 +272,32 @@ static func _single_ring(segments: Array[PackedVector3Array], epsilon: float) ->
 	if current != start or ring.size() != links.size():
 		return []
 	return ring
+
+
+static func _remove_collinear(points: Array[Vector3], epsilon: float) -> Array[Vector3]:
+	var reduced: Array[Vector3] = points.duplicate()
+	var changed := true
+	while changed and reduced.size() >= 3:
+		changed = false
+		for i in range(reduced.size()):
+			var previous: Vector3 = reduced[(i + reduced.size() - 1) % reduced.size()]
+			var current: Vector3 = reduced[i]
+			var following: Vector3 = reduced[(i + 1) % reduced.size()]
+			var first: Vector3 = current - previous
+			var second: Vector3 = following - current
+			if first.length_squared() <= epsilon * epsilon:
+				reduced.remove_at(i)
+				changed = true
+				break
+			if second.length_squared() <= epsilon * epsilon:
+				reduced.remove_at(i)
+				changed = true
+				break
+			if first.cross(second).length() <= epsilon * (first.length() + second.length()):
+				reduced.remove_at(i)
+				changed = true
+				break
+	return reduced
 
 
 static func _cap_vertex(
