@@ -88,7 +88,7 @@ func _ready() -> void:
 
 func _create_curve() -> Curve3D:
 	var curve := Curve3D.new()
-	var points: Array[Vector3] = (
+	var points: Array = (
 		[Vector3(-10, 0, -4), Vector3(-2, 0, 6),
 			Vector3(4, 0, -3), Vector3(10, 0, 4)]
 		if curved else
