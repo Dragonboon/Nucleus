@@ -57,6 +57,8 @@ enum OriginMode { AUTHORED_ORIGIN, VISUAL_BOTTOM }
 @export var can_rotate: bool = true
 @export var can_remove: bool = true
 @export_range(0.0, 180.0, 1.0) var rotation_increment_degrees: float = 15.0
+## Degrees per second while held; independent of rotation_increment_degrees.
+@export_range(1.0, 720.0, 1.0, "or_greater") var rotation_speed_degrees_per_second: float = 120.0
 
 @export_group("Linear chains")
 @export var allow_chains: bool = false
@@ -113,6 +115,7 @@ func validate() -> PackedStringArray:
 		clearance_offset.x, clearance_offset.y, clearance_offset.z,
 		grid_step.x, grid_step.y, grid_origin.x, grid_origin.y,
 		chain_spacing, chain_curve_tension, rotation_increment_degrees,
+		rotation_speed_degrees_per_second,
 	]:
 		if not is_finite(number):
 			errors.append("Placement numeric settings must be finite.")
@@ -132,6 +135,8 @@ func validate() -> PackedStringArray:
 		and (grid_step.x <= 0.0 or grid_step.y <= 0.0)
 	):
 		errors.append("Both grid steps must be positive when snapping.")
+	if rotation_speed_degrees_per_second <= 0.0:
+		errors.append("Continuous rotation speed must be positive.")
 	if chain_spacing <= 0.0 or chain_max_count < 1:
 		errors.append("Chain spacing and count must be positive.")
 	if chain_max_control_points < 2 or chain_max_control_points > 32:

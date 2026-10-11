@@ -522,6 +522,31 @@ func rotate_step(direction: int) -> Error:
 	return rotate_degrees(_placeables[0].profile.rotation_increment_degrees * signi(direction))
 
 
+## Frame-rate-independent rotation for held controls; no quantization.
+## An optional explicit speed overrides the authored profile speed.
+func rotate_held(
+	direction: float,
+	delta: float,
+	speed_override: float = -1.0,
+) -> Error:
+	if not is_finite(direction) or not is_finite(delta) or delta < 0.0:
+		return ERR_INVALID_PARAMETER
+	if not is_finite(speed_override):
+		return ERR_INVALID_PARAMETER
+	if mode == Mode.IDLE or _confirm_pending or _placeables.is_empty():
+		return ERR_UNAVAILABLE
+	var speed: float = (
+		speed_override if speed_override > 0.0
+		else _placeables[0].profile.rotation_speed_degrees_per_second
+	)
+	if not is_finite(speed) or speed <= 0.0:
+		return ERR_INVALID_PARAMETER
+	if is_zero_approx(direction) or delta == 0.0:
+		return OK
+	# Clamp a stalled/render-paused frame to avoid an unexpected jump.
+	return rotate_degrees(clampf(direction, -1.0, 1.0) * speed * minf(delta, 0.1))
+
+
 ## Confirm triggers fresh, incremental physics checks (no long synchronous spike).
 ## OK means accepted for validation, not committed; observe placement_confirmed.
 func confirm() -> Error:
