@@ -11,6 +11,7 @@ static func evaluate_hit(
 	yaw: float = 0.0,
 	exclude: Array[RID] = [],
 	snap_settings: Dictionary = {},
+	visual_bounds: Dictionary = {},
 ) -> Dictionary:
 	if space == null or profile == null or not profile.validate().is_empty():
 		return _reject(&"invalid_profile")
@@ -136,6 +137,11 @@ static func evaluate_hit(
 	var right := forward.cross(up).normalized()
 	var basis := Basis(right, up, right.cross(up)).orthonormalized()
 	var transform := Transform3D(basis, pos)
+	if profile.origin_mode == NucleusPlacementProfile3D.OriginMode.VISUAL_BOTTOM:
+		if not bool(visual_bounds.get("valid", false)):
+			return _reject(&"no_visual_bounds")
+		var bounds: AABB = visual_bounds["bounds"]
+		transform.origin += NucleusPlacementGeometry3D.bottom_correction(bounds, basis, up)
 	var shape_transform := transform * Transform3D(Basis.IDENTITY, profile.clearance_offset)
 	if not NucleusPlacementQueries3D.is_transform_free(
 		space,
@@ -160,6 +166,7 @@ static func evaluate_at(
 	yaw: float = 0.0,
 	exclude: Array[RID] = [],
 	snap_settings: Dictionary = {},
+	visual_bounds: Dictionary = {},
 ) -> Dictionary:
 	if space == null or profile == null or not _finite(position):
 		return _reject(&"invalid_profile")
@@ -177,7 +184,7 @@ static func evaluate_at(
 		exclude,
 	)
 	query.collide_with_areas = false
-	return evaluate_hit(space, profile, space.intersect_ray(query), yaw, exclude, snap)
+	return evaluate_hit(space, profile, space.intersect_ray(query), yaw, exclude, snap, visual_bounds)
 
 
 ## Grid quantization is world-X/Z only; Y always comes from actual support.

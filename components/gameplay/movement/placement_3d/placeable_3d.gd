@@ -9,6 +9,19 @@ extends Node3D
 @export var profile: NucleusPlacementProfile3D
 @export var stable_id: StringName = &""
 
+var _visual_bounds_cache: Dictionary = {}
+
+
+## Call this after procedurally modifying a placeable's child meshes.
+func invalidate_visual_bounds() -> void:
+	_visual_bounds_cache.clear()
+
+
+func get_visual_bounds() -> Dictionary:
+	if _visual_bounds_cache.is_empty():
+		_visual_bounds_cache = NucleusPlacementGeometry3D.get_visual_bounds(get_root())
+	return _visual_bounds_cache
+
 
 func _ready() -> void:
 	if target == null:

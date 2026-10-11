@@ -7,6 +7,8 @@ extends Resource
 ## INHERIT uses the session unless an older profile opted into snap_to_grid.
 ## ENABLED uses this asset's grid; DISABLED ignores the session grid.
 enum SnapMode { INHERIT, ENABLED, DISABLED }
+## Visual bounds are opt-in: preserve authored pivots for existing scenes.
+enum OriginMode { AUTHORED_ORIGIN, VISUAL_BOTTOM }
 
 @export_group("Identity / support")
 @export var kind: StringName = &"object"
@@ -19,6 +21,9 @@ enum SnapMode { INHERIT, ENABLED, DISABLED }
 @export var allow_nonstatic_support: bool = false
 ## Optional semantic tags; requires a NucleusSurfaceSource3D on the collider.
 @export var required_surface_tags: Array[StringName] = []
+
+@export_group("Visual origin")
+@export var origin_mode: OriginMode = OriginMode.AUTHORED_ORIGIN
 
 @export_group("Support")
 @export_flags_3d_physics var support_mask: int = 1
@@ -112,6 +117,8 @@ func validate() -> PackedStringArray:
 		if not is_finite(number):
 			errors.append("Placement numeric settings must be finite.")
 			break
+	if origin_mode not in [OriginMode.AUTHORED_ORIGIN, OriginMode.VISUAL_BOTTOM]:
+		errors.append("Unknown placement origin mode.")
 	if clearance_shape == null:
 		errors.append("A clearance_shape is required to check occupancy.")
 	if support_mask == 0:

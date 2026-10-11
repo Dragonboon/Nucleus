@@ -7,14 +7,15 @@ const FENCE: PackedScene = preload("res://examples/placement/assets/fence.tscn")
 const PILLAR: PackedScene = preload("res://examples/placement/assets/pillar.tscn")
 const PLATFORM: PackedScene = preload("res://examples/placement/assets/platform.tscn")
 const CRATE: PackedScene = preload("res://examples/placement/assets/crate.tscn")
+const TOTEM: PackedScene = preload("res://examples/placement/assets/totem.tscn")
 
 const WORLD_DOCUMENT = preload("res://examples/placement/placement_world_document.gd")
 const WORLD_SAVE_PREFIX: String = "user://placement_lab_world_"
 const WORLD_SLOT_COUNT: int = 3
 const MAX_DUPLICATE_GROUP: int = 8
-const SCENES: Array[PackedScene] = [HOUSE, FENCE, PILLAR, PLATFORM, CRATE]
-const KINDS: Array[String] = ["house", "fence", "pillar", "platform", "crate"]
-const NAMES: Array[String] = ["Casa", "Valla", "Columna", "Plataforma", "Caja"]
+const SCENES: Array[PackedScene] = [HOUSE, FENCE, PILLAR, PLATFORM, CRATE, TOTEM]
+const KINDS: Array[String] = ["house", "fence", "pillar", "platform", "crate", "totem"]
+const NAMES: Array[String] = ["Casa", "Valla", "Columna", "Plataforma", "Caja", "Tótem"]
 
 const REASONS := {
 	&"no_surface": "No hay una superficie de apoyo.",
@@ -33,6 +34,7 @@ const REASONS := {
 	&"group_self_overlap": "Los objetos del grupo se solapan entre si.",
 	&"checking": "Validando por partes (sin bloquear el frame)...",
 	&"invalid_scene": "No se puede instanciar la pieza.",
+	&"no_visual_bounds": "El objeto requiere mallas visibles para calcular su base.",
 	&"game_policy": "La regla del juego ha rechazado el cambio.",
 }
 
@@ -67,6 +69,20 @@ var _snap_toggle: CheckButton
 var _repeat_toggle: CheckButton
 var _repeat_placement: bool = true
 var _brush_scene: PackedScene
+## Optional paint tool; the regular click-to-place session is unchanged.
+var _paint_mode: bool = false
+var _paint_dragging: bool = false
+var _paint_closing: bool = false
+var _paint_processing: bool = false
+var _paint_tool := NucleusPlacementBrush3D.new()
+var _paint_pending: Array[Vector3] = []
+var _paint_before: Dictionary = {}
+var _paint_accepted: int = 0
+var _paint_rejected: int = 0
+var _paint_radius: float = 0.0
+var _paint_spacing: float = 1.5
+var _paint_stroke_limit: int = 64
+var _paint_toggle: CheckButton
 var _pending_duplicate: bool = false
 var _visual_grid: MeshInstance3D
 var _snap_steps: OptionButton
@@ -121,6 +137,12 @@ func _ready() -> void:
 	_set_toast("Elige una pieza. Clic izquierdo para colocar; E para editar.")
 
 
+## One world candidate per physics tick, never an unbounded drag burst.
+func _physics_process(_delta: float) -> void:
+	if _paint_dragging or _paint_closing:
+		_paint_pump()
+
+
 func _process(delta: float) -> void:
 	var horizontal := Vector2.ZERO
 	if Input.is_key_pressed(KEY_A) and not Input.is_key_pressed(KEY_CTRL):
@@ -142,6 +164,9 @@ func _process(delta: float) -> void:
 		var progress := _session.get_validation_progress()
 		if progress.y > 0:
 			_status_label.text = "COMPROBANDO %d / %d verificaciones" % [progress.x, progress.y]
+	# Mouse release over a Control may bypass _unhandled_input: finish anyway.
+	if _paint_dragging and not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
+		_paint_end()
 	if _marquee_dragging and not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
 		_marquee_dragging = false
 		_marquee.visible = false
@@ -181,6 +206,13 @@ func _unhandled_input(event: InputEvent) -> void:
 			_update_camera()
 			return
 		if button.button_index == MOUSE_BUTTON_LEFT:
+			if _paint_mode:
+				if button.pressed:
+					_paint_start(button.position)
+				else:
+					_paint_end()
+				get_viewport().set_input_as_handled()
+				return
 			if (
 				button.pressed and button.shift_pressed
 				and _session.mode == NucleusPlacementSession3D.Mode.IDLE
@@ -202,6 +234,9 @@ func _unhandled_input(event: InputEvent) -> void:
 				return
 	if event is InputEventMouseMotion:
 		var motion := event as InputEventMouseMotion
+		if _paint_mode and _paint_dragging and not _orbiting and not _panning:
+			_paint_add_cursor(motion.position)
+			return
 		if _marquee_dragging:
 			_show_marquee(_marquee_start, motion.position)
 		elif _orbiting:
@@ -218,6 +253,13 @@ func _unhandled_input(event: InputEvent) -> void:
 			_update_camera()
 		return
 	if event is InputEventKey and event.pressed and not event.echo:
+		if _paint_dragging or _paint_closing:
+			if event.keycode == KEY_ESCAPE:
+				_paint_abort()
+			else:
+				_set_toast("Termina el trazo antes de usar otras herramientas.")
+			get_viewport().set_input_as_handled()
+			return
 		if event.ctrl_pressed:
 			match event.keycode:
 				KEY_Z:
@@ -256,6 +298,10 @@ func _unhandled_input(event: InputEvent) -> void:
 				_select_asset(3)
 			KEY_5, KEY_KP_5:
 				_select_asset(4)
+			KEY_6, KEY_KP_6:
+				_select_asset(5)
+			KEY_P:
+				_toggle_paint_mode()
 			KEY_F:
 				_select_chain()
 			KEY_C:
@@ -412,7 +458,7 @@ func _toggle_repeat_placement() -> void:
 ## The session has committed and cleared its previous preview before calling
 ## this; use a deferred continuation to avoid signal reentrancy during physics.
 func _resume_brush(scene: PackedScene) -> void:
-	if not _repeat_placement or _brush_scene != scene:
+	if _paint_mode or not _repeat_placement or _brush_scene != scene:
 		return
 	if _session.mode != NucleusPlacementSession3D.Mode.IDLE:
 		return
@@ -422,9 +468,135 @@ func _resume_brush(scene: PackedScene) -> void:
 		_update_panels()
 
 
+## The lab owns authoring UX, catalog, stroke transactions and allowed paint masks.
+## NucleusPlacementBrush3D owns only spacing/jitter. Session owns physics.
+func _toggle_paint_mode() -> void:
+	if _paint_dragging or _paint_closing:
+		_set_toast("Termina o cancela el trazo actual.")
+		_paint_toggle.set_pressed_no_signal(_paint_mode)
+		return
+	if not _paint_mode and _brush_scene == null:
+		_brush_scene = CRATE
+	_paint_mode = not _paint_mode
+	_paint_toggle.set_pressed_no_signal(_paint_mode)
+	if _paint_mode:
+		_chain_waiting_for_anchor = null
+		_curve_waiting_for_anchor = null
+		_session.cancel()
+		_set_selected(null)
+		_set_toast("Pincel activo: arrastra clic izquierdo. Un trazo = un deshacer.")
+	elif _brush_scene != null:
+		_resume_brush(_brush_scene)
+		_set_toast("Pincel desactivado. Vuelve la colocación individual.")
+	_update_panels()
+
+
+func _paint_start(screen_position: Vector2) -> void:
+	if _paint_dragging or _paint_closing or _brush_scene == null:
+		return
+	if _session.mode != NucleusPlacementSession3D.Mode.IDLE:
+		_session.cancel()
+	var started: Error = _paint_tool.begin(
+		_paint_spacing, _paint_radius, _paint_stroke_limit, 11731,
+	)
+	if started != OK:
+		_set_toast("Perfil de pincel no valido.")
+		return
+	_paint_pending.clear()
+	_paint_before = _capture_document()
+	_paint_accepted = 0
+	_paint_rejected = 0
+	_paint_dragging = true
+	_paint_closing = false
+	_paint_add_cursor(screen_position)
+
+
+func _paint_add_cursor(screen_position: Vector2) -> void:
+	if not _paint_dragging or _paint_tool.is_full():
+		return
+	# The lab paint brush targets terrain (layer 1), not placeable roofs.
+	var hit: Dictionary = _raycast(screen_position, 1)
+	if hit.is_empty():
+		return
+	for candidate: Vector3 in _paint_tool.add_cursor(hit["position"]):
+		_paint_pending.append(candidate)
+
+
+func _paint_end() -> void:
+	if not _paint_dragging:
+		return
+	_paint_dragging = false
+	_paint_closing = true
+	_paint_tool.end()
+
+
+func _paint_pump() -> void:
+	if _paint_processing or _session.mode != NucleusPlacementSession3D.Mode.IDLE:
+		return
+	if _paint_pending.is_empty():
+		if _paint_closing:
+			_paint_closing = false
+			_record_action(_paint_before, &"paint_stroke")
+			_paint_before.clear()
+			_set_toast("Pincel: %d colocados, %d rechazados. Ctrl+Z deshace el trazo." % [
+				_paint_accepted, _paint_rejected,
+			])
+			_update_panels()
+		return
+	if _placed.size() >= WORLD_DOCUMENT.MAX_PIECES:
+		_paint_rejected += _paint_pending.size()
+		_paint_pending.clear()
+		return
+	var position: Vector3 = _paint_pending.pop_front()
+	var space: PhysicsDirectSpaceState3D = _world.get_world_3d().direct_space_state
+	var query := PhysicsRayQueryParameters3D.create(
+		position + Vector3.UP * 60.0,
+		position - Vector3.UP * 60.0,
+		1,
+	)
+	query.collide_with_areas = false
+	var hit: Dictionary = space.intersect_ray(query)
+	if hit.is_empty():
+		_paint_rejected += 1
+		return
+	_paint_processing = true
+	if _session.begin_new(_brush_scene) != OK:
+		_paint_processing = false
+		_paint_rejected += 1
+		return
+	if not _session.update_from_hit(hit):
+		_session.cancel()
+		_paint_processing = false
+		_paint_rejected += 1
+		return
+	var error: Error = _session.confirm()
+	if error != OK and _paint_processing:
+		_session.cancel()
+		_paint_processing = false
+		_paint_rejected += 1
+
+
+func _paint_abort() -> void:
+	_paint_pending.clear()
+	_paint_tool.end()
+	_paint_dragging = false
+	_paint_closing = false
+	_paint_processing = false
+	_session.cancel()
+	if not _paint_before.is_empty():
+		var error: Error = _restore_document(_paint_before)
+		if error != OK:
+			push_error("Paint rollback failed: %s" % error_string(error))
+	_paint_before.clear()
+	_set_toast("Trazo cancelado y revertido.")
+
+
 func _select_asset(index: int) -> void:
 	if index < 0 or index >= SCENES.size():
 		return
+	if _paint_mode:
+		_paint_mode = false
+		_paint_toggle.set_pressed_no_signal(false)
 	_chain_waiting_for_anchor = null
 	_curve_waiting_for_anchor = null
 	_brush_scene = SCENES[index]
@@ -439,6 +611,9 @@ func _select_asset(index: int) -> void:
 
 
 func _select_chain() -> void:
+	if _paint_mode:
+		_paint_mode = false
+		_paint_toggle.set_pressed_no_signal(false)
 	_brush_scene = null
 	_session.cancel()
 	_set_selected(null)
@@ -449,6 +624,9 @@ func _select_chain() -> void:
 
 
 func _select_curve() -> void:
+	if _paint_mode:
+		_paint_mode = false
+		_paint_toggle.set_pressed_no_signal(false)
 	_brush_scene = null
 	_session.cancel()
 	_set_selected(null)
@@ -493,6 +671,10 @@ func _toggle_selected(placeable: NucleusPlaceable3D) -> void:
 
 
 func _select_all() -> void:
+	# Selection takes priority over painting; subsequent clicks can edit assets.
+	if _paint_mode:
+		_paint_mode = false
+		_paint_toggle.set_pressed_no_signal(false)
 	# A repeated single-asset brush is not a modal lock: Ctrl+A switches
 	# immediately to selection mode, so E can move the whole authored world.
 	if _session.mode == NucleusPlacementSession3D.Mode.SINGLE and _brush_scene != null:
@@ -603,6 +785,13 @@ func _rotate(direction: int) -> void:
 
 
 func _cancel_operation() -> void:
+	if _paint_mode:
+		_paint_mode = false
+		_paint_toggle.set_pressed_no_signal(false)
+		_brush_scene = null
+		_set_toast("Pincel desactivado.")
+		_update_panels()
+		return
 	_brush_scene = null
 	if _curve_waiting_for_anchor != null:
 		_curve_waiting_for_anchor = null
@@ -635,6 +824,17 @@ func _on_preview_updated(valid: bool, reason: StringName, transforms: Array[Tran
 
 
 func _on_placement_confirmed(roots: Array[Node3D], was_edit: bool) -> void:
+	if _paint_processing:
+		# No per-piece history: the entire drag becomes one reversible operation.
+		for root: Node3D in roots:
+			var component := NucleusPlaceable3D.find_in(root)
+			if component != null:
+				component.stable_id = _issue_piece_id()
+			_placed.append(root)
+		_paint_accepted += roots.size()
+		_paint_processing = false
+		# Avoid serializing the full world after each brush stamp.
+		return
 	var duplicated := _pending_duplicate
 	_pending_duplicate = false
 	var resume: PackedScene = (
@@ -680,6 +880,11 @@ func _on_placement_cancelled(was_edit: bool) -> void:
 
 
 func _on_placement_rejected(reason: StringName) -> void:
+	if _paint_processing:
+		_paint_rejected += 1
+		_paint_processing = false
+		_session.cancel()
+		return
 	_set_toast("Operación rechazada: " + _reason_text(reason))
 
 
@@ -763,7 +968,9 @@ func _update_panels() -> void:
 	if _mode_label == null:
 		return
 	var active := "Exploracion"
-	if _curve_waiting_for_anchor != null:
+	if _paint_mode:
+		active = "Pincel: %d / %d candidatos" % [_paint_tool.get_count(), _paint_stroke_limit]
+	elif _curve_waiting_for_anchor != null:
 		active = "Curva: elegir inicio"
 	elif _chain_waiting_for_anchor != null:
 		active = "Cadena: elegir inicio"
@@ -990,6 +1197,30 @@ func _build_ui() -> void:
 		_add_button(stack, "%d   %s" % [index + 1, NAMES[index]], func() -> void: _select_asset(idx))
 	_add_button(stack, "F   Valla recta (2 clics)", _select_chain)
 	_add_button(stack, "C   Valla CURVA (puntos)", _select_curve)
+	_add_label(stack, "PINCEL DE OBJETOS (RUNTIME)", 14, Color(0.42, 0.92, 0.78))
+	_paint_toggle = CheckButton.new()
+	_paint_toggle.name = "PaintModeToggle"
+	_paint_toggle.text = "P   Pintar arrastrando clic izq."
+	_paint_toggle.toggled.connect(func(pressed: bool) -> void:
+		if _paint_mode != pressed:
+			_toggle_paint_mode())
+	stack.add_child(_paint_toggle)
+	var paint_spacing := OptionButton.new()
+	paint_spacing.name = "PaintSpacing"
+	for distance: float in [0.8, 1.5, 2.5, 4.0]:
+		paint_spacing.add_item("Separación: %.1f m" % distance)
+	paint_spacing.select(1)
+	paint_spacing.item_selected.connect(func(index: int) -> void:
+		_paint_spacing = [0.8, 1.5, 2.5, 4.0][index])
+	stack.add_child(paint_spacing)
+	var paint_radius := OptionButton.new()
+	paint_radius.name = "PaintRadius"
+	for radius: float in [0.0, 0.5, 1.0, 2.0]:
+		paint_radius.add_item("Dispersión: %.1f m" % radius)
+	paint_radius.select(0)
+	paint_radius.item_selected.connect(func(index: int) -> void:
+		_paint_radius = [0.0, 0.5, 1.0, 2.0][index])
+	stack.add_child(paint_radius)
 	_add_button(stack, "Curva: colocar (clic izq.)", _finish_curve)
 	_repeat_toggle = CheckButton.new()
 	_repeat_toggle.name = "RepeatPlacement"
@@ -1044,6 +1275,7 @@ func _build_ui() -> void:
 		+ "Mayus+arrastrar: seleccionar por marco\n"
 		+ "Curva: izq.=colocar, der.=giro, Retroceso=deshacer\n"
 		+ "G: libre absoluto / snap por asset\n"
+		+ "P: pincel para pintar piezas arrastrando (max. 64)\n"
 		+ "Ctrl+C/V/D: copiar, pegar, duplicar\n"
 		+ "Ctrl+Z/Y: deshacer/rehacer\n"
 		+ "Ctrl+S/O/N: guardar/cargar/nuevo\n"

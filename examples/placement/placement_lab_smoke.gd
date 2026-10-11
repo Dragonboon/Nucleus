@@ -10,6 +10,7 @@ const ASSET_PATHS: Array[String] = [
 	"res://examples/placement/assets/pillar.tscn",
 	"res://examples/placement/assets/platform.tscn",
 	"res://examples/placement/assets/crate.tscn",
+	"res://examples/placement/assets/totem.tscn",
 ]
 
 var _checks: int = 0
@@ -85,6 +86,36 @@ func _run() -> void:
 	) as NucleusPlacementProfile3D
 	_check(crate_profile != null and crate_profile.resolve_snap(false)["enabled"],
 		"Crates explicitly snap on their own grid")
+	var totem_profile := load(
+		"res://examples/placement/profiles/totem_profile.tres"
+	) as NucleusPlacementProfile3D
+	_check(totem_profile != null and totem_profile.origin_mode
+		== NucleusPlacementProfile3D.OriginMode.VISUAL_BOTTOM,
+		"The center-origin placeholder opts into visual-bottom placement")
+	var paint_toggle := lab.find_child("PaintModeToggle", true, false) as CheckButton
+	_check(paint_toggle != null,
+		"The lab exposes a separate drag-to-paint tool")
+	if paint_toggle != null and session != null:
+		lab.call("_toggle_paint_mode")
+		_check(lab.get("_paint_mode") == true,
+			"P activates a scene-owned paint mode without changing core sessions")
+		lab.call("_cancel_operation")
+		_check(lab.get("_paint_mode") == false,
+			"Escape exits idle paint mode without deleting world objects")
+	var totem_scene := load(ASSET_PATHS[5]) as PackedScene
+	if totem_scene != null:
+		var totem := totem_scene.instantiate() as Node3D
+		var component := NucleusPlaceable3D.find_in(totem)
+		var bounds: Dictionary = component.get_visual_bounds()
+		_check(bool(bounds.get("valid", false)), "Visual bounds find the centered-pivot asset")
+		if bool(bounds.get("valid", false)):
+			var aabb: AABB = bounds["bounds"]
+			_check(aabb.position.y < 0.0, "Test totem deliberately extends below its origin")
+		totem.free()
+	_check(lab.find_child("PaintSpacing", true, false) != null,
+		"Brush spacing is adjustable in the lab UI")
+	_check(lab.find_child("PaintRadius", true, false) != null,
+		"Brush jitter radius is adjustable in the lab UI")
 	var layout: Array[Vector3] = NucleusPlacementChain3D.points(
 		Vector3.ZERO, Vector3(0, 0, -4.1), 2.0, 20,
 	)
@@ -234,6 +265,7 @@ func _test_authored_world_document(lab: Node3D) -> void:
 		"pillar": load(ASSET_PATHS[2]),
 		"platform": load(ASSET_PATHS[3]),
 		"crate": load(ASSET_PATHS[4]),
+		"totem": load(ASSET_PATHS[5]),
 	}
 	var original: Dictionary = lab.call("_capture_document")
 	var transform := Transform3D(Basis.IDENTITY, Vector3(2.0, 0.03, 8.0))

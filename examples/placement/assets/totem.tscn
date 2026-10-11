@@ -1,0 +1,49 @@
+[gd_scene load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://components/gameplay/movement/placement_3d/placeable_3d.gd" id="1_placeable"]
+[ext_resource type="Resource" path="res://examples/placement/profiles/totem_profile.tres" id="2_profile"]
+
+[sub_resource type="StandardMaterial3D" id="Material_stone"]
+albedo_color = Color(0.44, 0.66, 0.80, 1)
+roughness = 0.9
+
+[sub_resource type="StandardMaterial3D" id="Material_gold"]
+albedo_color = Color(0.86, 0.65, 0.23, 1)
+roughness = 0.7
+
+[sub_resource type="BoxMesh" id="BodyMesh"]
+size = Vector3(1.05, 1.8, 1.05)
+
+[sub_resource type="BoxMesh" id="TopMesh"]
+size = Vector3(1.16, 0.16, 1.16)
+
+[sub_resource type="BoxMesh" id="FootMesh"]
+size = Vector3(1.16, 0.13, 1.16)
+
+[sub_resource type="BoxShape3D" id="BodyShape"]
+size = Vector3(1.1, 1.9, 1.1)
+
+[node name="TotemPivotCentral" type="Node3D"]
+script = ExtResource("1_placeable")
+profile = ExtResource("2_profile")
+
+[node name="BodyPivotAtCenter" type="MeshInstance3D" parent="."]
+mesh = SubResource("BodyMesh")
+material_override = SubResource("Material_stone")
+
+[node name="Crown" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.92, 0)
+mesh = SubResource("TopMesh")
+material_override = SubResource("Material_gold")
+
+[node name="Foot" type="MeshInstance3D" parent="."]
+position = Vector3(0, -0.92, 0)
+mesh = SubResource("FootMesh")
+material_override = SubResource("Material_gold")
+
+[node name="Solid" type="StaticBody3D" parent="."]
+collision_layer = 2
+collision_mask = 0
+
+[node name="Shape" type="CollisionShape3D" parent="Solid"]
+shape = SubResource("BodyShape")

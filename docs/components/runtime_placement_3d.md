@@ -25,6 +25,8 @@ sampling or terrain collision import is performed.
 | `NucleusPlaceable3D` | Composed metadata node with target and optional persistent ID; no manager or global registry |
 | `NucleusPlacementSolver3D` | Stateless physics validation from a ray hit or an authored world point |
 | `NucleusPlacementChain3D` | Pure bounded straight/curved path layouts, headings and box-overlap checks |
+| `NucleusPlacementGeometry3D` | Stateless local mesh bounds and optional visual-bottom support correction |
+| `NucleusPlacementBrush3D` | Stateless-to-world, stroke-local bounded candidate spacing and seeded radial jitter |
 | `NucleusPlacementSession3D` | A single temporary session: preview, edit, confirm, cancel; emits results |
 
 ## Example scene assembly
@@ -433,3 +435,98 @@ The preview's last green result cannot replace the final verification. A lab
 UI must not overwrite the success message emitted by `placement_confirmed`
 with a subsequent generic "checking" message if a short chain completes
 synchronously. Changing mouse bindings requires no changes to the core solver.
+
+## Visual-bottom placement for meshes with centered/offset pivots (opt-in)
+
+`NucleusPlacementProfile3D.origin_mode` has two settings:
+
+- `AUTHORED_ORIGIN` (default): preserve all existing scene pivots and save data.
+  The surface hit plus `surface_offset` is the resulting root origin.
+- `VISUAL_BOTTOM`: after support/slope evaluation, translate the final root
+  transform along its resolved up axis so the lowest corner of its **local
+  visual bounding box** touches the sampled support plane. `surface_offset`
+  is still applied separately. The adjusted transform is then checked against
+  the *same existing* physics clearance query before admission.
+
+`NucleusPlacementGeometry3D.get_visual_bounds(root)` traverses only
+`MeshInstance3D` children and combines their `Mesh.get_aabb()` corners using
+child transforms relative to the root. `NucleusPlaceable3D.get_visual_bounds()`
+**caches** that result per instance: the solver does not traverse meshes per
+cursor movement. If meshes are changed at runtime, call
+`placeable.invalidate_visual_bounds()` explicitly before the next validation.
+`VISUAL_BOTTOM` rejects a placeable with no usable visual geometry with
+`no_visual_bounds`. This mode does not change real physics collision shapes,
+rigid-body mass, mesh geometry or support classification.
+
+Important: a visual AABB is an approximation, not an exact triangle contact
+shape. Decorative overhangs, invisible MeshInstances, animated/skinned geometry
+and nonuniformly scaled root transforms require an authored pivot or a
+product-specific support anchor instead. The asset's `clearance_shape` and
+`clearance_offset` **remain authored** in root-local coordinates, and must
+agree with its real collision volume. Do not use the visual AABB as a second
+physics solver. Neither snap nor save/load re-applies this offset to an
+already committed transform. It is computed only during a fresh placement/edit.
+
+For a live example, open `examples/placement/assets/totem.tscn` and
+`examples/placement/profiles/totem_profile.tres`. The totem has its visual and
+physics origin near its geometric centre. Its `origin_mode = VISUAL_BOTTOM`
+places its base on the ground. The other five lab profiles are unchanged.
+
+## Bounded runtime brush candidate generator
+
+`NucleusPlacementBrush3D` is a pure `RefCounted` helper. It is **not** an
+`EditorPlugin`, global manager, Godot `Scatter` replacement or physics solver.
+
+```gdscript
+var brush := NucleusPlacementBrush3D.new()
+brush.begin(1.5, 0.5, 64, 12345)  # spacing, jitter radius, max, seed
+var candidates: Array[Vector3] = brush.add_cursor(world_pointer_position)
+# Consumer must raycast/validate each candidate using PlacementSession3D.
+brush.end()
+```
+
+The generator interpolates across skipped pointer positions at a fixed X/Z
+arc-length step (no frame-time dependence), optionally jitters each candidate
+in a bounded circular radius using a seeded native `RandomNumberGenerator`,
+and caps output to 256 points per stroke (64 in the lab). It never instantiates
+nodes, touches physics, returns validated transforms or commits the world.
+Circle jitter does **not** guarantee pairwise minimum separation; the ordinary
+collision solver is responsible for rejecting overlaps. An identical seed and
+identical sequence of cursor points yield identical candidate positions, but
+not necessarily identical physics results in different world states.
+
+The lab owns the scene catalogue, mouse input, queue, world raycasts, stable
+IDs, and the single `NucleusValidatedActionHistory` entry per completed drag.
+It uses `NucleusPlacementSession3D.begin_new`, `update_from_hit` and `confirm`
+**one candidate per physics tick**. The session independently rechecks each
+candidate before committing it. Failed candidates are skipped and counted;
+valid candidates commit progressively. A stroke is one undo transaction, not
+an all-or-nothing placement admission: rejected points do not erase previous
+valid stamps. `Esc` while drawing or draining a stroke cancels the entire
+stroke and restores its initial world document. This is safe only because the
+lab owns and can atomically reconstruct that data-only world document; a
+production multiplayer game must perform transactions on its own authority.
+
+`NucleusScatter*` should still handle large numbers of visual-only instances
+(MultiMesh). The runtime brush is for separately editable/persistent scenes
+with real collision shapes and stable IDs. No gameplay cost is charged in the
+pure helper. Keep expensive scene instantiation on the main thread and profile
+p95/p99 physics frame time before increasing batch sizes.
+
+### Verification
+
+- Run `res://tests/headless/test_runner.tscn` for geometry bounds, pivot
+  correction and deterministic capped brush sampling tests.
+- Run `godot --headless --path . --script res://examples/placement/placement_lab_smoke.gd`
+  for the sixth placeholder, palette and UI wiring.
+- Open `examples/placement/placement_lab.tscn`, press `6`, place a totem on
+  flat ground, rotate it and compare `origin_mode` on/off in Inspector.
+- With that same asset selected, press `P`, drag slowly and rapidly on ground,
+  then release. Confirm there is exactly one Undo action for the whole stroke,
+  rejected positions do not spawn, and `Esc` cancels a pending stroke.
+- Switch to a crate and verify `G` still toggles truly free vs 1 m snap,
+  fences retain curved mode, and saving/restoring preserves placed transforms.
+
+This integration is an original implementation of the ideas reviewed in
+Godot Asset Placer / GoPlacer / QuickPlace; it does not include or depend on
+any third-party plugin code or editor APIs.

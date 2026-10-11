@@ -108,7 +108,7 @@ El limite de la cadena de la valla es **`chain_max_count = 20` en el perfil**
 pero el coste de validar y materializar todos los tramos aumenta. No es un
 limite fijo de la herramienta de curvas.
 
-## Cinco tipos de prueba
+## Seis tipos de prueba
 
 | Pieza | Propiedades a observar |
 | --- | --- |
@@ -117,6 +117,7 @@ limite fijo de la herramienta de curvas.
 | **Columna** | Orientacion respecto al suelo, colocacion sobre terreno o plataformas (`kind=platform`) |
 | **Plataforma** | Pendiente maxima 9°, snap 0.5 m, permite encima columnas y cajas |
 | **Caja** | Permite apilar cajas sobre otras cajas o sobre plataformas; editing y retirada independientes |
+| **Tótem** | Pivote central, `VISUAL_BOTTOM`, corrección automática de la base geométrica |
 
 Todas tienen colliders nativos en la capa 2. Las superficies portantes de la
 demostracion estan en la capa 1, y los obstaculos no portantes en la capa 4.
@@ -328,3 +329,55 @@ es el consumidor adecuado y puede conectarse a `NucleusSaveSession`.
    0 / 0.7 / 1 y confirma el rechazo si hay solapes.
 5. Guarda y vuelve a abrir un mundo con `Ctrl+S`/`Ctrl+O`, sin perder IDs ni
    transforms; comprueba la carga de JSON legacy si vienes de la versión anterior.
+
+## Extensión P1: origen geométrico y pincel de placement (2026-10-11)
+
+El laboratorio incorpora un **sexto placeholder (`6`, Tótem)** para mostrar
+la nueva opción de perfil `origin_mode`:
+
+- `AUTHORED_ORIGIN` (predeterminado): respeta el pivote de siempre.
+- `VISUAL_BOTTOM`: calcula la caja visual local de las mallas hijas una sola vez,
+  compensa su base hacia el terreno y comprueba la colisión con ese transform
+  definitivo. Puedes comparar ambas opciones en
+  `examples/placement/profiles/totem_profile.tres`.
+
+**Nuevo control `P`**: activa/desactiva el *pincel de objetos*. Selecciona
+antes un asset con `1`–`6` (o actívalo sin selección para usar Caja). Con P
+activo, **mantén pulsado y arrastra el clic izquierdo** por el terreno:
+
+- **Separación**: 0,8 / 1,5 / 2,5 / 4 m, control del espaciado sobre la ruta.
+- **Dispersión radial**: 0 / 0,5 / 1 / 2 m. Los desplazamientos son
+  reproducibles con la semilla fija de este laboratorio. No es un sistema
+  de plantas con densidad por metro cuadrado: genera un candidato por paso
+  del cursor, con *jitter* opcional dentro del radio.
+- **Límite**: 64 candidatos por trazo y máximo 384 objetos persistentes
+  en el mundo de demostración.
+- **Presupuesto**: como máximo un candidato del pincel por tick físico,
+  utilizando los métodos de validación y confirmación de `PlacementSession3D`.
+- **Undo**: todo el trazo se registra como **una sola acción** al finalizar la
+  cola; `Ctrl+Z` la revierte de una vez. Las posiciones no admitidas cuentan
+  como rechazadas y no se convierten en escenas.
+- **Cancelar**: `Esc` mientras se pinta o termina de validar revierte
+  completamente el trazo. `Esc` una vez en reposo sale del modo pincel.
+- **Volver al modo normal**: `P` apaga el pincel. Las curvas con `C`, las
+  cadenas rectas con `F`, el snap con `G`, las acciones sobre multiselección y
+  el guardado mediante `NucleusSave` no cambian.
+
+El pincel consulta solo la superficie del terreno de demostración (capa 1)
+para evitar que el cursor se adhiera accidentalmente a la parte superior de
+los objetos que ya estás pintando. Cada perfil sigue verificando sus propias
+capas, pendiente, huella, obstáculos y restricciones de apilado. El trazo no
+puede utilizarse para crear objetos en el aire. Si el usuario quiere un
+pincel sobre paredes o sobre otras piezas, la política de superficie debe
+configurarse explícitamente en su juego.
+
+**Limitaciones:** no se altera la escala del objeto, no hay brochazo de área
+con múltiples candidatos simultáneos y no se generan `MultiMesh` ni objetos
+físicamente asentados con `RigidBody3D`. Para vegetación masiva visual debe
+usarse el módulo `NucleusScatter`. No está implementado un pincel de borrado.
+
+**Pruebas manuales:** empieza con Caja (`5`) en zona plana, `P`, arrastra
+unos 10 m, suelta, espera al mensaje de finalización y pulsa `Ctrl+Z`;
+prueba después el Tótem (`6`) para validar su origen central. Activa el
+snap (`G`) y compara posiciones frente al modo libre. Verifica por último
+que una cadena curva siga funcionando como antes.

@@ -17,6 +17,8 @@ func run() -> Dictionary:
 	_test_large_group_selection()
 	_test_incremental_clearance()
 	_test_curve_tension_and_spacing()
+	_test_visual_origin_bounds()
+	_test_brush_stroke_sampling()
 	return finish()
 
 
@@ -460,3 +462,77 @@ func _test_curve_tension_and_spacing() -> void:
 	expect_true(saw_difference, "Per-asset tension visibly changes curved distribution.")
 	expect_true(NucleusPlacementChain3D.path_layout(route, 1.0, 30, 12, -0.2).is_empty(),
 		"Invalid authored tension rejects instead of guessing geometry.")
+
+
+func _test_visual_origin_bounds() -> void:
+	var root := Node3D.new()
+	var box := MeshInstance3D.new()
+	var visual := BoxMesh.new()
+	visual.size = Vector3(2, 2, 2)
+	box.mesh = visual
+	box.position = Vector3(0.25, -0.5, 0.0)
+	root.add_child(box)
+	var other := MeshInstance3D.new()
+	var cap := BoxMesh.new()
+	cap.size = Vector3(0.5, 0.5, 0.5)
+	other.mesh = cap
+	other.position = Vector3(0, 1.25, 0)
+	root.add_child(other)
+	var result: Dictionary = NucleusPlacementGeometry3D.get_visual_bounds(root)
+	expect_true(bool(result.get("valid", false)), "A compound mesh exposes visual bounds.")
+	var bounds: AABB = result["bounds"]
+	expect_float(bounds.position.y, -1.5, "Child offsets determine the lowest visual point.")
+	expect_float(bounds.end.y, 1.5, "Child mesh bounds are merged.")
+	var correction: Vector3 = NucleusPlacementGeometry3D.bottom_correction(
+		bounds, Basis.IDENTITY, Vector3.UP,
+	)
+	expect_float(correction.y, 1.5, "Central pivot is moved above ground to touch it.")
+	var yaw: Basis = Basis(Vector3.UP, PI * 0.5)
+	var rotated: Vector3 = NucleusPlacementGeometry3D.bottom_correction(
+		bounds, yaw, Vector3.UP,
+	)
+	expect_float(rotated.y, 1.5, "Yaw does not change bottom contact height.")
+	var no_mesh := Node3D.new()
+	expect_false(bool(NucleusPlacementGeometry3D.get_visual_bounds(no_mesh)["valid"]),
+		"Absent visual geometry must not invent an offset.")
+	var profile := _profile()
+	expect_equal(profile.origin_mode, NucleusPlacementProfile3D.OriginMode.AUTHORED_ORIGIN,
+		"Existing assets retain their authored pivot by default.")
+	profile.origin_mode = NucleusPlacementProfile3D.OriginMode.VISUAL_BOTTOM
+	expect_true(profile.validate().is_empty(), "Visual bottom is an opt-in valid profile.")
+	root.free()
+	no_mesh.free()
+
+
+func _test_brush_stroke_sampling() -> void:
+	var sampler := NucleusPlacementBrush3D.new()
+	expect_equal(sampler.begin(1.0, 0.0, 5, 17), OK,
+		"Brush accepts a bounded profile.")
+	var first: Array[Vector3] = sampler.add_cursor(Vector3.ZERO)
+	expect_equal(first.size(), 1, "A stroke stamps its first point exactly once.")
+	expect_equal(first[0], Vector3.ZERO, "Zero-radius brush keeps the cursor position.")
+	var sample: Array[Vector3] = sampler.add_cursor(Vector3(2.5, 0, 0))
+	expect_equal(sample.size(), 2, "Sparse input generates evenly spaced stamps.")
+	expect_float(sample[0].x, 1.0, "First interpolated stamp is one metre along.")
+	expect_float(sample[1].x, 2.0, "Second interpolated stamp is two metres along.")
+	expect_true(sampler.add_cursor(Vector3(2.5, 0, 0)).is_empty(),
+		"Stationary cursor never paints duplicates.")
+	var tail: Array[Vector3] = sampler.add_cursor(Vector3(200, 0, 0))
+	expect_equal(tail.size(), 2, "The limit caps a long input jump.")
+	expect_equal(sampler.get_count(), 5, "No stroke may exceed authored maximum.")
+	expect_true(sampler.is_full(), "Limit exhaustion is observable to the consumer.")
+	expect_true(sampler.add_cursor(Vector3(300, 0, 0)).is_empty(),
+		"A full stroke rejects further candidates.")
+	sampler.end()
+	expect_true(sampler.add_cursor(Vector3.ZERO).is_empty(),
+		"Ended strokes do not mutate the world.")
+	expect_equal(sampler.begin(0.0), ERR_INVALID_PARAMETER,
+		"Zero spacing is rejected.")
+	var a := NucleusPlacementBrush3D.new()
+	var b := NucleusPlacementBrush3D.new()
+	a.begin(1.0, 2.0, 8, 123)
+	b.begin(1.0, 2.0, 8, 123)
+	expect_equal(a.add_cursor(Vector3.ZERO), b.add_cursor(Vector3.ZERO),
+		"A fixed seed reproduces radial jitter.")
+	expect_equal(a.add_cursor(Vector3(3, 0, 0)), b.add_cursor(Vector3(3, 0, 0)),
+		"A stroke seed reproduces later stamps too.")

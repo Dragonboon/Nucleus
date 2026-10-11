@@ -613,6 +613,11 @@ func _pump_validation(limit: int = -1) -> void:
 		var placeable: NucleusPlaceable3D = _placeables[_pending_index]
 		var profile: NucleusPlacementProfile3D = placeable.profile
 		var snap := get_snap_settings(profile)
+		var visuals: Dictionary = (
+			placeable.get_visual_bounds()
+			if profile.origin_mode == NucleusPlacementProfile3D.OriginMode.VISUAL_BOTTOM
+			else {}
+		)
 		if (
 			mode in [Mode.EDIT_GROUP, Mode.DUPLICATE, Mode.DUPLICATE_GROUP]
 			or (mode == Mode.EDIT and not profile.can_move)
@@ -624,11 +629,11 @@ func _pump_validation(limit: int = -1) -> void:
 		if mode == Mode.SINGLE or mode == Mode.EDIT:
 			if mode == Mode.EDIT and not profile.can_move:
 				result = NucleusPlacementSolver3D.evaluate_at(
-					space, profile, entry["position"], entry["yaw"], exclusions, snap,
+					space, profile, entry["position"], entry["yaw"], exclusions, snap, visuals,
 				)
 			else:
 				result = NucleusPlacementSolver3D.evaluate_hit(
-					space, profile, _candidate_hit, entry["yaw"], exclusions, snap,
+					space, profile, _candidate_hit, entry["yaw"], exclusions, snap, visuals,
 				)
 		elif mode == Mode.EDIT_GROUP and _internal_supports.has(_pending_index):
 			# Reattach stacked members to their moved support, preserving exactly
@@ -649,7 +654,7 @@ func _pump_validation(limit: int = -1) -> void:
 				"transform": transformed}
 		else:
 			result = NucleusPlacementSolver3D.evaluate_at(
-				space, profile, entry["position"], entry["yaw"], exclusions, snap,
+				space, profile, entry["position"], entry["yaw"], exclusions, snap, visuals,
 			)
 		work += 1
 		if not bool(result.get("valid", false)):
