@@ -19,6 +19,7 @@ func run() -> Dictionary:
 	_test_curve_tension_and_spacing()
 	_test_visual_origin_bounds()
 	_test_brush_stroke_sampling()
+	_test_continuous_rotation()
 	return finish()
 
 
@@ -536,3 +537,30 @@ func _test_brush_stroke_sampling() -> void:
 		"A fixed seed reproduces radial jitter.")
 	expect_equal(a.add_cursor(Vector3(3, 0, 0)), b.add_cursor(Vector3(3, 0, 0)),
 		"A stroke seed reproduces later stamps too.")
+
+## Rotation speed is authored per asset, independent of step increments.
+func _test_continuous_rotation() -> void:
+	var world := Node3D.new()
+	var session := NucleusPlacementSession3D.new()
+	world.add_child(session)
+	var placeable := NucleusPlaceable3D.new()
+	placeable.profile = _profile()
+	placeable.profile.rotation_speed_degrees_per_second = 90.0
+	world.add_child(placeable)
+	session._placeables.append(placeable)
+	session.mode = NucleusPlacementSession3D.Mode.SINGLE
+	expect_equal(session.rotate_held(0.0, 0.25), OK,
+		"Zero input is valid and makes no rotation.")
+	expect_equal(session.rotate_held(1.0, -0.1), ERR_INVALID_PARAMETER,
+		"Negative elapsed time is rejected.")
+	expect_equal(session.rotate_held(1.0, 0.1), OK,
+		"Held rotation uses the profile velocity.")
+	expect_float(session._yaw, deg_to_rad(9.0),
+		"100 milliseconds at 90 degrees/s rotates nine degrees.")
+	expect_equal(session.rotate_held(-1.0, 0.1), OK,
+		"Held reverse rotation is symmetrical.")
+	expect_float(session._yaw, 0.0, "Opposing input returns to initial heading.")
+	placeable.profile.can_rotate = false
+	expect_equal(session.rotate_held(1.0, 0.1), ERR_UNAVAILABLE,
+		"Continuous rotation respects can_rotate.")
+	world.free()
