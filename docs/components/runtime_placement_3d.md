@@ -134,8 +134,36 @@ func set_grid_from_ui(enabled: bool) -> void:
         push_warning(error_string(error))
 ```
 
-`set_snap_defaults(enabled, step, origin)` rejects zero/negative/nonfinite
-steps and origins and returns `ERR_BUSY` while confirmation is already pending.
+`set_snap_defaults(enabled, step, origin, free_override = null)` rejects
+zero/negative/nonfinite steps and origins and returns `ERR_BUSY` while
+confirmation is already pending. The optional fourth argument is a `bool`
+(or omitted). It applies the session's explicit free policy atomically,
+without two successive physics validations. Existing three-argument callers
+retain their previous behavior.
+
+For an actual **free placement mode**, pass `free_override = true`:
+
+```gdscript
+# OFF: free cursor movement even when the profile forces snap/legacy grid.
+placement.set_snap_defaults(false, Vector2.ONE, Vector2.ZERO, true)
+# ON: session grid plus authored asset preferences and opt-outs.
+placement.set_snap_defaults(true, Vector2(0.5, 0.5), Vector2.ZERO, false)
+```
+
+`force_free_placement` defaults to `false` for backward compatibility. When
+`true` it takes precedence over `snap_mode = ENABLED` and legacy
+`snap_to_grid = true`, returning `source = &"free_override"` from
+`get_snap_settings()`. **This never mutates the shared `.tres` profile.**
+A consuming game may keep the original inherited/asset-forced behavior by
+omitting the fourth argument.
+
+The free cursor preview for a single object (or a group that fits within one
+validation tick) bypasses `preview_interval_ms` and uses a 1 mm change
+threshold. The old 65 ms limiter made free motion appear to jump at roughly
+15 updates per second. Long chains and larger groups keep their bounded
+throttle and `max_checks_per_tick` budget. This is not an unrestricted
+high-cost collision scan: free candidates still validate only when the
+physics cursor hit actually changes.
 When used during a preview it **invalidates and revalidates** the candidate;
 never rely on an earlier green result. All commits still perform a fresh
 bounded physics verification.

@@ -32,6 +32,9 @@ enum Mode { IDLE, SINGLE, CHAIN, EDIT, PATH, EDIT_GROUP }
 @export var snap_enabled_by_default: bool = false
 @export var snap_grid_step: Vector2 = Vector2.ONE
 @export var snap_grid_origin: Vector2 = Vector2.ZERO
+## Explicit player-facing free mode. Overrides legacy and asset-forced grid snap.
+## Defaults to false so existing projects retain their original profile rules.
+@export var force_free_placement: bool = false
 
 ## Game policy: (Array[Transform3D], Array[NucleusPlaceable3D]) -> Error.
 var admission: Callable
@@ -82,20 +85,34 @@ func set_snap_defaults(
 	enabled: bool,
 	step: Vector2 = Vector2.ONE,
 	origin: Vector2 = Vector2.ZERO,
+	free_override: Variant = null,
 ) -> Error:
 	if not NucleusPlacementSolver3D.valid_grid(step, origin):
+		return ERR_INVALID_PARAMETER
+	if free_override != null and typeof(free_override) != TYPE_BOOL:
 		return ERR_INVALID_PARAMETER
 	if _confirm_pending:
 		return ERR_BUSY
 	snap_enabled_by_default = enabled
 	snap_grid_step = step
 	snap_grid_origin = origin
+	if free_override != null:
+		force_free_placement = bool(free_override)
 	if mode != Mode.IDLE:
 		_refresh_from_current_hit()
 	return OK
 
 
 func get_snap_settings(profile: NucleusPlacementProfile3D = null) -> Dictionary:
+	# A direct user request for free placement beats profile-level forced snap.
+	# Do not mutate the shared profile resource to achieve this.
+	if force_free_placement:
+		return {
+			"enabled": false,
+			"step": snap_grid_step,
+			"origin": snap_grid_origin,
+			"source": &"free_override",
+		}
 	var target := profile
 	if target == null and not _placeables.is_empty():
 		target = _placeables[0].profile
@@ -242,8 +259,16 @@ func update_from_screen(screen_position: Vector2) -> bool:
 	var hit := camera.get_world_3d().direct_space_state.intersect_ray(query)
 	_current_hit = hit.duplicate()
 	var now := Time.get_ticks_usec()
-	if not _validation_pending and _hit_changed(hit, _candidate_hit):
-		if _last_batch_usec < 0 or now - _last_batch_usec >= preview_interval_ms * 1000:
+	# One free piece needs continuous cursor tracking, not a 65 ms step cadence.
+	# Keep the throttle for chains and large groups, where the physics budget matters.
+	var continuous := _continuous_free_preview()
+	var tolerance := 0.001 if continuous else cursor_tolerance
+	if not _validation_pending and _hit_changed(hit, _candidate_hit, tolerance):
+		if (
+			continuous
+			or _last_batch_usec < 0
+			or now - _last_batch_usec >= preview_interval_ms * 1000
+		):
 			_schedule_validation(hit)
 	elif not _validation_pending and _candidate_hit.is_empty() and hit.is_empty():
 		_set_invalid(&"no_surface")
@@ -359,14 +384,33 @@ func _refresh_from_current_hit() -> void:
 		_pump_validation()
 
 
-func _hit_changed(next_hit: Dictionary, previous_hit: Dictionary) -> bool:
+## Single-object and small-group free previews can finish within one tick.
+## Longer groups/chains retain their bounded, throttled work scheduling.
+func _continuous_free_preview() -> bool:
+	if _placeables.is_empty() or mode == Mode.IDLE:
+		return false
+	if bool(get_snap_settings(_placeables[0].profile).get("enabled", false)):
+		return false
+	return (
+		mode == Mode.SINGLE
+		or mode == Mode.EDIT
+		or (mode == Mode.EDIT_GROUP and _roots.size() <= max_checks_per_tick)
+	)
+
+
+func _hit_changed(
+	next_hit: Dictionary,
+	previous_hit: Dictionary,
+	tolerance: float = -1.0,
+) -> bool:
 	if next_hit.is_empty() or previous_hit.is_empty():
 		return next_hit.is_empty() != previous_hit.is_empty()
 	if next_hit.get("collider") != previous_hit.get("collider"):
 		return true
 	var a: Vector3 = next_hit.get("position", Vector3.ZERO)
 	var b: Vector3 = previous_hit.get("position", Vector3.ZERO)
-	return a.distance_to(b) > cursor_tolerance
+	var threshold := cursor_tolerance if tolerance < 0.0 else tolerance
+	return a.distance_squared_to(b) > threshold * threshold
 
 
 func _schedule_validation(hit: Dictionary) -> void:

@@ -51,21 +51,29 @@ modo, si el cursor permite colocar y por que se rechaza un candidato.
 
 ## Snap configurable (nuevo)
 
-La interfaz derecha ofrece **G / Activar snap global** y un selector de pasos
-`0,5 m`, `1 m` o `2 m`. El indicador **SNAP EFECTIVO** muestra el resultado
-final y si proviene de la sesion o del perfil de asset. Se puede cambiar
-mientras una pieza se previsualiza; al hacerlo se revalida la posicion.
+El boton **G** diferencia ahora dos estados que se notan claramente:
 
-El ajuste global es un **valor por defecto**, no una imposicion universal:
+- **OFF = LIBRE REAL**: el asset sigue al cursor continuamente, sin
+  redondeos X/Z, incluso si casa, caja o plataforma tienen snap forzado.
+- **ON = SNAP**: se aplican los pasos globales de `0,5 m`, `1 m` o `2 m` a
+  los perfiles que los heredan. Los assets pueden imponer su cuadrícula
+  especifica o desactivarla (valla curva).
 
-- **Caja**: snap siempre activo de **1 m**, incluso con G apagado; util para
-  construir filas y apilar cajas con pivotes alineados.
-- **Casa**: conserva su snap antiguo de **1 m**, ya existente en el perfil.
-- **Plataforma**: conserva el snap antiguo de **0,5 m**.
-- **Columna**: hereda la opcion G y el paso global para comparar colocacion libre
-  frente a colocacion organizada.
-- **Valla**: fuerza snap desactivado; las cadenas rectas y curvas no pierden
-  continuidad por redondear cada tramo a una celda distinta.
+El indicador **SNAP EFECTIVO** distingue `LIBRE (forzado por el usuario)`
+de una cuadrícula activada por la sesion o el asset. La cuadricula
+grafica orientativa se oculta en modo libre; no tiene colision ni controla
+las posiciones. No se cambian los
+recursos originales: G solo modifica la sesion actual.
+
+Si desarrollas un consumidor sin el override `force_free_placement`, sigue
+vigente el contrato original de perfiles:
+
+- **Caja**: fuerza `snap_mode = ENABLED`, cuadrícula 1 m cuando G esta
+  encendido; G apagado la libera.
+- **Casa**: mantiene 1 m al activar snap; G apagado permite coordenadas libres.
+- **Plataforma**: mantiene 0,5 m al activar snap; G apagado permite libre.
+- **Columna**: usa la rejilla global solo cuando G esta encendido.
+- **Valla**: fuerza `snap_mode = DISABLED` para preservar sus tramos curvos.
 
 Para cambiar un asset, abre por ejemplo
 `res://examples/placement/profiles/crate_profile.tres` en el Inspector y
@@ -73,6 +81,10 @@ modifica `snap_mode` (`INHERIT` / `ENABLED` / `DISABLED`), `grid_step` y
 `grid_origin`. Los perfiles anteriores con `snap_to_grid = true` siguen siendo
 compatibles. El grid afecta **X/Z**, la altura Y sigue el terreno o la plataforma
 real, y la validacion sigue rechazando pendientes y solapes.
+
+La previsualizacion libre de piezas individuales ahora responde a cada tick
+fisico (solo si cambia el punto bajo el cursor); la limitacion anterior de
+65 ms permanece para las cadenas largas y grupos numerosos.
 
 El limite de la cadena de la valla es **`chain_max_count = 20` en el perfil**
 `fence_profile.tres`; puedes aumentar ese valor (hasta 256 desde Inspector),

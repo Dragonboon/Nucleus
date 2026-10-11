@@ -96,12 +96,37 @@ func _run() -> void:
 		"Live preview enforces a per-frame validation budget")
 	_check(session != null and not session.snap_enabled_by_default,
 		"Snap is opt-in for inheriting placeables")
+	_check(session != null and session.force_free_placement,
+		"The lab starts in genuinely free placement mode")
+	if session != null and crate_profile != null:
+		_check(not session.get_snap_settings(crate_profile)["enabled"],
+			"Lab free mode bypasses forced crate snapping")
 	var canvas := lab.get_node_or_null("Interfaz del laboratorio")
 	_check(canvas != null, "Interactive lab owns one UI canvas")
 	_check(canvas != null and canvas.find_child("SnapGlobal", true, false) != null,
 		"Lab exposes its session snap toggle")
 	_check(canvas != null and canvas.find_child("SnapStep", true, false) != null,
 		"Lab exposes a choice of grid cell sizes")
+	if world != null and session != null and crate_profile != null and fence_profile != null:
+		var grid := world.get_node_or_null(
+			"Cuadricula visual sin colision"
+		) as MeshInstance3D
+		_check(grid != null and not grid.visible,
+			"The visual grid is hidden in free mode")
+		lab.call("_toggle_default_snap")
+		_check(session.snap_enabled_by_default and not session.force_free_placement,
+			"G enables the authored snapping rules")
+		_check(session.get_snap_settings(crate_profile)["enabled"],
+			"G enables the crate's authored 1 m snap")
+		_check(not session.get_snap_settings(fence_profile)["enabled"],
+			"Fences still opt out of global snap")
+		_check(grid != null and grid.visible,
+			"Grid visualization only appears in snap mode")
+		lab.call("_toggle_default_snap")
+		_check(not session.snap_enabled_by_default and session.force_free_placement,
+			"G returns to truly free mode")
+		_check(not session.get_snap_settings(crate_profile)["enabled"],
+			"Free mode bypasses asset snapping again")
 	var platform_profile := load(
 		"res://examples/placement/profiles/platform_profile.tres"
 	) as NucleusPlacementProfile3D

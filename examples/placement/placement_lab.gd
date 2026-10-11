@@ -50,6 +50,7 @@ var _status_label: Label
 var _mode_label: Label
 var _snap_label: Label
 var _snap_toggle: CheckButton
+var _visual_grid: MeshInstance3D
 var _snap_steps: OptionButton
 var _selection_label: Label
 var _info_label: Label
@@ -78,7 +79,8 @@ func _ready() -> void:
 	_session.pending_preview_material = _ghost_material(Color(1.0, 0.73, 0.25, 0.45))
 	_session.max_checks_per_tick = 3
 	_session.preview_interval_ms = 65
-	_session.set_snap_defaults(false, Vector2.ONE)
+	# An OFF toggle now means truly free positioning, even for forced-snap assets.
+	_session.set_snap_defaults(false, Vector2.ONE, Vector2.ZERO, true)
 	_session.preview_updated.connect(_on_preview_updated)
 	_session.placement_confirmed.connect(_on_placement_confirmed)
 	_session.placement_cancelled.connect(_on_placement_cancelled)
@@ -276,13 +278,13 @@ func _world_click(screen_position: Vector2, additive: bool = false) -> void:
 		_set_selected(picked)
 
 
-## Only changes the session default. Profiles may override it independently.
+## Explicit interaction modes: G OFF = free, G ON = per-asset rules + grid.
 func _toggle_default_snap() -> void:
 	if _session == null:
 		return
 	var next := not _session.snap_enabled_by_default
 	var error := _session.set_snap_defaults(
-		next, _session.snap_grid_step, _session.snap_grid_origin,
+		next, _session.snap_grid_step, _session.snap_grid_origin, not next,
 	)
 	if error != OK:
 		if _snap_toggle != null:
@@ -291,9 +293,12 @@ func _toggle_default_snap() -> void:
 		return
 	if _snap_toggle != null:
 		_snap_toggle.set_pressed_no_signal(next)
-	_set_toast("Snap global %s. Los perfiles pueden forzar su propio ajuste." % (
-		"activado" if next else "desactivado"
-	))
+	if _visual_grid != null:
+		_visual_grid.visible = next
+	_set_toast(
+		"SNAP: activos los perfiles y la cuadricula." if next
+		else "LIBRE: movimiento continuo, sin snap, incluso para assets forzados."
+	)
 	_update_panels()
 
 
@@ -643,6 +648,8 @@ func _update_panels() -> void:
 		var author := "asset" if source in ["asset", "asset_off", "legacy_asset"] else (
 			"rejilla de asset" if source == "asset_grid" else "sesion"
 		)
+		if source == "free_override":
+			author = "LIBRE (forzado por el usuario)"
 		_snap_label.text = "SNAP EFECTIVO: %s  |  X/Z %.2f / %.2f  |  %s" % [
 			"ON" if active_snap else "OFF", grid.x, grid.y, author,
 		]
@@ -747,6 +754,8 @@ func _build_grid() -> void:
 	var grid := MeshInstance3D.new()
 	grid.mesh = mesh
 	grid.name = "Cuadricula visual sin colision"
+	grid.visible = false  # A free cursor should not look grid-locked.
+	_visual_grid = grid
 	_world.add_child(grid)
 
 
@@ -844,7 +853,7 @@ func _build_ui() -> void:
 		+ "Ctrl+clic: sumar/quitar seleccion\n"
 		+ "Mayus+arrastrar: seleccionar por marco\n"
 		+ "Curva: clic=vertice, Retroceso=deshacer, Enter=fin\n"
-		+ "G: snap global (perfiles pueden sobrescribirlo)\n"
+		+ "G: libre absoluto / snap por asset\n"
 		+ "H/J/K: pendientes / plano",
 		12, Color(0.69, 0.81, 0.89),
 	)
@@ -871,7 +880,7 @@ func _build_ui() -> void:
 	snap_heading.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_snap_toggle = CheckButton.new()
 	_snap_toggle.name = "SnapGlobal"
-	_snap_toggle.text = "G  Activar snap global"
+	_snap_toggle.text = "G  Snap ON / OFF = libre"
 	right_stack.add_child(_snap_toggle)
 	_snap_toggle.toggled.connect(func(_pressed: bool) -> void: _toggle_default_snap())
 	_snap_steps = OptionButton.new()

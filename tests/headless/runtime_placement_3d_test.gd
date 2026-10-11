@@ -12,6 +12,7 @@ func run() -> Dictionary:
 	_test_group_edit_cancel()
 	_test_snap_resolution()
 	_test_snap_horizontal()
+	_test_free_preview_tracking()
 	return finish()
 
 
@@ -265,8 +266,32 @@ func _test_snap_resolution() -> void:
 		"Live session accepts positive, finite grid steps.")
 	expect_true(session.get_snap_settings(p)["enabled"],
 		"Session resolves the authored asset without replacing the profile.")
+	p.snap_mode = NucleusPlacementProfile3D.SnapMode.ENABLED
+	p.grid_step = Vector2.ONE
+	expect_equal(session.set_snap_defaults(
+		false, Vector2.ONE, Vector2.ZERO, true,
+	), OK, "Free override can be enabled with one atomic revalidation.")
+	expect_false(session.get_snap_settings(p)["enabled"],
+		"Explicit free mode overrides an asset that forces snap on.")
+	expect_equal(session.get_snap_settings(p)["source"], &"free_override",
+		"Free policy is inspectable for the UI.")
+	p.snap_mode = NucleusPlacementProfile3D.SnapMode.INHERIT
+	p.snap_to_grid = true
+	expect_false(session.get_snap_settings(p)["enabled"],
+		"Explicit free mode also overrides legacy snap_to_grid resources.")
+	p.snap_to_grid = false
+	expect_equal(session.set_snap_defaults(
+		true, Vector2(0.5, 0.5), Vector2.ZERO, false,
+	), OK, "Re-enabling snap restores asset and session policy.")
+	expect_true(session.get_snap_settings(p)["enabled"],
+		"Session snapping resumes after leaving free mode.")
+	expect_true(session._continuous_free_preview() == false,
+		"Idle sessions do not poll physics for continuous previews.")
 	expect_equal(session.set_snap_defaults(true, Vector2.ZERO), ERR_INVALID_PARAMETER,
 		"Session refuses a zero grid step.")
+	expect_equal(session.set_snap_defaults(
+		true, Vector2.ONE, Vector2.ZERO, "not_bool",
+	), ERR_INVALID_PARAMETER, "Free override accepts bool or omitted only.")
 	expect_true(session.snap_enabled_by_default,
 		"Invalid configuration cannot mutate the active default.")
 	session.free()
@@ -287,3 +312,32 @@ func _test_snap_horizontal() -> void:
 		"A finite, positive grid is usable.")
 	expect_false(NucleusPlacementSolver3D.valid_grid(Vector2(INF, 1), Vector2.ZERO),
 		"Nonfinite steps must be rejected.")
+
+
+func _test_free_preview_tracking() -> void:
+	var session := NucleusPlacementSession3D.new()
+	var item := NucleusPlaceable3D.new()
+	item.profile = _profile()
+	session._placeables.append(item)
+	session.mode = NucleusPlacementSession3D.Mode.SINGLE
+	session.force_free_placement = true
+	expect_true(session._continuous_free_preview(),
+		"A single free placeable is eligible for per-physics-tick updates.")
+	var origin := {"position": Vector3(0.35, 0.0, 0.0)}
+	var moved := {"position": Vector3(0.355, 0.0, 0.0)}
+	expect_true(session._hit_changed(moved, origin, 0.001),
+		"Free cursor movement is not rounded to a 4 cm threshold.")
+	expect_false(session._hit_changed(moved, origin, 0.01),
+		"Larger configured tolerances still suppress minor jitter.")
+	session.force_free_placement = false
+	item.profile.snap_mode = NucleusPlacementProfile3D.SnapMode.ENABLED
+	expect_false(session._continuous_free_preview(),
+		"Snapped previews retain the bounded scheduling policy.")
+	session.force_free_placement = true
+	session.mode = NucleusPlacementSession3D.Mode.CHAIN
+	expect_false(session._continuous_free_preview(),
+		"Long free chains do not bypass the incremental physics budget.")
+	session.mode = NucleusPlacementSession3D.Mode.IDLE
+	session._placeables.clear()
+	item.free()
+	session.free()
