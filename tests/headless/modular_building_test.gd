@@ -36,4 +36,51 @@ func run() -> Dictionary:
 	changes = NucleusModularNeighborhood.resolve_around(Vector3i.ZERO, query, rules)
 	expect_false(changes[0]["occupied"], "Removed cell has clear descriptor.")
 	expect_equal(changes[2]["variant_id"], &"isolated", "Remaining cell updated.")
+	_test_visual_binding()
 	return finish()
+
+func _test_visual_binding() -> void:
+	var root := Node3D.new()
+	expect_true(attach_test_node(root), "Modular presenter needs SceneTree.")
+	var board := NucleusSquareBoard3D.new()
+	root.add_child(board)
+	var presenter := NucleusModularVariantBinding3D.new()
+	presenter.square_board = board
+	root.add_child(presenter)
+	var catalog := NucleusPlacementVariantSet3D.new()
+	var variant := NucleusPlacementVariant3D.new()
+	variant.variant_id = &"end"
+	var scene_root := Node3D.new()
+	scene_root.name = "CosmeticEnd"
+	var mesh := MeshInstance3D.new()
+	mesh.mesh = BoxMesh.new()
+	scene_root.add_child(mesh)
+	mesh.owner = scene_root
+	var packed := PackedScene.new()
+	expect_equal(packed.pack(scene_root), OK, "Cosmetic scene packs.")
+	scene_root.free()
+	variant.scene = packed
+	catalog.variants = [variant]
+	presenter.catalog = catalog
+	var cell := Vector3i(2, -1, 1)
+	expect_true(board.paint_cell(cell), "Board owns the occupied cell.")
+	var descriptors: Array[Dictionary] = [{
+		"cell": cell, "occupied": true, "variant_id": &"end",
+		"rotation_steps": 1,
+	}]
+	presenter.apply_updates(descriptors)
+	expect_equal(presenter._visuals.size(), 1, "A known visual is instantiated.")
+	var visual: Node3D = presenter._visuals[cell]["node"]
+	expect_equal(visual.global_position, board.cell_to_world(cell),
+		"Cosmetic mesh aligns with board center.")
+	expect_float(visual.rotation.y, PI * 0.5, "Variant is rotated.")
+	descriptors[0]["rotation_steps"] = 2
+	presenter.apply_updates(descriptors)
+	expect_true(visual == presenter._visuals[cell]["node"],
+		"Changing a rule orientation reuses the same visual.")
+	expect_float(visual.rotation.y, PI, "Existing visual updates rotation.")
+	descriptors[0]["occupied"] = false
+	presenter.apply_updates(descriptors)
+	expect_equal(presenter._visuals.size(), 0, "Erasure removes cosmetic visuals.")
+	expect_true(board.has_tile(cell), "Cosmetic updates never mutate occupancy.")
+	free_test_node(root)
