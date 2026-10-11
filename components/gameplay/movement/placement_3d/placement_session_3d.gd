@@ -240,6 +240,7 @@ func _switch_variant(index: int) -> Error:
 	_saved_visuals[0] = saved
 	_scene = candidate_scene
 	_variant_index = index
+	component.variant_id = get_variant_id()
 	_preview_feedback_state = -1
 	_refresh_from_current_hit()
 	variant_changed.emit(get_variant_id(), index)
