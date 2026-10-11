@@ -5,6 +5,7 @@ func run() -> Dictionary:
 	_test_limits()
 	_test_roadbed()
 	_test_surface_and_component()
+	_test_lab_layout()
 	return finish()
 
 func _line() -> Curve3D:
@@ -120,3 +121,25 @@ func _test_roadbed() -> void:
 		"Extruded road preserves world-distance UVs.")
 	profile.roadbed_thickness = 0.0
 	expect_false(profile.validate().is_empty(), "Zero thickness is rejected.")
+
+## The actual lab must open without a large blocking control panel.
+func _test_lab_layout() -> void:
+	var scene := load("res://examples/spline_paths/spline_paths_lab.tscn") as PackedScene
+	expect_true(scene != null, "Spline lab scene loads.")
+	if scene == null:
+		return
+	var lab := scene.instantiate() as Node3D
+	expect_true(attach_test_node(lab), "Spline lab enters SceneTree.")
+	var panel := lab.find_child("SplineControlsPanel", true, false) as PanelContainer
+	var controls := lab.find_child("SplineAdvancedControls", true, false) as VBoxContainer
+	var road := lab.find_child("SplineRoad", true, false) as NucleusSplineRoad3D
+	expect_true(panel != null, "Viewport HUD is present.")
+	expect_true(controls != null and not controls.visible,
+		"Advanced controls start collapsed.")
+	expect_true(road != null and road.target_mesh.mesh != null,
+		"Collapsing controls does not stop road generation.")
+	if panel != null:
+		var bounds: Rect2 = panel.get_global_rect()
+		expect_true(bounds.position.x > 0.0, "Panel is no longer left-anchored.")
+		expect_true(bounds.size.x <= 300.0, "Compact HUD has bounded width.")
+	free_test_node(lab)
