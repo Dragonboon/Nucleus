@@ -44,3 +44,11 @@ El manifiesto de Nucleus debe encontrar el archivo físico
 `res://tests/headless/hex_grid_3d_test.gd`. El overlay incluye esta suite
 con comprobaciones de giro individual, dirección seleccionada y aislamiento
 respecto al giro del tablero.
+
+## 2D/3D shared extension
+
+The 3D panel now exposes a **flat-top** checkbox. It changes projection and
+mesh orientation without changing stored coordinates, piece yaw, or connection
+identity. Paired neighbor cells additionally emit edge-contact events; they
+still emit two corner-contact events. The new 2D lab is in
+`res://examples/hex_grid_2d/hex_grid_2d_lab.tscn`.

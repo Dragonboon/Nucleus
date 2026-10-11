@@ -7,6 +7,8 @@ signal tile_painted(cell: Vector3i, tile: Node3D)
 signal tile_erased(cell: Vector3i)
 signal tile_moved(from_cell: Vector3i, to_cell: Vector3i)
 signal tile_rotated(cell: Vector3i, steps: int)
+signal edge_connected(cell: Vector3i, side: int, other: Vector3i)
+signal edge_disconnected(cell: Vector3i, side: int, other: Vector3i)
 signal corner_connected(
 	cell: Vector3i, corner: int, other: Vector3i, other_corner: int, point: Vector3,
 )
@@ -24,6 +26,7 @@ const MAX_RING: int = 24
 @export_range(-8, 8, 1) var active_layer: int = 0
 @export var tile_color: Color = Color(0.52, 0.69, 0.79)
 @export var show_ghost: bool = true
+@export var flat_top: bool = false
 ## The arrow belongs to the selected tile only; never to the ghost grid.
 @export var show_selected_orientation: bool = true
 
@@ -83,18 +86,20 @@ func is_valid_cell(cell: Vector3i) -> bool:
 
 
 func world_to_cell(world_position: Vector3, layer: int = 0) -> Vector3i:
-	var axial := NucleusHexLayout3D.local_to_axial(to_local(world_position), cell_radius)
+	var axial := NucleusHexLayout3D.local_to_axial(to_local(world_position), cell_radius, flat_top)
 	return Vector3i(axial.x, axial.y, layer)
 
 
 func cell_to_world(cell: Vector3i) -> Vector3:
-	var local := NucleusHexLayout3D.axial_to_local(Vector2i(cell.x, cell.y), cell_radius)
+	var local := NucleusHexLayout3D.axial_to_local(Vector2i(cell.x, cell.y), cell_radius, flat_top)
 	local.y = float(cell.z) * layer_step
 	return to_global(local)
 
 
 func cell_corner_world(cell: Vector3i, corner: int) -> Vector3:
-	var local := NucleusHexLayout3D.corner_local(Vector2i(cell.x, cell.y), corner, cell_radius)
+	var local := NucleusHexLayout3D.corner_local(
+		Vector2i(cell.x, cell.y), corner, cell_radius, flat_top,
+	)
 	local.y = float(cell.z) * layer_step + tile_height
 	return to_global(local)
 
@@ -232,7 +237,9 @@ func set_hover(cell: Vector3i, visible: bool = true) -> void:
 		return
 	_hover.visible = visible and show_ghost and is_valid_cell(cell)
 	if _hover.visible:
-		_hover.position = NucleusHexLayout3D.axial_to_local(Vector2i(cell.x, cell.y), cell_radius)
+		_hover.position = NucleusHexLayout3D.axial_to_local(
+			Vector2i(cell.x, cell.y), cell_radius, flat_top,
+		)
 		_hover.position.y = float(cell.z) * layer_step + tile_height + 0.07
 
 
@@ -267,6 +274,11 @@ func set_active_layer(value: int) -> void:
 	_rebuild_ghost()
 
 
+func set_flat_top(value: bool) -> void:
+	flat_top = value
+	_rebuild_geometry()
+
+
 func set_ghost_visible(value: bool) -> void:
 	show_ghost = value
 	if _ghost != null:
@@ -286,7 +298,7 @@ func clear_tiles() -> void:
 
 
 func _position_tile(tile: MeshInstance3D, cell: Vector3i) -> void:
-	tile.position = NucleusHexLayout3D.axial_to_local(Vector2i(cell.x, cell.y), cell_radius)
+	tile.position = NucleusHexLayout3D.axial_to_local(Vector2i(cell.x, cell.y), cell_radius, flat_top)
 	tile.position.y = float(cell.z) * layer_step + tile_height * 0.5
 	tile.rotation.y = deg_to_rad(float(int(_angles.get(cell, 0))) * 60.0)
 
@@ -303,7 +315,7 @@ func _update_selected_direction() -> void:
 	if not _selection_direction.visible:
 		return
 	var axial := Vector2i(_selected_cell.x, _selected_cell.y)
-	_selection_direction.position = NucleusHexLayout3D.axial_to_local(axial, cell_radius)
+	_selection_direction.position = NucleusHexLayout3D.axial_to_local(axial, cell_radius, flat_top)
 	_selection_direction.position.y = (
 		float(_selected_cell.z) * layer_step + tile_height + 0.035
 	)
@@ -322,6 +334,10 @@ func _add_connections(cell: Vector3i) -> void:
 			)
 		other_corners.append({"cell": cell, "corner": corner})
 		_vertices[key] = other_corners
+	for side: int in range(6):
+		var other_cell: Vector3i = _edge_cell(cell, side)
+		if _tiles.has(other_cell):
+			edge_connected.emit(cell, side, other_cell)
 
 
 func _remove_connections(cell: Vector3i) -> void:
@@ -341,12 +357,23 @@ func _remove_connections(cell: Vector3i) -> void:
 			_vertices.erase(key)
 		else:
 			_vertices[key] = entries
+	for side: int in range(6):
+		var other_cell: Vector3i = _edge_cell(cell, side)
+		if _tiles.has(other_cell):
+			edge_disconnected.emit(cell, side, other_cell)
+
+
+static func _edge_cell(cell: Vector3i, side: int) -> Vector3i:
+	var axial: Vector2i = NucleusHexLayout.edge_neighbor(
+		Vector2i(cell.x, cell.y), side,
+	)
+	return Vector3i(axial.x, axial.y, cell.z)
 
 
 func _rebuild_geometry() -> void:
 	if not is_inside_tree() or _ghost == null:
 		return
-	_tile_mesh = _build_hex_prism(cell_radius, tile_height)
+	_tile_mesh = _build_hex_prism(cell_radius, tile_height, flat_top)
 	_selection_direction.mesh = _build_direction_arrow(cell_radius)
 	for cell: Vector3i in _tiles:
 		var tile: MeshInstance3D = _tiles[cell]
@@ -364,8 +391,12 @@ func _rebuild_ghost() -> void:
 	var line_y := float(active_layer) * layer_step + 0.035
 	for axial: Vector2i in NucleusHexLayout3D.cells_in_radius(ring_count):
 		for side: int in range(6):
-			var a := NucleusHexLayout3D.corner_local(axial, side, cell_radius)
-			var b := NucleusHexLayout3D.corner_local(axial, side + 1, cell_radius)
+			var other: Vector2i = NucleusHexLayout.edge_neighbor(axial, side)
+			if NucleusHexLayout.in_radius(other, ring_count):
+				if other.x < axial.x or (other.x == axial.x and other.y < axial.y):
+					continue
+			var a := NucleusHexLayout3D.corner_local(axial, side, cell_radius, flat_top)
+			var b := NucleusHexLayout3D.corner_local(axial, side + 1, cell_radius, flat_top)
 			a.y = line_y
 			b.y = line_y
 			mesh.surface_add_vertex(a)
@@ -376,21 +407,25 @@ func _rebuild_ghost() -> void:
 	var hover_mesh := ImmediateMesh.new()
 	hover_mesh.surface_begin(Mesh.PRIMITIVE_LINES)
 	for index: int in range(6):
-		hover_mesh.surface_add_vertex(NucleusHexLayout3D.corner_local(Vector2i.ZERO, index, cell_radius))
 		hover_mesh.surface_add_vertex(
-			NucleusHexLayout3D.corner_local(Vector2i.ZERO, index + 1, cell_radius)
+			NucleusHexLayout3D.corner_local(Vector2i.ZERO, index, cell_radius, flat_top)
+		)
+		hover_mesh.surface_add_vertex(
+			NucleusHexLayout3D.corner_local(Vector2i.ZERO, index + 1, cell_radius, flat_top)
 		)
 	hover_mesh.surface_end()
 	_hover.mesh = hover_mesh
 	_hover.visible = false
 
 
-static func _build_hex_prism(radius: float, height: float) -> ArrayMesh:
+static func _build_hex_prism(
+	radius: float, height: float, flat_top: bool = false,
+) -> ArrayMesh:
 	var surface := SurfaceTool.new()
 	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
 	for side: int in range(6):
-		var a := NucleusHexLayout3D.corner_local(Vector2i.ZERO, side, radius)
-		var b := NucleusHexLayout3D.corner_local(Vector2i.ZERO, side + 1, radius)
+		var a := NucleusHexLayout3D.corner_local(Vector2i.ZERO, side, radius, flat_top)
+		var b := NucleusHexLayout3D.corner_local(Vector2i.ZERO, side + 1, radius, flat_top)
 		var top_a := Vector3(a.x, height * 0.5, a.z)
 		var top_b := Vector3(b.x, height * 0.5, b.z)
 		var bottom_a := Vector3(a.x, -height * 0.5, a.z)

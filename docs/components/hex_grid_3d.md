@@ -114,3 +114,13 @@ shared `SelectedOrientation` gizmo: it tracks only the highlighted tile, not
 all painted cells. `set_show_selected_orientation(bool)` toggles this purely
 visual marker; it does not modify tiles, corner keys, rotation steps or events.
 The shared hex prism no longer colours a top-face wedge.
+
+## Shared 2D/3D topology extension
+
+From this overlay, `NucleusHexLayout3D` is a compatibility wrapper around
+`NucleusHexLayout`; it adds a final optional `flat_top` argument to projection
+and corner functions. `NucleusHexBoard3D` adds `flat_top` and `set_flat_top`,
+`edge_connected` and `edge_disconnected` while retaining the original vertex
+signals and axial `(q,r,layer)` identity. Ghost grid edges are drawn once.
+
+See `docs/components/hex_grid_2d.md` for the shared ownership and 2D consumer.

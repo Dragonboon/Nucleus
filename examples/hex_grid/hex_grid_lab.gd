@@ -355,6 +355,14 @@ func _make_ui() -> void:
 	show_direction.button_pressed = board.show_selected_orientation
 	show_direction.toggled.connect(board.set_show_selected_orientation)
 	column.add_child(show_direction)
+	var flat_option := CheckBox.new()
+	flat_option.text = "Orientación flat-top (hexágonos 3D)"
+	flat_option.button_pressed = board.flat_top
+	flat_option.toggled.connect(func(enabled: bool) -> void:
+		board.set_flat_top(enabled)
+		_sync_ui()
+	)
+	column.add_child(flat_option)
 	var visibility := CheckBox.new()
 	visibility.text = "Cuadrícula fantasma"
 	visibility.button_pressed = true
@@ -439,6 +447,7 @@ func _sync_ui() -> void:
 		board.cell_radius, board.ring_count, board.tile_height,
 		board.layer_step, board.active_layer, rad_to_deg(board.rotation.y),
 	]
+	_details.text += "\nTipo: " + ("FLAT-TOP" if board.flat_top else "POINTY-TOP")
 	var info := "Tool: %s | Piezas: %d | Contactos de esquina: %d" % [
 		_tool.to_upper(), board.tile_count(), board.shared_corner_count(),
 	]
