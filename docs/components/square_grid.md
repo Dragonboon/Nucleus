@@ -31,7 +31,7 @@ and its four neighbors, then apply variants through its own authorized catalog.
 - `res://examples/square_grid/square_grid_2d_lab.tscn`:
   orthogonal/isometric switch, left-click paint, right-click erase and R rotate.
 - `res://examples/square_grid/square_grid_3d_lab.tscn`:
-  click paint/erase, PageUp/PageDown layer change and C clear.
+  click paint/erase, Shift+click selection, Q/R rotation, Z/X layer\n  change, a bounded ghost grid, hover outline and orientation indicator.
 
 Both labs use no assets, Autoloads, plugin installation, or generated colliders.
 They are demonstrations, not production construction controllers.

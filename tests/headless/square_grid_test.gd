@@ -48,6 +48,29 @@ func _test_occupancy() -> void:
 	expect_true(board3.paint_cell(cell), "3D cell paints.")
 	expect_true(board3.rotate_tile(cell), "3D rotation stores.")
 	expect_equal(board3.get_rotation_steps(cell), 1, "3D quarter turn.")
+	var grid := board3.get_node_or_null("GhostGrid") as MeshInstance3D
+	var marker := board3.get_node_or_null("SelectedOrientation") as MeshInstance3D
+	expect_true(grid != null and grid.mesh != null, "3D grid is rendered.")
+	expect_true(marker != null and not marker.visible, "No selection hides direction.")
+	board3.highlight_selection(cell)
+	expect_true(board3.has_selection(), "A placed tile can be selected.")
+	expect_true(marker.visible, "Selection reveals direction.")
+	expect_true(board3.rotate_tile(cell), "Selected tile can rotate again.")
+	expect_equal(board3.get_rotation_steps(cell), 2, "Selection rotates 180 degrees.")
+	expect_float(marker.rotation.y, PI, "Arrow follows tile orientation.")
+	board3.set_active_layer(3)
+	expect_equal(board3.active_layer, 3, "Active layer can be changed.")
+	expect_float(grid.position.y, 3.0 * board3.layer_step + 0.155,
+		"Ghost grid follows the active layer.")
+	expect_false(board3.has_selection(), "Layer change clears old selection.")
+	board3.set_active_layer(50)
+	expect_equal(board3.active_layer, 8, "Layer upper limit enforced.")
+	board3.set_active_layer(-50)
+	expect_equal(board3.active_layer, -8, "Layer lower limit enforced.")
+	board3.set_ghost_visible(false)
+	expect_false(grid.visible, "Ghost can be hidden independently.")
+	board3.set_ghost_visible(true)
+	expect_true(grid.visible, "Ghost can be restored.")
 	free_test_node(world)
 
 func _test_modular_rules() -> void:
