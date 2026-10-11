@@ -1,3 +1,24 @@
+## Variantes y rotación libre (laboratorio)
+
+Al seleccionar **Casa (1)**, el laboratorio usa un `NucleusPlacementVariantSet3D`
+con tres opciones: `roof_gable`, `roof_flat` y `roof_hip`.
+**V** y **X** recorren las variantes, actualizan el preview y fuerzan la
+reevaluación de soporte y colisiones; también hay botones en el panel.
+El catálogo se mantiene en la demo, sin imponer assets ni HUD al componente.
+
+**T** alterna entre rotación por pasos (pulsación Q/R) y rotación continua
+(mantener Q/R). El giro utiliza `delta` y la velocidad configurable
+`NucleusPlacementProfile3D.rotation_speed_degrees_per_second`.
+No altera los pasos que usa `rotate_step()`, ni los permisos `can_rotate`.
+Los frames bloqueados tienen un límite de `delta` para evitar saltos bruscos.
+
+El documento del laboratorio sigue aceptando mundos anteriores. Las casas
+con una variante seleccionada incorporan opcionalmente `variant` al registro
+guardado; la restauración busca únicamente claves autorizadas como
+`house:roof_flat` en el catálogo del juego, nunca rutas de recursos
+proporcionadas por el archivo. Esta información viaja también por undo/redo
+sin cambiar el esquema de mundos existente.
+
 # Runtime Placement 3D — laboratorio interactivo
 
 Este ejemplo prueba el componente **NucleusPlacementSession3D** existente sin
@@ -18,7 +39,9 @@ framework. Todos los objetos son `PackedScene` con primitivas de Godot y perfile
 | `Mayus+arrastrar` | Seleccion por rectangulo de pantalla |
 | `Ctrl+A` | Seleccionar todo lo colocado |
 | `E` | Mover los objetos seleccionados (si el perfil lo permite) |
-| `Q` / `R` | Rotar las previsualizaciones o todo el grupo |
+| `Q` / `R` | Rotar por pasos o, en modo libre, mantener pulsadas para giro continuo |
+| `T` | Alternar rotación por pasos y libre |
+| `V` / `X` | Siguiente/anterior variante de tejado mientras se coloca una casa |
 | `G` | Alternar el snap global de la sesion (no fuerza los assets) |
 | `Supr` | Eliminar la seleccion (comprobacion de permisos previa) |
 | `Esc` | Cancelar previsualizacion / restaurar transformaciones originales |
@@ -54,7 +77,9 @@ ni la escena principal. Puedes ejecutar este laboratorio independientemente.
 | Clic izquierdo mientras se previsualiza | Validar y colocar; rojo significa invalido |
 | Clic izquierdo sobre pieza confirmada | Seleccionarla |
 | **E** | Editar la seleccion (moverla con raton, luego confirmar con clic) |
-| **Q / R** | Rotar el preview hacia izquierda/derecha según el perfil |
+| **Q / R** | Rotación por pasos; con T activado, mantener para girar libremente |
+| **T** | Alternar rotación continua a 120°/s por defecto (configurable por asset) |
+| **V / X** | Cambiar variante de tejado de una casa durante el preview |
 | **Supr** | Solicitar retirada de la pieza seleccionada |
 | **Esc** | Cancelar creacion o restaurar edicion; cuando no hay sesion, deseleccionar |
 | Raton derecho + arrastrar | Orbitar camara fuera del modo curva; dentro, anadir un giro |
