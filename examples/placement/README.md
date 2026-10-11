@@ -11,8 +11,9 @@ framework. Todos los objetos son `PackedScene` con primitivas de Godot y perfile
 | --- | --- |
 | `1`–`5` | Colocar casa, valla, columna, plataforma o caja |
 | `F` | Iniciar valla recta: clic inicio, clic final |
-| `C` | Iniciar cadena curva: clic inicio, clic(s) intermedios, `Enter` para terminar en cursor |
+| `C` | Iniciar cadena curva: clic izquierdo para inicio; derecho para nuevos puntos; izquierdo para colocar |
 | `Retroceso` | Borrar ultimo punto de control de curva |
+| `Alt` + clic derecho y arrastrar | Orbitar la camara mientras se dibuja una curva |
 | `Ctrl+clic` | Alternar pieza dentro de la multiseleccion |
 | `Mayus+arrastrar` | Seleccion por rectangulo de pantalla |
 | `Ctrl+A` | Seleccionar todo lo colocado |
@@ -21,7 +22,22 @@ framework. Todos los objetos son `PackedScene` con primitivas de Godot y perfile
 | `G` | Alternar el snap global de la sesion (no fuerza los assets) |
 | `Supr` | Eliminar la seleccion (comprobacion de permisos previa) |
 | `Esc` | Cancelar previsualizacion / restaurar transformaciones originales |
-| Ratón derecho / rueda / central / WASD | Orbitar / zoom / paneo / mover camara |
+| Ratón derecho / rueda / central / WASD | Orbitar / zoom / paneo / mover camara (en curva: derecho = giro) |
+
+## Interaccion de curvas (correccion de flujo)
+
+1. Pulsa `C` y haz **clic izquierdo** en el terreno para fijar el inicio.
+2. Desplaza el cursor y usa **clic derecho** para fijar uno o varios puntos de giro.
+3. Desplaza el cursor al extremo deseado y haz **clic izquierdo** para confirmar
+   **toda la cadena**. No se inserta un nuevo punto de control con ese clic.
+4. Mientras trazas, `Alt + clic derecho` permite orbitar la camara, `Retroceso`
+   deshace el ultimo control y `Esc` cancela el trazado.
+
+`Enter` ya no es necesario para confirmar. El boton del panel **Curva: colocar
+(clic izq.)** sigue disponible para accesibilidad. La previsualizacion verde
+indica la ultima comprobacion completada; un clic de confirmacion solicita una
+**nueva validacion incremental** del trazado final. Si algo cambia o el conjunto
+se vuelve invalido, se rechaza indicando el motivo sin crear piezas parciales.
 
 ## Abrir
 
@@ -41,7 +57,8 @@ ni la escena principal. Puedes ejecutar este laboratorio independientemente.
 | **Q / R** | Rotar el preview hacia izquierda/derecha según el perfil |
 | **Supr** | Solicitar retirada de la pieza seleccionada |
 | **Esc** | Cancelar creacion o restaurar edicion; cuando no hay sesion, deseleccionar |
-| Raton derecho + arrastrar | Orbitar camara |
+| Raton derecho + arrastrar | Orbitar camara fuera del modo curva; dentro, anadir un giro |
+| Alt + raton derecho + arrastrar | Orbitar camara mientras se dibuja una curva |
 | Rueda | Zoom |
 | Raton central + arrastrar o **WASD** | Desplazar camara |
 | **H / J / K** | Enfocar pendiente 18°, zona plana y pendiente 43° |
@@ -120,10 +137,12 @@ en **2|4**. Las mallas decorativas no tienen colision.
 5. **Valla recta:** pulsa F, haz clic en el plano y mueve el raton a
    varios metros de distancia; confirma 3–6 segmentos. Prueba una cadena
    que atraviese el obstaculo: el conjunto no se debe confirmar.
-6. **Valla curva:** pulsa C, haz clic para iniciar, haz clic en varios puntos
-   para bordear el obstaculo y mueve el cursor hasta el extremo deseado.
-   Pulsa Enter para validar y colocar la cadena completa. Retroceso deshace
-   el ultimo punto; Esc cancela. Tramos muy cerrados que se solapen se rechazan.
+6. **Valla curva:** pulsa C y haz **clic izquierdo** para iniciar. Anade
+   giros con **clic derecho** para bordear el obstaculo y mueve el cursor
+   hasta el extremo deseado. Haz **clic izquierdo** para validar y colocar
+   la cadena completa. **Alt + derecho** permite orbitar durante el trazado.
+   Retroceso deshace el ultimo punto; Esc cancela. Tramos muy cerrados que
+   se solapen se rechazan.
 7. **Multiseleccion:** Ctrl+clic añade/quita piezas; Mayus+arrastrar dibuja
    un marco; Ctrl+A selecciona todas. Pulsa E y cambia posicion y giro del
    grupo. Con Esc recupera exactamente todos los transform originales.
@@ -280,7 +299,7 @@ con F6 en Godot.
   para girarlas, clic izquierdo para confirmar o `Esc` para descartar. `Ctrl+V`
   hace lo mismo con el portapapeles. El laboratorio conserva el límite de ocho
   copias por operación y asigna IDs nuevos solo tras confirmar.
-- **Curvas precisas:** `C` y puntos de control con clic. `chain_curve_tension`
+- **Curvas precisas:** `C`, inicio con clic izquierdo, puntos de control con derecho y colocacion con izquierdo. `chain_curve_tension`
   permite ajustar cuánto se suavizan las esquinas; la orientación se calcula
   con la tangente física de cada segmento, no con el lado de una polilínea
   gruesa. `chain_spacing` debe corresponder a la longitud real de la malla.

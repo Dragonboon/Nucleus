@@ -148,10 +148,83 @@ func _run() -> void:
 		and platform_profile.kind in pillar_profile.supported_by_kinds,
 		"Pillar/platform support is explicitly mutual")
 
+	_test_curve_mouse_input(lab, session)
 	_test_authored_world_document(lab)
 	_test_workflow_and_persistence(lab)
 	lab.free()
 	_finish()
+
+
+## Exercise the lab's real mouse routing, not just Nucleus curve geometry.
+## Green preview is provisional: a primary click starts the final recheck.
+func _test_curve_mouse_input(
+	lab: Node3D,
+	session: NucleusPlacementSession3D,
+) -> void:
+	if session == null:
+		return
+	var camera := lab.get_node_or_null("LabCamera") as Camera3D
+	if camera == null:
+		_check(false, "Curve input test needs the lab camera")
+		return
+	var before: Dictionary = lab.call("_capture_document")
+	var anchor_screen := camera.unproject_position(Vector3(-4.0, 0.0, 7.0))
+	var bend_screen := camera.unproject_position(Vector3(0.0, 0.0, 7.0))
+	var end_screen := camera.unproject_position(Vector3(4.0, 0.0, 7.0))
+	_check(not (lab.call("_raycast", anchor_screen, 1) as Dictionary).is_empty(),
+		"Curve anchor projects onto ground")
+	_check(not (lab.call("_raycast", bend_screen, 1) as Dictionary).is_empty(),
+		"Curve bend projects onto ground")
+	_check(not (lab.call("_raycast", end_screen, 1) as Dictionary).is_empty(),
+		"Curve endpoint projects onto ground")
+	lab.call("_select_curve")
+	lab.call("_world_click", anchor_screen)
+	_check(session.mode == NucleusPlacementSession3D.Mode.PATH,
+		"LMB chooses the initial path anchor")
+	if session.mode != NucleusPlacementSession3D.Mode.PATH:
+		lab.call("_cancel_operation")
+		return
+	var initial_controls := session.get_path_controls().size()
+	var right := InputEventMouseButton.new()
+	right.button_index = MOUSE_BUTTON_RIGHT
+	right.pressed = true
+	right.position = bend_screen
+	lab.call("_unhandled_input", right)
+	_check(session.get_path_controls().size() == initial_controls + 1,
+		"RMB adds one curve bend without placing the chain")
+	_check(not bool(lab.get("_orbiting")),
+		"RMB during path placement does not orbit the camera")
+	right.pressed = false
+	lab.call("_unhandled_input", right)
+	_check(session.get_path_controls().size() == initial_controls + 1,
+		"RMB release does not insert another control point")
+	var alt_right := InputEventMouseButton.new()
+	alt_right.button_index = MOUSE_BUTTON_RIGHT
+	alt_right.alt_pressed = true
+	alt_right.pressed = true
+	alt_right.position = bend_screen
+	lab.call("_unhandled_input", alt_right)
+	_check(bool(lab.get("_orbiting")),
+		"Alt+RMB still orbits while editing a curve")
+	alt_right.pressed = false
+	lab.call("_unhandled_input", alt_right)
+	_check(not bool(lab.get("_orbiting")),
+		"Releasing Alt+RMB ends camera orbit")
+	_check(session.get_path_controls().size() == initial_controls + 1,
+		"Alt+RMB never adds a curve bend")
+	var left := InputEventMouseButton.new()
+	left.button_index = MOUSE_BUTTON_LEFT
+	left.pressed = true
+	left.position = end_screen
+	lab.call("_unhandled_input", left)
+	_check(
+		session.mode == NucleusPlacementSession3D.Mode.IDLE
+		or bool(session.get("_confirm_pending")) or session.last_reason != &"",
+		"LMB requests final verification instead of another curve control",
+	)
+	session.cancel()
+	_check(lab.call("_restore_document", before) == OK,
+		"Curve mouse input fixture restores the previous world")
 
 
 func _test_authored_world_document(lab: Node3D) -> void:

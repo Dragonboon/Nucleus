@@ -413,3 +413,23 @@ rotation, integrity and codec selection. The example-owned
 not the same as `modules/world_state`: there is no persistent region or runtime
 spawning service in the lab. A real multi-scene game may use `WorldStateService`
 with `SaveSession`, and must recheck final placement on its authority.
+
+### Example: curved placement mouse controls
+
+The session does not own input mappings. The optional
+`examples/placement/placement_lab.gd` deliberately binds:
+
+- `C`, then **left click**: choose the first path anchor;
+- **right click** while in `Mode.PATH`: call `add_path_control()` for one bend;
+- **left click** while in `Mode.PATH`: capture the clicked ray position and call
+  `confirm()` to place the whole chain;
+- `Alt` + right drag: orbit the lab camera without adding a control point;
+- `Backspace`: remove the last bend; `Escape`: cancel the entire draft.
+
+`confirm()` returns `OK` when validation is **requested**, not necessarily when
+placement has completed. The only authoritative success signal is
+`placement_confirmed`; `placement_rejected` reports a failed final validation.
+The preview's last green result cannot replace the final verification. A lab
+UI must not overwrite the success message emitted by `placement_confirmed`
+with a subsequent generic "checking" message if a short chain completes
+synchronously. Changing mouse bindings requires no changes to the core solver.

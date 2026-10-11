@@ -154,6 +154,17 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
 		var button := event as InputEventMouseButton
 		if button.button_index == MOUSE_BUTTON_RIGHT:
+			# During curved placement, RMB adds a bend instead of orbiting.
+			# Alt+RMB is the explicit camera-orbit override in this mode.
+			var editing_curve := (
+				_session != null
+				and _session.mode == NucleusPlacementSession3D.Mode.PATH
+			)
+			if editing_curve and not button.alt_pressed and not _orbiting:
+				if button.pressed:
+					_add_curve_control_at(button.position)
+				get_viewport().set_input_as_handled()
+				return
 			_orbiting = button.pressed
 			get_viewport().set_input_as_handled()
 			return
@@ -249,8 +260,6 @@ func _unhandled_input(event: InputEvent) -> void:
 				_select_chain()
 			KEY_C:
 				_select_curve()
-			KEY_ENTER, KEY_KP_ENTER:
-				_finish_curve()
 			KEY_BACKSPACE:
 				_remove_last_curve_point()
 			KEY_A:
@@ -289,7 +298,7 @@ func _world_click(screen_position: Vector2, additive: bool = false) -> void:
 		var result := _session.begin_path(scene, hit["position"])
 		if result == OK:
 			_session.update_from_screen(screen_position)
-			_set_toast("Clic para añadir giros. Enter confirma hasta el cursor; Retroceso deshace punto.")
+			_set_toast("Curva iniciada. Clic derecho: nuevo giro; clic izquierdo: colocar.")
 		else:
 			_set_toast("No se pudo iniciar la curva: " + error_string(result))
 		_update_panels()
@@ -310,15 +319,10 @@ func _world_click(screen_position: Vector2, additive: bool = false) -> void:
 		_update_panels()
 		return
 	if _session.mode == NucleusPlacementSession3D.Mode.PATH:
-		var hit := _raycast(screen_position, 1)
-		if hit.is_empty():
-			_set_toast("Punto de curva sin terreno.")
-			return
-		var error := _session.add_path_control(hit["position"])
-		if error != OK:
-			_set_toast("Punto rechazado: " + error_string(error))
-		else:
-			_set_toast("Punto añadido. Más clics para rodear obstáculos; Enter para confirmar.")
+		# LMB commits the full path at the actual clicked position.
+		# confirm() revalidates asynchronously; it is not an instant success.
+		_session.update_from_screen(screen_position)
+		_finish_curve()
 		return
 	if _session.mode != NucleusPlacementSession3D.Mode.IDLE:
 		var error := _session.confirm()
@@ -335,6 +339,23 @@ func _world_click(screen_position: Vector2, additive: bool = false) -> void:
 		_toggle_selected(picked)
 	else:
 		_set_selected(picked)
+
+
+## RMB commits one control point, without affecting the live chain preview.
+## The first anchor is still chosen by LMB after pressing C.
+func _add_curve_control_at(screen_position: Vector2) -> void:
+	if _session == null or _session.mode != NucleusPlacementSession3D.Mode.PATH:
+		return
+	var hit := _raycast(screen_position, 1)
+	if hit.is_empty():
+		_set_toast("No hay terreno bajo el nuevo punto de curva.")
+		return
+	var error: Error = _session.add_path_control(hit["position"])
+	if error != OK:
+		_set_toast("Punto rechazado: " + error_string(error))
+	else:
+		_set_toast("Giro añadido. Clic derecho: otro giro; izquierdo: colocar.")
+	_update_panels()
 
 
 ## Explicit interaction modes: G OFF = free, G ON = per-asset rules + grid.
@@ -433,7 +454,7 @@ func _select_curve() -> void:
 	_set_selected(null)
 	_chain_waiting_for_anchor = null
 	_curve_waiting_for_anchor = FENCE
-	_set_toast("Cadena CURVA: clic sobre el terreno para iniciar el recorrido.")
+	_set_toast("Cadena CURVA: clic izquierdo para fijar el inicio; derecho para giros.")
 	_update_panels()
 
 
@@ -442,9 +463,15 @@ func _finish_curve() -> void:
 		return
 	var error := _session.confirm()
 	if error == OK:
-		_set_toast("Comprobando todos los segmentos antes de construir...")
+		# A short chain can commit synchronously and emit placement_confirmed
+		# before confirm() returns. Never overwrite its success feedback.
+		if _session.mode == NucleusPlacementSession3D.Mode.PATH:
+			_set_toast("Validando cadena antes de colocarla...")
+	elif error == ERR_BUSY:
+		_set_toast("La cadena ya se esta comprobando. Espera al resultado.")
 	else:
-		_set_toast("La curva no se puede confirmar: " + error_string(error))
+		_set_toast("No se puede colocar: " + _reason_text(_session.last_reason)
+			+ " (" + error_string(error) + ")")
 
 
 func _remove_last_curve_point() -> void:
@@ -963,7 +990,7 @@ func _build_ui() -> void:
 		_add_button(stack, "%d   %s" % [index + 1, NAMES[index]], func() -> void: _select_asset(idx))
 	_add_button(stack, "F   Valla recta (2 clics)", _select_chain)
 	_add_button(stack, "C   Valla CURVA (puntos)", _select_curve)
-	_add_button(stack, "Enter   Confirmar curva", _finish_curve)
+	_add_button(stack, "Curva: colocar (clic izq.)", _finish_curve)
 	_repeat_toggle = CheckButton.new()
 	_repeat_toggle.name = "RepeatPlacement"
 	_repeat_toggle.text = "B   Repetir tras colocar"
@@ -1010,11 +1037,12 @@ func _build_ui() -> void:
 	_add_button(stack, "Esc   Cancelar / Revertir", _cancel_operation)
 	_add_label(
 		stack,
-		"Raton derecho: orbitar · Rueda: zoom\n"
+		"Raton derecho: orbitar (en curva: nuevo giro)\n"
+		+ "Alt+derecho: orbitar curva · Rueda: zoom\n"
 		+ "Raton central: mover · WASD: desplazar\n"
 		+ "Ctrl+clic: sumar/quitar seleccion\n"
 		+ "Mayus+arrastrar: seleccionar por marco\n"
-		+ "Curva: clic=vertice, Retroceso=deshacer, Enter=fin\n"
+		+ "Curva: izq.=colocar, der.=giro, Retroceso=deshacer\n"
 		+ "G: libre absoluto / snap por asset\n"
 		+ "Ctrl+C/V/D: copiar, pegar, duplicar\n"
 		+ "Ctrl+Z/Y: deshacer/rehacer\n"
