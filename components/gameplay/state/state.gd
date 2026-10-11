@@ -39,6 +39,21 @@ func request_transition(
 	)
 
 
+## Resolve the actor selected by the owner, or null if it was freed.
+func get_actor() -> Node:
+	return machine.get_actor() if is_instance_valid(machine) else null
+
+
+## Explicit deferred request; change_state() remains immediate-only.
+func request_deferred_transition(
+	next_state_id: StringName,
+	context: Dictionary = {},
+) -> Error:
+	if not is_instance_valid(machine):
+		return ERR_UNCONFIGURED
+	return machine.request_state(next_state_id, context)
+
+
 func can_enter(
 	_previous_state: NucleusState,
 	_context: Dictionary,
