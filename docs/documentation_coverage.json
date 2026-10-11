@@ -232,7 +232,8 @@
     ],
     "modules/networking": [
       "docs/modules/networking.md",
-      "docs/modules/online_replication.md"
+      "docs/modules/online_replication.md",
+      "docs/modules/network_prediction.md"
     ],
     "modules/performance": [
       "docs/modules/performance.md",
