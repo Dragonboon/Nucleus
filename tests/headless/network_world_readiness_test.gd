@@ -1,0 +1,23 @@
+extends "res://tests/headless/test_case.gd"
+
+func run() -> Dictionary:
+	var gate := NucleusNetworkWorldReadiness.new()
+	expect_true(attach_test_node(gate), "Readiness component attaches to SceneTree.")
+	expect_false(gate.begin_session(0), "Invalid epoch rejected.")
+	expect_true(gate.begin_session(10), "Server begins session.")
+	expect_false(gate.expect_peer(1), "Server itself is not a remote peer.")
+	expect_true(gate.expect_peer(2), "Admitted peer can be registered.")
+	expect_false(gate._accept_ready(2, 9), "Stale world epoch rejected.")
+	expect_false(gate.is_ready(2), "Rejected ACK does not unlock visibility.")
+	expect_false(gate._accept_ready(3, 10), "Unregistered peer rejected.")
+	expect_true(gate._accept_ready(2, 10), "Expected peer is admitted.")
+	expect_false(gate._accept_ready(2, 10), "Duplicate ACK rejected.")
+	expect_true(gate.is_ready(2), "Accepted peer is ready.")
+	expect_true(gate.begin_session(11), "New epoch resets readiness.")
+	expect_false(gate.is_ready(2), "Prior session cannot retain readiness.")
+	expect_false(gate._accept_ready(2, 10), "Prior epoch rejected after session change.")
+	expect_true(gate.expect_peer(2), "Rejoin must be registered again.")
+	gate.remove_peer(2)
+	expect_false(gate._accept_ready(2, 11), "Removed peer cannot acknowledge.")
+	free_test_node(gate)
+	return finish()
