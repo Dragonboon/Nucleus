@@ -253,6 +253,9 @@
     ],
     "modules/world_state": [
       "docs/modules/persistent_world_state.md"
+    ],
+    "modules/destruction": [
+      "docs/modules/destructible_meshes.md"
     ]
   }
 }
