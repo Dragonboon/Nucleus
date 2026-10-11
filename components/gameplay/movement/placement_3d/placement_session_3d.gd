@@ -242,7 +242,11 @@ func _switch_variant(index: int) -> Error:
 	_variant_index = index
 	component.variant_id = get_variant_id()
 	_preview_feedback_state = -1
+	is_candidate_valid = false
+	last_reason = &"checking"
 	_refresh_from_current_hit()
+	if _current_hit.is_empty():
+		_set_invalid(&"no_surface")
 	variant_changed.emit(get_variant_id(), index)
 	return OK
 
