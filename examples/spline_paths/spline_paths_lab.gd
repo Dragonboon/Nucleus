@@ -64,6 +64,7 @@ func _ready() -> void:
 	road.surface_sampler = terrain
 	road.profile = NucleusSplinePathProfile3D.new()
 	road.profile.width = 3.0
+	road.profile.roadbed_enabled = true
 	road.auto_build_on_ready = false
 	add_child(road)
 
