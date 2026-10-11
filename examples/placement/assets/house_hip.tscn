@@ -1,0 +1,97 @@
+[gd_scene load_steps=16 format=3]
+
+[ext_resource type="Script" path="res://components/gameplay/movement/placement_3d/placeable_3d.gd" id="1_placeable"]
+[ext_resource type="Resource" path="res://examples/placement/profiles/house_profile.tres" id="2_profile"]
+
+[sub_resource type="StandardMaterial3D" id="Material_wall"]
+albedo_color = Color(0.76, 0.65, 0.47, 1)
+roughness = 0.82
+
+[sub_resource type="StandardMaterial3D" id="Material_roof"]
+albedo_color = Color(0.42, 0.21, 0.25, 1)
+roughness = 0.82
+
+[sub_resource type="StandardMaterial3D" id="Material_window"]
+albedo_color = Color(0.3, 0.61, 0.76, 1)
+roughness = 0.82
+
+[sub_resource type="StandardMaterial3D" id="Material_door"]
+albedo_color = Color(0.38, 0.25, 0.2, 1)
+roughness = 0.82
+
+[sub_resource type="StandardMaterial3D" id="Material_trim"]
+albedo_color = Color(0.91, 0.82, 0.67, 1)
+roughness = 0.82
+
+[sub_resource type="BoxMesh" id="Mesh_Walls"]
+size = Vector3(3, 2, 2.7)
+
+[sub_resource type="BoxMesh" id="Mesh_RoofLeft"]
+size = Vector3(1.9, 0.19, 3.2)
+
+[sub_resource type="BoxMesh" id="Mesh_RoofRight"]
+size = Vector3(1.9, 0.19, 3.2)
+
+[sub_resource type="BoxMesh" id="Mesh_Door"]
+size = Vector3(0.7, 1.25, 0.07)
+
+[sub_resource type="BoxMesh" id="Mesh_WindowLeft"]
+size = Vector3(0.48, 0.58, 0.08)
+
+[sub_resource type="BoxMesh" id="Mesh_WindowRight"]
+size = Vector3(0.48, 0.58, 0.08)
+
+[sub_resource type="BoxMesh" id="Mesh_FoundationTrim"]
+size = Vector3(3.1, 0.11, 2.8)
+
+[sub_resource type="BoxShape3D" id="BodyShape"]
+size = Vector3(3, 2, 2.7)
+
+[node name="HouseHip" type="Node3D"]
+script = ExtResource("1_placeable")
+profile = ExtResource("2_profile")
+
+[node name="Walls" type="MeshInstance3D" parent="."]
+mesh = SubResource("Mesh_Walls")
+material_override = SubResource("Material_wall")
+position = Vector3(0, 1, 0)
+
+[node name="RoofLeft" type="MeshInstance3D" parent="."]
+mesh = SubResource("Mesh_RoofLeft")
+material_override = SubResource("Material_roof")
+position = Vector3(-0.65, 2.38, 0)
+rotation_degrees = Vector3(0, 0, -38)
+
+[node name="RoofRight" type="MeshInstance3D" parent="."]
+mesh = SubResource("Mesh_RoofRight")
+material_override = SubResource("Material_roof")
+position = Vector3(0.65, 2.38, 0)
+rotation_degrees = Vector3(0, 0, 38)
+
+[node name="Door" type="MeshInstance3D" parent="."]
+mesh = SubResource("Mesh_Door")
+material_override = SubResource("Material_door")
+position = Vector3(0, 0.63, -1.38)
+
+[node name="WindowLeft" type="MeshInstance3D" parent="."]
+mesh = SubResource("Mesh_WindowLeft")
+material_override = SubResource("Material_window")
+position = Vector3(-1, 1.32, -1.38)
+
+[node name="WindowRight" type="MeshInstance3D" parent="."]
+mesh = SubResource("Mesh_WindowRight")
+material_override = SubResource("Material_window")
+position = Vector3(1, 1.32, -1.38)
+
+[node name="FoundationTrim" type="MeshInstance3D" parent="."]
+mesh = SubResource("Mesh_FoundationTrim")
+material_override = SubResource("Material_trim")
+position = Vector3(0, 0.1, 0)
+
+[node name="Solid" type="StaticBody3D" parent="."]
+collision_layer = 2
+collision_mask = 0
+
+[node name="BodyCollision" type="CollisionShape3D" parent="Solid"]
+shape = SubResource("BodyShape")
+position = Vector3(0, 1.02, 0)
