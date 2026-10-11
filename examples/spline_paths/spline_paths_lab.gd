@@ -11,6 +11,8 @@ var _handles: Array[MeshInstance3D] = []
 var _selected: int = -1
 var _dragging: bool = false
 var _panel: PanelContainer
+var _controls: VBoxContainer
+var _tools_button: Button
 
 func _ready() -> void:
 	var world := WorldEnvironment.new()
@@ -22,9 +24,10 @@ func _ready() -> void:
 	world.environment = env
 	add_child(world)
 	camera = Camera3D.new()
-	camera.position = Vector3(17, 16, 23)
+	camera.position = Vector3(0, 21, 26)
 	add_child(camera)
-	camera.look_at(Vector3.ZERO)
+	camera.look_at(Vector3(-1, 0, 0))
+	camera.fov = 64.0
 	camera.current = true
 	var sun := DirectionalLight3D.new()
 	sun.rotation_degrees = Vector3(-48, -25, 0)
@@ -68,36 +71,57 @@ func _ready() -> void:
 	road.auto_build_on_ready = false
 	add_child(road)
 
+	# Compact viewport HUD: collapsed by default so the editable road stays visible.
 	var layer := CanvasLayer.new()
 	add_child(layer)
 	_panel = PanelContainer.new()
-	var panel: PanelContainer = _panel
-	panel.position = Vector2(16, 16)
-	panel.custom_minimum_size = Vector2(290, 0)
-	layer.add_child(panel)
+	_panel.name = "SplineControlsPanel"
+	layer.add_child(_panel)
 	var column := VBoxContainer.new()
-	panel.add_child(column)
+	_panel.add_child(column)
+	var header := HBoxContainer.new()
+	column.add_child(header)
 	var heading := Label.new()
-	heading.text = "SPLINE ROADS · NUCLEUS"
-	column.add_child(heading)
+	heading.text = "SPLINE PATHS"
+	heading.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	header.add_child(heading)
+	_tools_button = Button.new()
+	_tools_button.name = "SplineToolsButton"
+	_tools_button.text = "Tools (H) +"
+	_tools_button.pressed.connect(_toggle_controls)
+	header.add_child(_tools_button)
+
+	status = Label.new()
+	status.name = "SplineCompactStatus"
+	status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	column.add_child(status)
+
+	_controls = VBoxContainer.new()
+	_controls.name = "SplineAdvancedControls"
+	_controls.visible = false
+	column.add_child(_controls)
 	var shapes := HBoxContainer.new()
-	column.add_child(shapes)
+	_controls.add_child(shapes)
 	_button(shapes, "1 Straight", func() -> void: _set_curved(false))
 	_button(shapes, "2 Curved", func() -> void: _set_curved(true))
 	var widths := HBoxContainer.new()
-	column.add_child(widths)
+	_controls.add_child(widths)
 	_button(widths, "Q Narrow", func() -> void: _change_width(-0.5))
 	_button(widths, "R Widen", func() -> void: _change_width(0.5))
-	_button(column, "T Toggle terrain following", _toggle_follow)
-	_button(column, "B Toggle roadbed volume", _toggle_roadbed)
-	_button(column, "+ Raise selected point", func() -> void: _raise_point(0.5))
-	_button(column, "- Lower selected point", func() -> void: _raise_point(-0.5))
+	_button(_controls, "T Follow surface", _toggle_follow)
+	_button(_controls, "B Toggle roadbed", _toggle_roadbed)
+	var elevation := HBoxContainer.new()
+	_controls.add_child(elevation)
+	_button(elevation, "+ Raise point", func() -> void: _raise_point(0.5))
+	_button(elevation, "- Lower point", func() -> void: _raise_point(-0.5))
 	var instructions := Label.new()
-	instructions.text = "Click: select/drag point | Shift+click: add point\\n"
-	instructions.text += "Right click: remove selected | +/-: elevation"
-	column.add_child(instructions)
-	status = Label.new()
-	column.add_child(status)
+	instructions.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	instructions.text = "Click / drag points · Shift+click to add"
+	instructions.text += "\nRight click to remove · +/- for elevation"
+	_controls.add_child(instructions)
+
+	get_viewport().size_changed.connect(_layout_controls)
+	_layout_controls()
 	_rebuild()
 
 func _create_curve() -> Curve3D:
@@ -142,14 +166,15 @@ func _rebuild() -> void:
 	if outcome != OK:
 		status.text = "Unable to rebuild: " + error_string(outcome)
 		return
-	status.text = "Width: %.1fm | %s | %s" % [
-		road.profile.width,
-		"Curved" if curved else "Straight",
-		"Terrain surface" if follow_surface else "Elevated/free",
+	status.text = "%.1fm wide · %d points · %s" % [
+		road.profile.width, road.path.curve.point_count,
+		"roadbed" if road.profile.roadbed_enabled else "flat",
 	]
-	status.text += "\\nPoints: %d | Selection: %d | Roadbed: %s" % [
-		road.path.curve.point_count, _selected + 1,
-		"on" if road.profile.roadbed_enabled else "off",
+	if _controls.visible:
+		status.text += "\n%s · %s · selected: %d" % [
+			"Curved" if curved else "Straight",
+			"Surface" if follow_surface else "Free",
+			_selected + 1,
 	]
 
 func _toggle_roadbed() -> void:
@@ -236,7 +261,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		if click.button_index == MOUSE_BUTTON_LEFT and not click.pressed:
 			_dragging = false
 			return
-		if not click.pressed or _panel.get_global_rect().has_point(click.position):
+		if not click.pressed or _pointer_on_ui(click.position):
 			return
 		if click.button_index == MOUSE_BUTTON_LEFT:
 			if click.shift_pressed:
@@ -262,6 +287,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not event is InputEventKey or not event.pressed or event.echo:
 		return
 	match event.keycode:
+		KEY_H:
+			_toggle_controls()
 		KEY_1:
 			_set_curved(false)
 		KEY_2:
@@ -278,6 +305,29 @@ func _unhandled_input(event: InputEvent) -> void:
 			_raise_point(0.5)
 		KEY_MINUS, KEY_KP_SUBTRACT:
 			_raise_point(-0.5)
+
+## Only the compact panel intercepts mouse input, never the CanvasLayer.
+func _pointer_on_ui(screen_position: Vector2) -> bool:
+	return _panel != null and _panel.get_global_rect().has_point(screen_position)
+
+
+func _layout_controls() -> void:
+	if _panel == null:
+		return
+	var viewport_width: float = get_viewport().get_visible_rect().size.x
+	var panel_width: float = clampf(viewport_width * 0.31, 190.0, 290.0)
+	_panel.custom_minimum_size.x = panel_width
+	_panel.size.x = panel_width
+	_panel.position = Vector2(maxf(8.0, viewport_width - panel_width - 12.0), 12.0)
+
+
+func _toggle_controls() -> void:
+	_controls.visible = not _controls.visible
+	_tools_button.text = "Hide (H) -" if _controls.visible else "Tools (H) +"
+	_panel.reset_size()
+	_layout_controls()
+	_rebuild()
+
 
 func _button(parent: Control, title: String, action: Callable) -> void:
 	var button := Button.new()
