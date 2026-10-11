@@ -47,6 +47,35 @@ func _get_configuration_warnings() -> PackedStringArray:
 	return warnings
 
 
+## Optional live cut. The plane is specified in world coordinates.
+## The intact source and existing pattern are preserved when slicing fails.
+func fracture_with_plane(
+	hit_position: Vector3,
+	impulse: Vector3,
+	world_normal: Vector3,
+	cap_material: Material = null,
+) -> bool:
+	if is_broken or not is_instance_valid(source_mesh) or source_mesh.mesh == null:
+		return _reject(&"invalid_source")
+	var inverse: Transform3D = source_mesh.global_transform.affine_inverse()
+	var local_point: Vector3 = inverse * hit_position
+	var local_normal: Vector3 = source_mesh.global_transform.basis.transposed() * world_normal
+	var result: Dictionary = NucleusMeshSliceBackend3D.slice(
+		source_mesh.mesh, local_point, local_normal, cap_material
+	)
+	if result.get("reason") != &"ok":
+		return _reject(result.get("reason", &"slice_failed"))
+	var generated: NucleusFracturePattern3D = NucleusMeshSliceBackend3D.to_pattern(result)
+	if generated == null:
+		return _reject(&"slice_failed")
+	var previous: NucleusFracturePattern3D = pattern
+	pattern = generated
+	if fracture(hit_position, impulse):
+		return true
+	pattern = previous
+	return false
+
+
 func fracture(hit_position: Vector3, impulse: Vector3) -> bool:
 	if is_broken:
 		return _reject(&"already_broken")
