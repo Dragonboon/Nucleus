@@ -262,6 +262,9 @@
     ],
     "components/world/modular_building": [
       "docs/components/square_grid.md"
+    ],
+    "components/world/spline_paths": [
+      "docs/components/spline_paths.md"
     ]
   }
 }
