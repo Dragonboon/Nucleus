@@ -41,6 +41,7 @@ func _test_command_line_tokenizer() -> void:
 
 	var invalid := registry.parse_line('dev.echo "unterminated')
 	expect_false(bool(invalid.get("ok", false)), "Unterminated quotes are rejected.")
+	registry.free()
 
 
 func _test_registry_registration_and_search() -> void:
@@ -65,6 +66,7 @@ func _test_registry_registration_and_search() -> void:
 	expect_equal(results[0].id, &"scene.reload", "Search returns the expected command.")
 	var multiword := registry.search("reload scene")
 	expect_equal(multiword.size(), 1, "Search supports multiword discovery queries.")
+	registry.free()
 
 
 func _test_execution_and_defaults() -> void:
@@ -101,6 +103,7 @@ func _test_execution_and_defaults() -> void:
 
 	var bad_result := registry.execute_line("world.spawn nope")
 	expect_false(bad_result.is_success(), "Invalid command arguments return failure.")
+	registry.free()
 
 
 func _test_alias_collision() -> void:
@@ -131,6 +134,7 @@ func _test_alias_collision() -> void:
 		ERR_ALREADY_EXISTS,
 		"Aliases cannot silently shadow an existing command.",
 	)
+	registry.free()
 
 
 func _test_history_capacity() -> void:
@@ -148,3 +152,4 @@ func _test_history_capacity() -> void:
 	registry.execute_line("dev.ping")
 	registry.execute_line("dev.ping")
 	expect_equal(registry.get_history().size(), 2, "History remains bounded.")
+	registry.free()

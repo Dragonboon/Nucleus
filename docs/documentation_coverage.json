@@ -42,7 +42,9 @@
       "docs/components/runtime_optimization.md"
     ],
     "components/gameplay/movement": [
-      "docs/components/gameplay_movement_camera.md"
+      "docs/components/gameplay_movement_camera.md",
+      "docs/components/2d_foundation.md",
+      "docs/components/runtime_placement_3d.md"
     ],
     "components/gameplay/pooling": [
       "docs/components/gameplay_pooling_targeting.md",
@@ -141,6 +143,10 @@
     "components/world/fields": [
       "docs/components/world_fields.md"
     ],
+    "components/world/hex_grid": [
+      "docs/components/hex_grid_2d.md",
+      "docs/components/hex_grid_3d.md"
+    ],
     "components/world/rendering": [
       "docs/components/rendering_quality.md"
     ],
@@ -195,7 +201,8 @@
     ],
     "core/utils": [
       "docs/components/core_runtime.md",
-      "docs/components/spatial_rect_index_2d.md"
+      "docs/components/spatial_rect_index_2d.md",
+      "docs/components/numeric_utilities.md"
     ],
     "core/window": [
       "docs/components/core_runtime.md"

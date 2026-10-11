@@ -298,7 +298,12 @@ func _test_movement_facing_modes() -> void:
 	motor.body = body
 	facing.motor = motor
 	facing.target = visual
-	target.global_position = Vector3(10.0, 0.0, 0.0)
+	var source := FixedMotionSource3D.new()
+	body.add_child(source)
+	motor.motion_source = source
+	body.add_child(target)
+	target.position = Vector3(10.0, 0.0, 0.0)
+	expect_true(attach_test_node(body), "Facing uses live world-space transforms.")
 
 	facing.set_facing_target(target)
 

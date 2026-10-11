@@ -5,6 +5,8 @@ extends Node
 ##
 ## Do not synchronize the same transform through MultiplayerSynchronizer at the
 ## same time.
+## Example: assign the remote visual root to target and leave the authority's
+## motor in charge of physics. Teleports pass the same validation as normal updates.
 
 @export var target: Node3D:
 	set(value):
@@ -122,6 +124,8 @@ func _receive_snapshot(
 	var now: float = float(
 		Time.get_ticks_usec()
 	) / 1000000.0
+	if not _buffer.push(sequence, now, position, rotation):
+		return
 
 	if (
 		teleport_distance > 0.0
@@ -142,13 +146,6 @@ func _receive_snapshot(
 			}
 		)
 		return
-
-	_buffer.push(
-		sequence,
-		now,
-		position,
-		rotation,
-	)
 
 
 func _apply_state(state: Dictionary) -> void:

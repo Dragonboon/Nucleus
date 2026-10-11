@@ -7,6 +7,8 @@ extends Node
 ## GROUNDED controls tangent motion and preserves the gravity-axis velocity;
 ## FLOATING controls the full 2D velocity. The game owns jump rules, abilities,
 ## animation, combat and content. Do not run another motor on the same body.
+## Example: a MotionSource2D requests world velocity; grounded mode discards its
+## up-axis component before speed limiting, so off-plane intent cannot slow a walk.
 
 signal movement_updated(desired_velocity: Vector2, actual_velocity: Vector2)
 
@@ -103,12 +105,17 @@ func request_velocity_impulse(velocity_delta: Vector2) -> Error:
 
 func _read_desired_velocity() -> Vector2:
 	var maximum: float = get_max_speed()
+	var requested := Vector2.ZERO
 	if motion_source != null and is_instance_valid(motion_source) and motion_source.enabled:
-		var requested: Vector2 = motion_source.get_desired_velocity(body, maximum)
-		return requested.limit_length(maximum) if requested.is_finite() else Vector2.ZERO
-	if motion_input != null and is_instance_valid(motion_input):
-		return motion_input.get_move_vector().limit_length(1.0) * maximum
-	return Vector2.ZERO
+		requested = motion_source.get_desired_velocity(body, maximum)
+	elif motion_input != null and is_instance_valid(motion_input):
+		requested = motion_input.get_move_vector() * maximum
+	if not requested.is_finite():
+		return Vector2.ZERO
+	if body.motion_mode == CharacterBody2D.MOTION_MODE_GROUNDED:
+		var tangent: Vector2 = NucleusMotionMath.right_from_up_2d(body.up_direction)
+		requested = tangent * requested.dot(tangent)
+	return requested.limit_length(maximum)
 
 
 func _integrate_floating(delta: float) -> void:

@@ -203,12 +203,11 @@ Calls controlled by `scripts/ci/static_checks.py` must go through their owner:
 | `OS.request_permission(s)` | `NucleusMobilePermissions` |
 | `ProjectSettings.load_resource_pack` | Verified `NucleusContentPackLoader` |
 
-**Known derivative-project audit mismatch:** at this revision, the inherited
-`static_checks.py` applies the `Nucleus` `class_name` prefix rule to *all* `.gd`
-files, including a consuming game's `game/` directory. This does **not** mean
-game-specific classes must be prefixed `Nucleus`. Treat such findings as an
-auditor-scope defect to correct separately; do not rename legitimate game classes,
-ignore all checks, or weaken actual security/ownership controls to get green CI.
+**Derivative-project class names:** `static_checks.py` requires the `Nucleus`
+prefix in framework-owned `core/`, `components/` and `modules/` scripts. A
+consuming game's `game/` classes retain its own naming policy. The protected
+engine-operation checks still apply; a game-specific prefix does not exempt
+code from existing input, settings or content-loading ownership rules.
 
 ## 4. Required change procedure and proof
 

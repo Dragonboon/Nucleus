@@ -81,7 +81,8 @@ func _test_projection_and_visibility() -> void:
 	expect_true(label.visible, "Projected label becomes visible.")
 
 	var expected_center: Vector2 = camera.unproject_position(target.global_position)
-	var expected_position: Vector2 = expected_center - Vector2(50.0, 20.0)
+	# A Theme may increase Label minimum size when it enters the tree.
+	var expected_position: Vector2 = expected_center - label.size * Vector2(0.5, 1.0)
 	expect_true(
 		label.position.is_equal_approx(expected_position),
 		"HUD placement uses the viewport projection and label alignment.",

@@ -70,6 +70,16 @@ func _test_grounded_motion_and_impulse() -> void:
 	expect_float(actor.velocity.x, 120.0, "Grounded motor uses tangent intent only.")
 	expect_float(actor.velocity.y, -250.0, "Impulse preserves vertical velocity.")
 	expect_float(motor.desired_velocity.length(), 120.0, "Source clamp is shared.")
+	source.requested_velocity = Vector2(30.0, 400.0)
+	motor._physics_process(0.1)
+	expect_float(actor.velocity.x, 30.0, "Grounded analog speed survives projection.")
+	expect_float(motor.desired_velocity.y, 0.0, "Grounded intent contains no vertical motion.")
+	actor.up_direction = Vector2.LEFT
+	source.requested_velocity = Vector2(400.0, 40.0)
+	actor.velocity = Vector2(-25.0, 0.0)
+	motor._physics_process(0.1)
+	expect_float(actor.velocity.y, 40.0, "Custom up uses its own tangent plane.")
+	expect_float(actor.velocity.x, -25.0, "Custom up preserves the existing vertical speed.")
 	free_test_node(actor)
 
 

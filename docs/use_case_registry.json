@@ -87,6 +87,13 @@
       "game_owns": "Relevant failure messages and privacy"
     },
     {
+      "domain": "Core",
+      "need": "Format large numbers or bound integer arithmetic",
+      "nucleus_role": "Use NumberFormatter and BoundedIntMath without game-specific counters",
+      "guide": "docs/components/numeric_utilities.md",
+      "game_owns": "Displayed units, numeric limits and economy policy"
+    },
+    {
       "domain": "Gameplay",
       "need": "Health, stamina, shield or mana",
       "nucleus_role": "Compose ValuePool and optional regeneration",
@@ -190,6 +197,13 @@
       "nucleus_role": "Use humanoid ragdoll authoring helpers with native physics",
       "guide": "docs/components/ragdoll_authoring_3d.md",
       "game_owns": "Rig, reactions and cinematic choices"
+    },
+    {
+      "domain": "Gameplay",
+      "need": "Compose a grounded or floating 2D character",
+      "nucleus_role": "Use CharacterMotor2D with native motion_mode and shared intent sources",
+      "guide": "docs/components/2d_foundation.md",
+      "game_owns": "Jump rules, sprites, combat and level design"
     },
     {
       "domain": "UI",
@@ -358,6 +372,27 @@
       "nucleus_role": "Use rendering quality and explicit scene-owned policies",
       "guide": "docs/components/rendering_quality.md",
       "game_owns": "LOD thresholds and hardware targets"
+    },
+    {
+      "domain": "World",
+      "need": "Place, move or rotate 3D objects during play",
+      "nucleus_role": "Use PlacementSession3D and existing shape/surface validation",
+      "guide": "docs/components/runtime_placement_3d.md",
+      "game_owns": "Assets, costs, permissions and persistent placement records"
+    },
+    {
+      "domain": "World",
+      "need": "Build a 2D hex board or query hex neighbors",
+      "nucleus_role": "Use shared axial topology with optional CanvasItem board presentation",
+      "guide": "docs/components/hex_grid_2d.md",
+      "game_owns": "Tile assets, turn rules, passability and path costs"
+    },
+    {
+      "domain": "World",
+      "need": "Build a layered 3D hex board",
+      "nucleus_role": "Use the XZ adapter and scene-owned board over shared axial topology",
+      "guide": "docs/components/hex_grid_3d.md",
+      "game_owns": "Meshes, collision, layer rules and persistence"
     },
     {
       "domain": "Optional modules",

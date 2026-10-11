@@ -61,6 +61,8 @@ discovery routes for machine-assisted tools. It does not execute code.
 | Resource batches / loading presentation | [`guides/resource_loading_quickstart.md`](guides/resource_loading_quickstart.md) |
 | Gameplay foundation | [`guides/gameplay_foundation_quickstart.md`](guides/gameplay_foundation_quickstart.md) |
 | Safe spawn / teleport / exit placement | [`components/safe_placement_queries.md`](components/safe_placement_queries.md) |
+| Reusable grounded or floating 2D movement | [2D foundation](components/2d_foundation.md) |
+| In-game 3D placement and editing | [Runtime placement](components/runtime_placement_3d.md) |
 | Actions, attributes and status effects | [`guides/actions_attributes_status_quickstart.md`](guides/actions_attributes_status_quickstart.md) |
 | Pooling and targeting | [`guides/pooling_targeting_quickstart.md`](guides/pooling_targeting_quickstart.md) |
 | Humanoid ragdoll authoring | [`guides/ragdoll_authoring_quickstart.md`](guides/ragdoll_authoring_quickstart.md) |
@@ -106,39 +108,23 @@ Accessibility is split deliberately:
 
 ## World and presentation contracts
 
-Useful focused contracts include:
+| What you need | Existing contract |
+| --- | --- |
+| A clock, daylight or environment cycle | [World time](components/world_time_environment.md), [celestial quickstart](guides/celestial_environment_quickstart.md) |
+| Rendering and lighting budgets | [Rendering quickstart](guides/rendering_quality_quickstart.md), [lighting quickstart](guides/lighting_shadows_quickstart.md) |
+| Sample terrain/water or attach buoyancy | [Surfaces](components/world_surfaces.md), [buoyancy](components/world_buoyancy.md) |
+| Hex coordinates, neighbors or a board | [Shared topology and 2D](components/hex_grid_2d.md), [3D layers](components/hex_grid_3d.md) |
+| Decals, spatial fields or world feedback | [Decals](components/world_decals.md), [fields](components/world_fields.md), [feedback](components/world_feedback.md) |
+| Schedule or batch visual work | [Scheduling and batched effects](components/world_scheduling_and_batched_fx.md) |
+| Connect movement, camera and animation | [Movement/camera](components/gameplay_movement_camera.md), [animation](components/animation_integration.md), [camera feedback](components/camera_game_feel.md) |
+| Configure a physical skeleton | [Ragdoll quickstart](guides/ragdoll_authoring_quickstart.md) |
+| Bind HUD values or project labels from 3D | [UI bindings](components/ui_runtime_bindings.md), [world anchors](components/ui_world_anchors.md) |
+| Validate edits, spatial overlap or scene instantiation | [Action history](components/validated_action_history.md), [rectangle index](components/spatial_rect_index_2d.md), [scene preflight](modules/packed_scene_preflight.md) |
 
-```text
-components/world_time_environment.md
-components/celestial_environment.md
-components/rendering_quality.md
-components/lighting_shadows_3d.md
-components/world_scheduling_and_batched_fx.md
-components/world_surfaces.md
-components/world_buoyancy.md
-components/world_feedback.md
-components/world_decals.md
-components/world_fields.md
-components/gameplay_movement_camera.md
-components/safe_placement_queries.md
-components/animation_integration.md
-components/ragdoll_authoring_3d.md
-components/camera_game_feel.md
-components/ui_runtime_bindings.md
-components/ui_world_anchors.md
-components/validated_action_history.md
-components/spatial_rect_index_2d.md
-modules/packed_scene_preflight.md
-```
-
-Quickstarts:
-
-```text
-guides/celestial_environment_quickstart.md
-guides/rendering_quality_quickstart.md
-guides/lighting_shadows_quickstart.md
-guides/ragdoll_authoring_quickstart.md
-```
+Hex boards own axial occupancy; placement sessions validate free-form 3D
+transforms. Neither owns inventory costs, network permission or save slots.
+Choose the contract that matches the required space rather than using both as
+competing owners of the same object.
 
 ## Documentation layers
 

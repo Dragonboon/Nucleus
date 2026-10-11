@@ -90,6 +90,13 @@ jobs:
             --path . \
             res://tests/smoke/resource_loading_smoke.tscn
 
+      - name: Run localhost ENet replication smoke scene
+        run: |
+          "${{ steps.godot.outputs.bin }}" \
+            --headless \
+            --path . \
+            res://tests/smoke/network_replication_smoke.tscn
+
       - name: Install official export templates
         shell: bash
         run: |

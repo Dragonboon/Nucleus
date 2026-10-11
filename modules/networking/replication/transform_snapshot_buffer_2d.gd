@@ -1,6 +1,9 @@
 class_name NucleusTransformSnapshotBuffer2D
 extends RefCounted
-## Ordered local-arrival snapshot buffer used for interpolation.
+## Bounded transform history ordered by sequence and local arrival time.
+## Example: push(sequence, now, position, angle), then sample(now - delay).
+## Invalid data is rejected without consuming a sequence. clear() starts a new
+## stream; call it for an intentional session reset, not to bypass admission.
 
 var capacity: int = 32
 var _latest_sequence: int = 0
@@ -13,7 +16,12 @@ func push(
 	position: Vector2,
 	rotation: float,
 ) -> bool:
-	if sequence <= _latest_sequence or received_time < 0.0:
+	if (
+		sequence <= _latest_sequence or not is_finite(received_time) or received_time < 0.0
+		or not position.is_finite() or not is_finite(rotation)
+	):
+		return false
+	if not _snapshots.is_empty() and received_time < float(_snapshots.back()["time"]):
 		return false
 
 	_latest_sequence = sequence
@@ -36,7 +44,7 @@ func push(
 
 
 func sample(sample_time: float) -> Dictionary:
-	if _snapshots.is_empty():
+	if not is_finite(sample_time) or _snapshots.is_empty():
 		return {}
 
 	while (

@@ -10,6 +10,8 @@ scenes.
 python3 scripts/ci/static_checks.py
 python3 scripts/ci/documentation_audit.py
 python3 scripts/ci/productization_audit.py
+python3 scripts/ci/use_case_audit.py
+python3 scripts/ci/build_use_case_catalog.py --check
 ```
 
 These catch source conventions, test-manifest mistakes, documentation coverage
@@ -64,6 +66,17 @@ godot --headless --path . res://tests/smoke/resource_loading_smoke.tscn
 
 Run the loading smoke whenever `core/loading`, warmup/loading integration or its
 public presentation bindings change.
+
+Movement and networking composition checks:
+
+```bash
+godot --headless --path . res://tests/smoke/locomotion_3d_smoke.tscn
+godot --headless --path . res://tests/smoke/network_replication_smoke.tscn
+```
+
+The first exercises a body over real Jolt frames; the second connects two ENet
+peers on localhost UDP port 48472. Neither validates a game's art, input device
+feel, WAN conditions or four-player gameplay. All four smoke scenes run in CI.
 
 ## 5. Manual validation scenes
 

@@ -30,6 +30,13 @@ The consuming game configures the native body:
   directional movement and wall collision matter more than floor detection.
 
 These are **Godot physics choices**, not separate Nucleus character classes.
+Grounded source velocity is projected onto the tangent before clamping to
+`get_max_speed()`. For example, a request `(400, 400)` with up `(0, -1)` and
+maximum speed `120` becomes `(120, 0)`, while an analog request `(30, 400)`
+becomes `(30, 0)`. Vertical intent neither moves the actor nor reduces its
+tangent speed; use `request_velocity_impulse()` for a game-authorized jump.
+Floating mode still clamps the complete XY vector.
+
 The game owns jumping, dashes, acceleration curves beyond the motor baseline,
 combat animation policy, knockback validation, sprite flip and art.
 

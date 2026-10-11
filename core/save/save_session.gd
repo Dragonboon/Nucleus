@@ -4,6 +4,9 @@ extends Node
 ##
 ## Participants register explicit capture/restore Callables. The global storage
 ## service never scans SceneTree groups and never imports gameplay types.
+## Example: register_participant(&"player", player.capture_state, player.restore_state).
+## Capture freezes the callback set, not the game world. Only attached sessions
+## listen for application autosave events; reentry resumes the same timer.
 
 signal snapshot_saved(result: NucleusSaveResult)
 signal snapshot_loaded(result: NucleusSaveResult)
@@ -27,18 +30,19 @@ var _saving: bool = false
 func _enter_tree() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 
-	_autosave_timer = Timer.new()
-	_autosave_timer.name = "AutosaveTimer"
-	_autosave_timer.one_shot = false
-	_autosave_timer.ignore_time_scale = true
-	_autosave_timer.process_callback = Timer.TIMER_PROCESS_IDLE
-	_autosave_timer.timeout.connect(autosave)
-	add_child(_autosave_timer)
-
 
 func _ready() -> void:
 	if autosave_policy == null:
 		autosave_policy = NucleusAutosavePolicy.new()
+
+	if not is_instance_valid(_autosave_timer):
+		_autosave_timer = Timer.new()
+		_autosave_timer.name = "AutosaveTimer"
+		_autosave_timer.one_shot = false
+		_autosave_timer.ignore_time_scale = true
+		_autosave_timer.process_callback = Timer.TIMER_PROCESS_IDLE
+		_autosave_timer.timeout.connect(autosave)
+		add_child(_autosave_timer)
 
 	NucleusApp.application_paused.connect(_on_application_paused)
 	NucleusApp.focus_changed.connect(_on_focus_changed)
@@ -48,8 +52,16 @@ func _ready() -> void:
 
 
 func _exit_tree() -> void:
-	if _autosave_timer:
+	if is_instance_valid(_autosave_timer):
 		_autosave_timer.stop()
+	if is_instance_valid(NucleusApp):
+		if NucleusApp.application_paused.is_connected(_on_application_paused):
+			NucleusApp.application_paused.disconnect(_on_application_paused)
+		if NucleusApp.focus_changed.is_connected(_on_focus_changed):
+			NucleusApp.focus_changed.disconnect(_on_focus_changed)
+		if NucleusApp.quit_requested.is_connected(_on_quit_requested):
+			NucleusApp.quit_requested.disconnect(_on_quit_requested)
+	request_ready()
 
 
 func register_participant(
@@ -268,18 +280,9 @@ func load_latest(
 
 
 func capture_snapshot() -> Dictionary:
-	var snapshot: Dictionary = {}
-
-	for participant_id: StringName in _participants:
-		var participant: Dictionary = _participants[participant_id]
-		var capture: Callable = participant["capture"]
-
-		if not capture.is_valid():
-			continue
-
-		snapshot[String(participant_id)] = capture.call()
-
-	return snapshot
+	var job: NucleusSaveCaptureJob = create_capture_job()
+	job.step(job.get_total_count())
+	return job.take_snapshot()
 
 
 func create_capture_job() -> NucleusSaveCaptureJob:
@@ -340,6 +343,8 @@ func _capture_metadata() -> Dictionary:
 
 
 func _refresh_autosave_timer() -> void:
+	if not is_inside_tree() or not is_instance_valid(_autosave_timer):
+		return
 	if autosave_policy == null or not autosave_policy.enabled:
 		_autosave_timer.stop()
 		return

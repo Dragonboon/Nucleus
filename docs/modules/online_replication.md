@@ -255,6 +255,9 @@ If an arriving position is farther from the current remote transform than that
 threshold, the interpolation buffer is cleared and the state is applied
 immediately.
 
+Admission happens **before** clearing history or writing the transform. A stale
+sequence or invalid transform cannot bypass validation merely by being far away.
+
 Use this for:
 
 ```text
@@ -278,8 +281,28 @@ NucleusTransformSnapshotBuffer3D
 
 reject stale sequences and interpolate between ordered snapshots.
 
+Arrival times must be finite, nonnegative and nondecreasing; equal times are
+valid. Positions and angles must be finite; 3D rotations must be unit quaternions.
+Rejected pushes leave the latest sequence and history unchanged, so a corrected
+snapshot can retry the same sequence. Invalid sample times return an empty map.
+`clear()` deliberately resets sequence admission as well as history: reserve it
+for a new stream/session, not for admitting old packets.
+
 They are networking-policy agnostic and regression-testable without opening a
 socket.
+
+Run the composition test with the pinned engine:
+
+```bash
+godot --headless --path . res://tests/smoke/network_replication_smoke.tscn
+```
+
+It creates two independent MultiplayerAPI roots, connects them through
+`NucleusNetworkHandler` over localhost ENet (UDP port 48472), and exercises the
+actual 2D/3D replicator RPCs. It checks ordinary snapshots, rejection of stale or
+invalid teleports, and a valid retry. Headless buffer tests cover numeric and
+timestamp boundaries. These checks do not simulate WAN latency, loss, a
+four-player game or client prediction.
 
 ## Player prediction
 

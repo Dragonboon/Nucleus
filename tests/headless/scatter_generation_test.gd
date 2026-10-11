@@ -149,11 +149,13 @@ func _test_density_volume_exclusion() -> void:
 
 func _test_rejects_unbounded_regions() -> void:
 	var job: NucleusScatterBuildJob3D = NucleusScatterBuildJob3D.new()
+	var surface := NucleusPlaneSurfaceSampler3D.new()
 	var result: Error = job.configure(
-		_profile(), NucleusPlaneSurfaceSampler3D.new(),
+		_profile(), surface,
 		Vector2.ZERO, Vector2(10000.0, 10000.0), &"too_big",
 	)
 	expect_equal(result, ERR_OUT_OF_MEMORY, "Large jobs must be split into smaller regions.")
+	surface.free()
 
 
 func _test_scene_owned_rendering_lifecycle() -> void:

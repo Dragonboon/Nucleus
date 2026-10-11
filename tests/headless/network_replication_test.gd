@@ -6,7 +6,79 @@ func run() -> Dictionary:
 	_test_rate_limiter()
 	_test_snapshot_buffer_2d()
 	_test_snapshot_buffer_3d()
+	_test_invalid_snapshots()
+	_test_teleport_sequence_2d()
+	_test_teleport_sequence_3d()
 	return finish()
+
+
+func _test_invalid_snapshots() -> void:
+	var planar := NucleusTransformSnapshotBuffer2D.new()
+	var spatial := NucleusTransformSnapshotBuffer3D.new()
+	expect_false(planar.push(1, NAN, Vector2.ZERO, 0.0), "2D rejects NaN arrival time.")
+	expect_false(spatial.push(1, INF, Vector3.ZERO, Quaternion()), "3D rejects infinite time.")
+	planar.clear()
+	spatial.clear()
+	expect_false(planar.push(1, 0.0, Vector2.INF, 0.0), "2D rejects non-finite positions.")
+	expect_false(spatial.push(1, 0.0, Vector3.INF, Quaternion()), "3D rejects invalid positions.")
+	planar.clear()
+	spatial.clear()
+	expect_false(planar.push(1, 0.0, Vector2.ZERO, NAN), "2D rejects non-finite rotation.")
+	expect_false(
+		spatial.push(1, 0.0, Vector3.ZERO, Quaternion(0.0, 0.0, 0.0, 0.0)),
+		"3D rejects zero-length rotations before quaternion interpolation.",
+	)
+	expect_equal(planar.get_latest_sequence(), 0, "Invalid 2D state does not consume sequence.")
+	expect_equal(spatial.get_latest_sequence(), 0, "Invalid 3D state does not consume sequence.")
+	expect_true(planar.push(1, 1.0, Vector2.ZERO, 0.0), "Valid 2D retry is accepted.")
+	expect_true(spatial.push(1, 1.0, Vector3.ZERO, Quaternion()), "Valid 3D retry is accepted.")
+	expect_false(planar.push(2, 0.5, Vector2.ONE, 0.0), "2D rejects decreasing arrival time.")
+	expect_false(spatial.push(2, 0.5, Vector3.ONE, Quaternion()), "3D rejects decreasing time.")
+	expect_true(planar.sample(NAN).is_empty(), "Invalid sample time returns no 2D state.")
+	expect_true(spatial.sample(INF).is_empty(), "Invalid sample time returns no 3D state.")
+	expect_equal(planar.get_count(), 1, "Invalid 2D samples leave history intact.")
+	expect_equal(spatial.get_count(), 1, "Invalid 3D samples leave history intact.")
+	expect_true(planar.push(2, 1.0, Vector2.ONE, 0.0), "Equal arrival times remain valid.")
+	expect_true(spatial.push(2, 1.0, Vector3.ONE, Quaternion()), "3D allows equal times.")
+
+
+func _test_teleport_sequence_2d() -> void:
+	var target := Node2D.new()
+	var replicator := NucleusNetworkTransformReplicator2D.new()
+	replicator.teleport_distance = 8.0
+	target.add_child(replicator)
+	replicator.target = target
+	replicator.set_multiplayer_authority(2)
+	expect_true(attach_test_node(target), "2D remote fixture needs a SceneTree.")
+	replicator._receive_snapshot(10, Vector2(20.0, 0.0), 0.0)
+	expect_equal(target.position.x, 20.0, "New 2D teleport is applied immediately.")
+	replicator._receive_snapshot(9, Vector2(100.0, 0.0), 0.0)
+	expect_equal(target.position.x, 20.0, "Old 2D teleport cannot roll state back.")
+	expect_equal(replicator._buffer.get_latest_sequence(), 10, "2D teleport preserves admission.")
+	replicator._receive_snapshot(11, Vector2.INF, 0.0)
+	expect_true(target.position.is_finite(), "Invalid 2D teleport never reaches the transform.")
+	replicator._receive_snapshot(11, Vector2(40.0, 0.0), 0.0)
+	expect_equal(target.position.x, 40.0, "Valid retry after rejection still teleports.")
+	free_test_node(target)
+
+
+func _test_teleport_sequence_3d() -> void:
+	var target := Node3D.new()
+	var replicator := NucleusNetworkTransformReplicator3D.new()
+	target.add_child(replicator)
+	replicator.target = target
+	replicator.set_multiplayer_authority(2)
+	expect_true(attach_test_node(target), "3D remote fixture needs a SceneTree.")
+	replicator._receive_snapshot(10, Vector3(20.0, 0.0, 0.0), Quaternion())
+	expect_equal(target.position.x, 20.0, "New 3D teleport is applied immediately.")
+	replicator._receive_snapshot(9, Vector3(100.0, 0.0, 0.0), Quaternion())
+	expect_equal(target.position.x, 20.0, "Old 3D teleport cannot roll state back.")
+	expect_equal(replicator._buffer.get_latest_sequence(), 10, "3D teleport preserves admission.")
+	replicator._receive_snapshot(11, Vector3.INF, Quaternion())
+	expect_true(target.position.is_finite(), "Invalid 3D teleport never reaches the transform.")
+	replicator._receive_snapshot(11, Vector3(40.0, 0.0, 0.0), Quaternion())
+	expect_equal(target.position.x, 40.0, "Valid 3D retry after rejection still teleports.")
+	free_test_node(target)
 
 
 func _test_sequence_tracker() -> void:

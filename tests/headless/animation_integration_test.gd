@@ -228,7 +228,7 @@ func _test_setup_creates_tree_and_velocity_binding() -> void:
 
 
 func _test_directional_profile_and_upgrade() -> void:
-	var root := Node3D.new()
+	var root := CharacterBody3D.new()
 	var player := _build_animation_player()
 	var tree := AnimationTree.new()
 	var binding := NucleusAnimationVelocityBinding3D.new()

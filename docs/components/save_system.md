@@ -183,12 +183,23 @@ save_session.register_participant(
 participants; register dependencies before their dependents if order matters.
 `set_metadata_provider()` supplies display metadata separately.
 
+Both synchronous and incremental capture use `NucleusSaveCaptureJob`, which
+freezes participant IDs and callbacks at capture start. Replacing a callback
+during capture affects the next snapshot; callbacks whose target has been freed
+are skipped. This stabilizes registration, not the game world: incremental
+capture still observes different participants on different frames.
+
 Its default `NucleusAutosavePolicy` enables autosaving every 120 seconds, keeps
 up to three autosaves per slot, enforces a five-second minimum between normal
 successful autosaves, saves on application pause and quit, and does not
 autosave on lost focus. `refresh_autosave_policy()` reapplies changed settings.
 `autosave(force = true)` bypasses the minimum interval but still respects the
 enabled flag; skipped saves return `ERR_BUSY` and emit `autosave_skipped`.
+
+Removing a session from the scene tree stops its timer and disconnects app
+pause/focus/quit listeners. Adding the same session back reuses its timer and
+reconnects once. Participants and pending restore data remain attached to that
+session instance. Free the session to end its lifetime permanently.
 
 For many participants, `save_manual_incremental()`,
 `save_quick_incremental()`, `autosave_incremental()` or

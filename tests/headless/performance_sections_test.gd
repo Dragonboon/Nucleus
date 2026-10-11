@@ -33,6 +33,7 @@ func _test_nested_and_out_of_order_sections() -> void:
 	expect_float(float(stats["maximum_ms"]), 10.0, "Maximum is retained.")
 	expect_equal(profiler.get_active_section_count(), 0, "All tokens are released.")
 	expect_float(profiler.end_section(inner, 1007000), -1.0, "Duplicate end is ignored.")
+	profiler.free()
 
 
 func _test_capacity_and_bad_tokens() -> void:
@@ -63,6 +64,7 @@ func _test_capacity_and_bad_tokens() -> void:
 	)
 	profiler.enabled = false
 	expect_equal(profiler.begin_section(&"disabled", 0), 0, "Disabled capture is inert.")
+	profiler.free()
 
 
 func _test_budgets_and_bounded_hitch_history() -> void:
@@ -96,6 +98,7 @@ func _test_budgets_and_bounded_hitch_history() -> void:
 		2,
 		"Statistics are returned by value, not mutable reference.",
 	)
+	profiler.free()
 
 
 func _test_sampler_probes_and_frame_hitches() -> void:
