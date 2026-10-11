@@ -41,6 +41,7 @@ const SUITES: Array[Script] = [
 	preload("res://tests/headless/validated_action_history_test.gd"),
 	preload("res://tests/headless/ai_navigation_test.gd"),
 	preload("res://tests/headless/network_replication_test.gd"),
+	preload("res://tests/headless/network_prediction_test.gd"),
 	preload("res://tests/headless/network_interest_test.gd"),
 	preload("res://tests/headless/platform_services_test.gd"),
 	preload("res://tests/headless/content_packs_test.gd"),
