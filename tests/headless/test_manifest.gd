@@ -24,6 +24,7 @@ const SUITES: Array[Script] = [
 	preload("res://tests/headless/materialization_queue_test.gd"),
 	preload("res://tests/headless/placement_queries_test.gd"),
 	preload("res://tests/headless/runtime_placement_3d_test.gd"),
+	preload("res://tests/headless/placement_variants_test.gd"),
 	preload("res://tests/headless/spatial_rect_index_2d_test.gd"),
 	preload("res://tests/headless/save_resume_test.gd"),
 	preload("res://tests/headless/rendering_quality_test.gd"),
