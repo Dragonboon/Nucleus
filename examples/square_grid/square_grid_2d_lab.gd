@@ -4,8 +4,15 @@ var board: NucleusSquareBoard2D
 var status: Label
 var isometric := false
 var _rules := NucleusModularRuleSet.new()
+var _selected_variant: StringName = &"isolated"
 
 func _ready() -> void:
+	_rules.fallback_variant = &"isolated"
+	for mask in range(1, 16):
+		var rule := NucleusModularRule.new()
+		rule.neighbor_mask = mask
+		rule.variant_id = StringName("neighbors_%d" % mask)
+		_rules.rules.append(rule)
 	board = NucleusSquareBoard2D.new()
 	board.name = "SquareBoard2D"
 	board.position = Vector2(590, 330)
@@ -60,9 +67,12 @@ func _refresh() -> void:
 	if status == null:
 		return
 	var total: int = 0
+	var example_variant: StringName = &"isolated"
 	for cell: Vector2i in board.painted_cells():
-		var mask := NucleusModularRuleSet.neighbor_mask(cell, board.has_tile)
+		var mask: int = NucleusModularRuleSet.neighbor_mask(cell, board.has_tile)
 		total += mask
+		example_variant = _rules.resolve(mask)
 	status.text = "Left click: paint | Right click: erase | R: rotate\n"
 	status.text += "Occupied: %d · shared corners: %d · connection score: %d" % [
 		board.tile_count(), board.shared_corner_count(), total]
+	status.text += "\nResolved example: " + str(example_variant)
