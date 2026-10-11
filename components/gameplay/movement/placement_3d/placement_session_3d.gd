@@ -168,6 +168,7 @@ func begin_variants(
 		return result
 	variant_set = catalog
 	_variant_index = index
+	_placeables[0].variant_id = get_variant_id()
 	variant_changed.emit(get_variant_id(), index)
 	return OK
 
