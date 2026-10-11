@@ -24,3 +24,23 @@ Open `res://examples/hex_grid/hex_grid_lab.tscn` and run **F6**. This lab is ind
 **Headless smoke:** `godot --headless --path . --script res://examples/hex_grid/hex_grid_smoke.gd`.
 
 The reference ground is **visual only**, so the demo intentionally doesn't claim valid gameplay collisions. See [Hex Grid contract](../../docs/components/hex_grid_3d.md) for the boundary with physical Runtime Placement3D.
+
+## Selección y orientación individual (parche)
+
+- `I` y clic sobre un tile, o **Mayús + clic** desde cualquier herramienta,
+  selecciona una pieza sin pintar nada nuevo. Su superficie se vuelve amarilla.
+- `Q`/`R` o los botones **Rotar pieza seleccionada −60° / +60°** modifican
+  exclusivamente esa pieza; el resto del tablero permanece inmóvil.
+- El indicador de dirección **es una flecha oscura visible solo en la selección**
+  (desactivable con el checkbox). La anterior cuña anaranjada que aparecía
+  sobre todos los hexágonos era simplemente un marcador de orientación.
+- `[`/`]` y los botones **Girar grid 60°** siguen rotando el tablero entero.
+- La geometría del tile es hexagonalmente simétrica. Por eso, el giro se ve
+  claramente mediante la flecha, aunque el contorno no cambie.
+
+### Suite headless
+
+El manifiesto de Nucleus debe encontrar el archivo físico
+`res://tests/headless/hex_grid_3d_test.gd`. El overlay incluye esta suite
+con comprobaciones de giro individual, dirección seleccionada y aislamiento
+respecto al giro del tablero.

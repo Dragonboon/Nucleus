@@ -69,10 +69,36 @@ func _test_board_lifecycle() -> void:
 	expect_true(board.paint_cell(a), "First painted tile should be accepted.")
 	expect_true(board.paint_cell(b), "Adjacent painted tile should be accepted.")
 	expect_false(board.paint_cell(b), "Duplicate cell placement must fail.")
+	var orientation := board.get_node_or_null("SelectedOrientation") as MeshInstance3D
+	expect_true(orientation != null, "Selection direction gizmo is present.")
+	if orientation == null:
+		free_test_node(scene_root)
+		return
+	expect_false(orientation.visible, "Direction is hidden without a selection.")
+	board.highlight_selection(a)
+	expect_true(orientation.visible, "Selection reveals its direction.")
+	expect_float(orientation.rotation.y, 0.0, "A fresh tile points toward local -Z.")
 	expect_equal(stats["connected"], 2, "Adjacent tiles emit two corner-connected events.")
 	expect_equal(board.shared_corner_count(), 2, "Live corner index counts the shared vertices.")
 	expect_true(board.rotate_tile(a, 1), "Tiles should rotate by 60 degrees.")
 	expect_equal(board.get_rotation_steps(a), 1, "Rotation step persists on the tile.")
+	expect_float(
+		(board.tile_at(a) as Node3D).rotation.y, PI / 3.0,
+		"Rotating a tile changes its own local transform.",
+	)
+	expect_float(
+		(board.tile_at(b) as Node3D).rotation.y, 0.0,
+		"Rotating one tile does not rotate its neighbor.",
+	)
+	expect_float(board.rotation.y, 0.0, "Tile rotation does not rotate the board.")
+	expect_float(
+		orientation.rotation.y, PI / 3.0,
+		"Selected direction arrow follows individual tile rotation.",
+	)
+	board.set_show_selected_orientation(false)
+	expect_false(orientation.visible, "Direction can be hidden independently of selection.")
+	board.set_show_selected_orientation(true)
+	expect_true(orientation.visible, "Direction can be re-enabled for selection.")
 	board.position = Vector3(8.0, 3.0, -4.0)
 	board.rotation.y = PI / 3.0
 	var mapped := Vector3i(-2, 1, 0)
@@ -94,12 +120,18 @@ func _test_board_lifecycle() -> void:
 	expect_true(board.move_tile(a, destination), "A tile can move into a vacant cell.")
 	expect_false(board.move_tile(a, b), "A consumed move source must be rejected.")
 	expect_equal(board.get_rotation_steps(destination), 1, "Move must preserve the tile orientation.")
+	expect_true(orientation.visible, "Selection remains active after moving its tile.")
+	expect_float(
+		orientation.rotation.y, PI / 3.0,
+		"Direction follows tile orientation after moving it.",
+	)
 	expect_true(board.paint_cell(Vector3i(0, 1, 1)), "Another layer allows independent occupancy.")
 	expect_equal(board.shared_corner_count(), 0, "Different layers do not connect.")
 	board.set_ring_count(1)
 	expect_false(board.paint_cell(Vector3i(2, 0, 0)), "Grid ring bound rejects distant placement.")
 	board.clear_tiles()
 	expect_equal(board.tile_count(), 0, "Clearing the board removes every tile.")
+	expect_false(orientation.visible, "Removing the selected tile hides its marker.")
 	free_test_node(scene_root)
 
 

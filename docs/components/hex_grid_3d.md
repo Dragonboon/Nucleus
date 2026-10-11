@@ -103,3 +103,14 @@ godot --headless --path . --script res://examples/hex_grid/hex_grid_smoke.gd
 ```
 
 The smoke checks axial coordinate round trips, exact vertices, layer isolation, connections, edit transforms, dimensional changes and bounds. Also open `res://examples/hex_grid/hex_grid_lab.tscn` (F6) to validate mouse input and appearance.
+
+
+## Selection direction marker
+
+The hex tile mesh is intentionally rotationally symmetric. Individual yaw is
+stored in `_angles` and applied to the tile node (`rotate_tile`), independent
+of the board's transform. To make orientation visible, the board owns one
+shared `SelectedOrientation` gizmo: it tracks only the highlighted tile, not
+all painted cells. `set_show_selected_orientation(bool)` toggles this purely
+visual marker; it does not modify tiles, corner keys, rotation steps or events.
+The shared hex prism no longer colours a top-face wedge.

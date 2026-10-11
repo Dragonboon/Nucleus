@@ -24,6 +24,8 @@ const MAX_RING: int = 24
 @export_range(-8, 8, 1) var active_layer: int = 0
 @export var tile_color: Color = Color(0.52, 0.69, 0.79)
 @export var show_ghost: bool = true
+## The arrow belongs to the selected tile only; never to the ghost grid.
+@export var show_selected_orientation: bool = true
 
 var _tiles: Dictionary = {} # Vector3i -> MeshInstance3D
 var _angles: Dictionary = {} # Vector3i -> 0..5
@@ -35,6 +37,7 @@ var _selected_cell: Vector3i = Vector3i.ZERO
 var _selection_active: bool = false
 var _ghost: MeshInstance3D
 var _hover: MeshInstance3D
+var _selection_direction: MeshInstance3D
 
 
 func _ready() -> void:
@@ -59,8 +62,17 @@ func _ready() -> void:
 	var hover_material := line_material.duplicate() as StandardMaterial3D
 	hover_material.albedo_color = Color(1.0, 0.9, 0.18, 1.0)
 	_hover.material_override = hover_material
+	_selection_direction = MeshInstance3D.new()
+	_selection_direction.name = "SelectedOrientation"
+	var direction_material := StandardMaterial3D.new()
+	direction_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	direction_material.albedo_color = Color(0.14, 0.19, 0.25)
+	direction_material.cull_mode = BaseMaterial3D.CULL_DISABLED
+	_selection_direction.material_override = direction_material
+	add_child(_selection_direction)
 	_rebuild_geometry()
 	_hover.visible = false
+	_selection_direction.visible = false
 
 
 func is_valid_cell(cell: Vector3i) -> bool:
@@ -122,6 +134,7 @@ func highlight_selection(cell: Vector3i, enabled: bool = true) -> void:
 		_selected_cell = cell
 		var selected: MeshInstance3D = _tiles[cell]
 		selected.material_override = _selected_material
+	_update_selected_direction()
 
 
 func tile_count() -> int:
@@ -161,6 +174,7 @@ func erase_cell(cell: Vector3i) -> bool:
 	_remove_connections(cell)
 	if _selection_active and _selected_cell == cell:
 		_selection_active = false
+		_update_selected_direction()
 	var tile: MeshInstance3D = _tiles[cell]
 	_tiles.erase(cell)
 	_angles.erase(cell)
@@ -183,6 +197,7 @@ func move_tile(from_cell: Vector3i, to_cell: Vector3i) -> bool:
 		_selected_cell = to_cell
 	tile.name = "Hex_%d_%d_%d" % [to_cell.x, to_cell.y, to_cell.z]
 	_position_tile(tile, to_cell)
+	_update_selected_direction()
 	_add_connections(to_cell)
 	tile_moved.emit(from_cell, to_cell)
 	return true
@@ -195,6 +210,7 @@ func rotate_tile(cell: Vector3i, delta_steps: int = 1) -> bool:
 	_angles[cell] = steps
 	var tile: MeshInstance3D = _tiles[cell]
 	tile.rotation.y = deg_to_rad(float(steps) * 60.0)
+	_update_selected_direction()
 	tile_rotated.emit(cell, steps)
 	return true
 
@@ -259,6 +275,11 @@ func set_ghost_visible(value: bool) -> void:
 		_hover.visible = false
 
 
+func set_show_selected_orientation(enabled: bool) -> void:
+	show_selected_orientation = enabled
+	_update_selected_direction()
+
+
 func clear_tiles() -> void:
 	for cell: Vector3i in painted_cells():
 		erase_cell(cell)
@@ -268,6 +289,26 @@ func _position_tile(tile: MeshInstance3D, cell: Vector3i) -> void:
 	tile.position = NucleusHexLayout3D.axial_to_local(Vector2i(cell.x, cell.y), cell_radius)
 	tile.position.y = float(cell.z) * layer_step + tile_height * 0.5
 	tile.rotation.y = deg_to_rad(float(int(_angles.get(cell, 0))) * 60.0)
+
+
+## One unlit, directionally asymmetric gizmo (not a marker on every tile).
+## Hex prisms are rotationally symmetric, so this shows their stored yaw.
+func _update_selected_direction() -> void:
+	if _selection_direction == null:
+		return
+	_selection_direction.visible = (
+		show_selected_orientation and _selection_active
+		and _tiles.has(_selected_cell)
+	)
+	if not _selection_direction.visible:
+		return
+	var axial := Vector2i(_selected_cell.x, _selected_cell.y)
+	_selection_direction.position = NucleusHexLayout3D.axial_to_local(axial, cell_radius)
+	_selection_direction.position.y = (
+		float(_selected_cell.z) * layer_step + tile_height + 0.035
+	)
+	var steps: int = int(_angles.get(_selected_cell, 0))
+	_selection_direction.rotation.y = deg_to_rad(float(steps) * 60.0)
 
 
 func _add_connections(cell: Vector3i) -> void:
@@ -306,11 +347,13 @@ func _rebuild_geometry() -> void:
 	if not is_inside_tree() or _ghost == null:
 		return
 	_tile_mesh = _build_hex_prism(cell_radius, tile_height)
+	_selection_direction.mesh = _build_direction_arrow(cell_radius)
 	for cell: Vector3i in _tiles:
 		var tile: MeshInstance3D = _tiles[cell]
 		tile.mesh = _tile_mesh
 		_position_tile(tile, cell)
 	_rebuild_ghost()
+	_update_selected_direction()
 
 
 func _rebuild_ghost() -> void:
@@ -352,13 +395,30 @@ static func _build_hex_prism(radius: float, height: float) -> ArrayMesh:
 		var top_b := Vector3(b.x, height * 0.5, b.z)
 		var bottom_a := Vector3(a.x, -height * 0.5, a.z)
 		var bottom_b := Vector3(b.x, -height * 0.5, b.z)
-		var top_color := Color(1.0, 0.55, 0.25) if side == 0 else Color.WHITE
-		_triangle(surface, Vector3.UP, Vector3.UP * height * 0.5, top_a, top_b, top_color)
+		# Keep the hex uniformly coloured; a separate selected-tile arrow
+		# communicates yaw without painting a confusing wedge on every tile.
+		_triangle(surface, Vector3.UP, Vector3.UP * height * 0.5, top_a, top_b)
 		_triangle(surface, Vector3.DOWN, Vector3.DOWN * height * 0.5, bottom_b, bottom_a)
 		var outward := ((a + b) * 0.5).normalized()
 		_triangle(surface, outward, top_a, bottom_a, bottom_b)
 		_triangle(surface, outward, top_a, bottom_b, top_b)
 	return surface.commit()
+
+
+static func _build_direction_arrow(radius: float) -> ArrayMesh:
+	var mesh := SurfaceTool.new()
+	mesh.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var tip := Vector3(0.0, 0.0, -0.66 * radius)
+	var head_left := Vector3(-0.28 * radius, 0.0, -0.13 * radius)
+	var head_right := Vector3(0.28 * radius, 0.0, -0.13 * radius)
+	_triangle(mesh, Vector3.UP, tip, head_left, head_right)
+	var left_front := Vector3(-0.085 * radius, 0.0, -0.12 * radius)
+	var right_front := Vector3(0.085 * radius, 0.0, -0.12 * radius)
+	var left_back := Vector3(-0.085 * radius, 0.0, 0.42 * radius)
+	var right_back := Vector3(0.085 * radius, 0.0, 0.42 * radius)
+	_triangle(mesh, Vector3.UP, left_front, left_back, right_front)
+	_triangle(mesh, Vector3.UP, right_front, left_back, right_back)
+	return mesh.commit()
 
 
 static func _triangle(

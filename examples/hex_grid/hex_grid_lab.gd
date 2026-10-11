@@ -13,6 +13,7 @@ var _move_source: Vector3i = Vector3i.ZERO
 var _moving: bool = false
 var _orbiting: bool = false
 var _painting_stroke: bool = false
+var _selection_click_held: bool = false
 var _last_stroke_cell: Vector3i = Vector3i.ZERO
 var _camera_yaw: float = 0.56
 var _camera_pitch: float = 0.87
@@ -34,6 +35,7 @@ func _ready() -> void:
 	board.tile_painted.connect(_on_tile_changed)
 	board.tile_erased.connect(_on_tile_erased)
 	board.tile_moved.connect(_on_tile_moved)
+	board.tile_rotated.connect(_on_tile_rotated)
 	_camera = Camera3D.new()
 	_camera.name = "OrbitCamera"
 	_camera.current = true
@@ -84,7 +86,14 @@ func _process(_delta: float) -> void:
 			_hover_cell = hit["cell"]
 			_hover_valid = true
 	board.set_hover(_hover_cell, _hover_valid)
-	if _tool == "paint" and _hover_valid and Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
+	if not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
+		_selection_click_held = false
+	if (
+		_tool == "paint" and _hover_valid
+		and Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT)
+		and not Input.is_key_pressed(KEY_SHIFT)
+		and not _selection_click_held
+	):
 		if not _painting_stroke or _last_stroke_cell.z != _hover_cell.z:
 			_painting_stroke = true
 			_last_stroke_cell = _hover_cell
@@ -115,8 +124,14 @@ func _unhandled_input(event: InputEvent) -> void:
 			_camera_distance = minf(65.0, _camera_distance + 2.0)
 			_refresh_camera()
 			return
+		if mouse.button_index == MOUSE_BUTTON_LEFT and not mouse.pressed:
+			_selection_click_held = false
 		if mouse.button_index == MOUSE_BUTTON_LEFT and mouse.pressed and _hover_valid:
-			_click_cell(_hover_cell)
+			if mouse.shift_pressed:
+				_selection_click_held = true
+				_select_cell(_hover_cell)
+			else:
+				_click_cell(_hover_cell)
 			get_viewport().set_input_as_handled()
 			return
 	if event is InputEventMouseMotion and _orbiting:
@@ -158,7 +173,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				board.highlight_selection(Vector3i.ZERO, false)
 			KEY_DELETE:
 				if _has_selection and board.erase_cell(_selected):
-						_has_selection = false
+					_has_selection = false
 			KEY_PAGEUP:
 				board.set_active_layer(board.active_layer + 1)
 			KEY_PAGEDOWN:
@@ -175,10 +190,7 @@ func _click_cell(cell: Vector3i) -> void:
 			if board.erase_cell(cell) and _has_selection and _selected == cell:
 				_has_selection = false
 		"select":
-			_has_selection = board.has_tile(cell)
-			board.highlight_selection(cell, _has_selection)
-			if _has_selection:
-				_selected = cell
+			_select_cell(cell)
 		"move":
 			if not _moving:
 				if board.has_tile(cell):
@@ -191,6 +203,17 @@ func _click_cell(cell: Vector3i) -> void:
 				if board.move_tile(_move_source, cell):
 					_selected = cell
 					_moving = false
+	_sync_ui()
+
+
+func _select_cell(cell: Vector3i) -> void:
+	_moving = false
+	_painting_stroke = false
+	_has_selection = board.has_tile(cell)
+	board.highlight_selection(cell, _has_selection)
+	if _has_selection:
+		_selected = cell
+	_sync_ui()
 
 
 func _set_tool(name: String) -> void:
@@ -201,8 +224,8 @@ func _set_tool(name: String) -> void:
 
 
 func _rotate_selected(delta_steps: int) -> void:
-	if _has_selection:
-		board.rotate_tile(_selected, delta_steps)
+	if _has_selection and board.rotate_tile(_selected, delta_steps):
+		_sync_ui()
 
 
 func _refresh_camera() -> void:
@@ -240,6 +263,10 @@ func _on_tile_erased(cell: Vector3i) -> void:
 
 func _on_tile_moved(from_cell: Vector3i, to_cell: Vector3i) -> void:
 	_add_event("MOVE %s → %s" % [str(from_cell), str(to_cell)])
+
+
+func _on_tile_rotated(cell: Vector3i, steps: int) -> void:
+	_add_event("ROTATE %s → %d°" % [str(cell), steps * 60])
 
 
 func _add_event(message: String) -> void:
@@ -315,6 +342,19 @@ func _make_ui() -> void:
 			Callable(self, "_adjust").bind(String(setting[1]), -float(setting[2])),
 			Callable(self, "_adjust").bind(String(setting[1]), float(setting[2])),
 		)
+	var orientation_row := HBoxContainer.new()
+	column.add_child(orientation_row)
+	var rotate_label := Label.new()
+	rotate_label.text = "Rotar pieza seleccionada"
+	rotate_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	orientation_row.add_child(rotate_label)
+	_button(orientation_row, "-60°", func() -> void: _rotate_selected(-1))
+	_button(orientation_row, "+60°", func() -> void: _rotate_selected(1))
+	var show_direction := CheckBox.new()
+	show_direction.text = "Flecha de orientación (pieza seleccionada)"
+	show_direction.button_pressed = board.show_selected_orientation
+	show_direction.toggled.connect(board.set_show_selected_orientation)
+	column.add_child(show_direction)
 	var visibility := CheckBox.new()
 	visibility.text = "Cuadrícula fantasma"
 	visibility.button_pressed = true
@@ -324,7 +364,8 @@ func _make_ui() -> void:
 	var help := Label.new()
 	help.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	help.text = (
-		"Q/R rotar tile seleccionado · Supr borrar\n"
+		"I y clic (o Mayús+clic): seleccionar pieza\n"
+		+ "Q/R o +/- del panel: rotar SOLO esa pieza · Supr borrar\n"
 		+ "[ / ] girar grid · Flechas mover grid\n"
 		+ "RePág/AvPág: capas · Botón derecho: orbitar · Rueda: zoom\n"
 		+ "M: clic origen → clic destino · Esc: cancelar mover"
@@ -404,7 +445,9 @@ func _sync_ui() -> void:
 	if _hover_valid:
 		info += "\nCursor: " + str(_hover_cell)
 	if _has_selection:
-		info += "\nSeleccionada: " + str(_selected)
+		info += "\nSeleccionada: %s | Giro propio: %d°" % [
+			str(_selected), board.get_rotation_steps(_selected) * 60,
+		]
 	if _moving:
 		info += "\nDestino: clic en una celda vacía"
 	_status.text = info
