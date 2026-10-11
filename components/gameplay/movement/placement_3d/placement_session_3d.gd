@@ -8,11 +8,14 @@ signal placement_confirmed(roots: Array[Node3D], was_edit: bool)
 signal placement_cancelled(was_edit: bool)
 signal placement_rejected(reason: StringName)
 signal removal_requested(root: Node3D)
+signal variant_changed(variant_id: StringName, index: int)
 
 enum Mode { IDLE, SINGLE, CHAIN, EDIT, PATH, EDIT_GROUP, DUPLICATE, DUPLICATE_GROUP }
 
 @export var world_parent: Node3D
 @export var camera: Camera3D
+## Optional alternatives for SINGLE previews. Other modes retain their behavior.
+@export var variant_set: NucleusPlacementVariantSet3D
 @export_range(0.1, 1000.0, 1.0, "or_greater") var ray_distance: float = 100.0
 @export var valid_preview_material: Material
 @export var invalid_preview_material: Material
@@ -44,6 +47,7 @@ var mode: Mode = Mode.IDLE
 var last_reason: StringName = &""
 var is_candidate_valid: bool = false
 
+var _variant_index: int = -1
 var _scene: PackedScene
 var _roots: Array[Node3D] = []
 var _placeables: Array[NucleusPlaceable3D] = []
@@ -136,6 +140,7 @@ func begin_new(scene: PackedScene) -> Error:
 		return ERR_UNCONFIGURED
 	cancel()
 	_scene = scene
+	_variant_index = -1
 	var added := _append_preview()
 	if added != OK:
 		_clear_all_new()
@@ -143,6 +148,100 @@ func begin_new(scene: PackedScene) -> Error:
 		return added
 	mode = Mode.SINGLE
 	set_physics_process(camera != null)
+	return OK
+
+
+## Begin the configured catalog at its default, or at a specified stable ID.
+func begin_variants(
+	catalog: NucleusPlacementVariantSet3D,
+	variant_id: StringName = &"",
+) -> Error:
+	if catalog == null or not catalog.validate().is_empty():
+		return ERR_INVALID_DATA
+	var index: int = catalog.get_default_index()
+	if variant_id != &"":
+		index = catalog.find_index(variant_id)
+	if index < 0 or index >= catalog.variants.size():
+		return ERR_DOES_NOT_EXIST
+	var result: Error = begin_new(catalog.variants[index].scene)
+	if result != OK:
+		return result
+	variant_set = catalog
+	_variant_index = index
+	variant_changed.emit(get_variant_id(), index)
+	return OK
+
+
+func get_variant_id() -> StringName:
+	if variant_set == null or _variant_index < 0:
+		return &""
+	if _variant_index >= variant_set.variants.size():
+		return &""
+	return variant_set.variants[_variant_index].variant_id
+
+
+func select_variant(variant_id: StringName) -> Error:
+	if variant_set == null or not variant_set.validate().is_empty():
+		return ERR_UNCONFIGURED
+	var index: int = variant_set.find_index(variant_id)
+	if index < 0:
+		return ERR_DOES_NOT_EXIST
+	return _switch_variant(index)
+
+
+func cycle_variant(direction: int = 1) -> Error:
+	if variant_set == null or not variant_set.validate().is_empty():
+		return ERR_UNCONFIGURED
+	if direction == 0:
+		return ERR_INVALID_PARAMETER
+	var size: int = variant_set.variants.size()
+	return _switch_variant(posmod(_variant_index + signi(direction), size))
+
+
+## Prepare and validate the candidate before replacing the previous preview.
+func _switch_variant(index: int) -> Error:
+	if mode != Mode.SINGLE:
+		return ERR_UNAVAILABLE
+	if _confirm_pending:
+		return ERR_BUSY
+	if index == _variant_index:
+		return OK
+	var candidate_scene: PackedScene = variant_set.variants[index].scene
+	var instance: Node = candidate_scene.instantiate()
+	if not instance is Node3D:
+		if instance != null:
+			instance.free()
+		return ERR_INVALID_DATA
+	var root: Node3D = instance as Node3D
+	var component: NucleusPlaceable3D = NucleusPlaceable3D.find_in(root)
+	if component == null or component.profile == null:
+		root.free()
+		return ERR_INVALID_DATA
+	if not component.profile.validate().is_empty():
+		root.free()
+		return ERR_INVALID_DATA
+	if component.target != null and component.target != root:
+		root.free()
+		return ERR_INVALID_DATA
+	var previous_transform: Transform3D = _roots[0].global_transform
+	world_parent.add_child(root)
+	if component.get_root() != root:
+		root.free()
+		return ERR_INVALID_DATA
+	root.global_transform = previous_transform
+	var saved: Array = _preview_on(root)
+	# The previous candidate was not committed: replace only the session-owned
+	# preview, preserve cursor and yaw, and restart physical validation.
+	_preview_off(_saved_visuals[0])
+	_roots[0].free()
+	_roots[0] = root
+	_placeables[0] = component
+	_saved_visuals[0] = saved
+	_scene = candidate_scene
+	_variant_index = index
+	_preview_feedback_state = -1
+	_refresh_from_current_hit()
+	variant_changed.emit(get_variant_id(), index)
 	return OK
 
 
@@ -901,6 +1000,7 @@ func _clear_state() -> void:
 	_transforms.clear()
 	_current_hit.clear()
 	_scene = null
+	_variant_index = -1
 	_preview_feedback_state = -1
 	is_candidate_valid = false
 	last_reason = &""
