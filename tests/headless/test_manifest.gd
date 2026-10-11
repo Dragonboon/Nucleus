@@ -82,4 +82,5 @@ const SUITES: Array[Script] = [
 	preload("res://tests/headless/modular_building_test.gd"),
 	preload("res://tests/headless/spline_paths_test.gd"),
 	preload("res://tests/headless/biome_poi_test.gd"),
+	preload("res://tests/headless/world_composition_test.gd"),
 ]
