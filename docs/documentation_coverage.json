@@ -256,6 +256,12 @@
     ],
     "modules/destruction": [
       "docs/modules/destructible_meshes.md"
+    ],
+    "components/world/square_grid": [
+      "docs/components/square_grid.md"
+    ],
+    "components/world/modular_building": [
+      "docs/components/square_grid.md"
     ]
   }
 }
