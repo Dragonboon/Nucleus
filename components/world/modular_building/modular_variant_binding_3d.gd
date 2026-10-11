@@ -43,6 +43,11 @@ func apply_updates(updates: Array[Dictionary]) -> void:
 			variant_rejected.emit(cell, variant_id)
 			continue
 		var visual: Node3D = instance as Node3D
+		# This presenter intentionally does not materialize colliders or gameplay.
+		if _contains_physics(visual):
+			visual.free()
+			variant_rejected.emit(cell, variant_id)
+			continue
 		_remove_visual(cell)
 		add_child(visual)
 		visual.global_position = square_board.cell_to_world(cell)
@@ -63,3 +68,12 @@ func _remove_visual(cell: Vector3i) -> void:
 	_visuals.erase(cell)
 	if is_instance_valid(node):
 		node.queue_free()
+
+## Guard against accidentally spawning real placeables as cosmetic duplicates.
+func _contains_physics(root: Node) -> bool:
+	if root is CollisionObject3D or root is CollisionShape3D:
+		return true
+	for child: Node in root.get_children():
+		if _contains_physics(child):
+			return true
+	return false

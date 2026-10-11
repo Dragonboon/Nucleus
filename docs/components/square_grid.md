@@ -47,3 +47,33 @@ manager is introduced.
 `tests/headless/square_grid_test.gd` covers orthogonal/isometric round trips,
 negative coordinates, BFS, exact edge sharing, rotation, 3D layers and rules.
 Run the registered headless manifest and both scenes graphically before release.
+
+## Modular building: rotated rules and bounded neighborhood updates
+
+`NucleusModularRule.allow_rotations` lets a north-oriented authored rule
+match east/south/west orientations without duplicating asset entries.
+`NucleusModularRuleSet.resolve_variant(mask)` returns `variant_id`,
+`rotation_steps`, `matched` and `neighbor_mask`. Existing
+`resolve(mask)` keeps returning a `StringName` for compatibility.
+Higher rule priority wins; exact/unrotated wins on equal priority; finally
+the first authored rule wins. Rules are capped at 64 for deterministic cost.
+
+`NucleusModularNeighborhood.resolve_around(changed, occupied, rules)`
+returns five descriptors in stable order: changed, north, east, south, west.
+The callback accepts a `Vector3i` so other elevation layers are never
+used to determine connections. For erased cells, the descriptor has
+`occupied=false`, allowing the presenter to dispose visuals.
+This planner is pure and does not alter grid occupancy or game authority.
+
+An optional `NucleusModularVariantBinding3D` accepts that result and
+an explicitly assigned `NucleusPlacementVariantSet3D` with an allowlisted
+`PackedScene` per variant. This is a visual-only example adapter:
+it does not invoke `PlacementSession3D.confirm()`, spawn authoritative
+entities, or validate building support. Do not use scenes with live physics
+or gameplay scripts as visual assets. Such construction scenes must instead
+go through the established Placement solver and game admission policy.
+
+Open `res://examples/modular_building/modular_building_lab.tscn` to
+paint/remove neighbor-connected pieces on a bounded 3D SquareGrid with
+Z/X layer selection. The demonstration owns input and art, and the core
+remains unaware of survival-game or architecture-specific rules.

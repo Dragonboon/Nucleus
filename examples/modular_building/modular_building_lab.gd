@@ -79,12 +79,50 @@ func _build_catalog() -> NucleusPlacementVariantSet3D:
 		entry.variant_id = name
 		var visual := Node3D.new()
 		visual.name = "Modular_" + str(name)
-		var body := MeshInstance3D.new()
+		var color := StandardMaterial3D.new()
+		match name:
+			&"isolated":
+				color.albedo_color = Color(0.87, 0.55, 0.34)
+			&"end":
+				color.albedo_color = Color(0.29, 0.76, 0.58)
+			&"straight":
+				color.albedo_color = Color(0.35, 0.67, 0.95)
+			&"corner":
+				color.albedo_color = Color(0.93, 0.74, 0.35)
+			&"junction":
+				color.albedo_color = Color(0.73, 0.50, 0.92)
+			&"cross":
+				color.albedo_color = Color(0.80, 0.88, 0.95)
+		var stem := MeshInstance3D.new()
 		var box := BoxMesh.new()
-		box.size = Vector3(0.85, 0.6, 0.85)
-		body.mesh = box
-		visual.add_child(body)
-		body.owner = visual
+		box.size = Vector3(0.55, 0.48, 0.55)
+		stem.mesh = box
+		stem.material_override = color
+		visual.add_child(stem)
+		stem.owner = visual
+		# The N axis is the authored reference for rotatable rules.
+		var sides: Array[int] = []
+		match name:
+			&"end":
+				sides = [0]
+			&"straight":
+				sides = [0, 2]
+			&"corner":
+				sides = [0, 1]
+			&"junction":
+				sides = [0, 1, 2]
+			&"cross":
+				sides = [0, 1, 2, 3]
+		for side: int in sides:
+			var arm := MeshInstance3D.new()
+			var arm_mesh := BoxMesh.new()
+			arm_mesh.size = Vector3(0.26, 0.3, 0.72)
+			arm.mesh = arm_mesh
+			arm.position = Vector3(0.0, 0.0, -0.52).rotated(Vector3.UP, float(side) * PI * 0.5)
+			arm.rotation.y = float(side) * PI * 0.5
+			arm.material_override = color
+			visual.add_child(arm)
+			arm.owner = visual
 		var packed := PackedScene.new()
 		packed.pack(visual)
 		visual.free()
