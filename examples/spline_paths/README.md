@@ -2,13 +2,18 @@
 
 Open `res://examples/spline_paths/spline_paths_lab.tscn`.
 
-- `1/2`: straight or curved Godot `Curve3D`
-- `Q/R`: adjust path width
-- `T`: toggle adaptation to `NucleusPlaneSurfaceSampler3D`
+The native `Path3D.curve` is editable in the running lab:
+- Left click a visible cyan point to select, then drag it along its elevation plane.
+- Shift + left click to append a new point (maximum 24 per demo).
+- Right click a point to remove it, preserving at least two control points.
+- `+` / `-`: raise/lower the selected point.
+- `1` / `2`: replace the editable path with a straight/curved preset.
+- `Q` / `R`: narrow/widen the road.
+- `T`: toggle following the existing surface sampler.
+- `B`: toggle the optional crowned roadbed cross-section.
 
-The sample composes a native `Path3D` with
-`NucleusSplineRoad3D` and an optional existing surface sampler. The
-generated ribbon is visual-only; it does not modify terrain, create
-collision or navigation, or replace native Godot curves.
-
-See `docs/components/spline_paths.md`.
+Roadbed profile properties are configured on
+`NucleusSplinePathProfile3D` and remain optional. Its shoulders, crown and
+thickness make the road look three-dimensional without terrain edits.
+See `docs/components/spline_paths.md` for its performance and geometry
+limits. The scene demonstrates editing and visual mesh creation only.
