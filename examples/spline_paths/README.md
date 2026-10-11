@@ -2,7 +2,7 @@
 
 Open `res://examples/spline_paths/spline_paths_lab.tscn`.
 
-The native `Path3D.curve` is editable in the running lab:
+The lab uses a compact, right-aligned HUD to keep the terrain visible.\nPress **H** (or the **Tools** button) to expand/collapse the controls;\nthey start collapsed and never block the central editing area.\n\nThe native `Path3D.curve` is editable in the running lab:
 - Left click a visible cyan point to select, then drag it along its elevation plane.
 - Shift + left click to append a new point (maximum 24 per demo).
 - Right click a point to remove it, preserving at least two control points.
