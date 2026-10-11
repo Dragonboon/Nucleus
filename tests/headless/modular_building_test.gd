@@ -37,6 +37,7 @@ func run() -> Dictionary:
 	expect_false(changes[0]["occupied"], "Removed cell has clear descriptor.")
 	expect_equal(changes[2]["variant_id"], &"isolated", "Remaining cell updated.")
 	_test_visual_binding()
+	_test_visual_cardinal_geometry()
 	return finish()
 
 func _test_visual_binding() -> void:
@@ -73,14 +74,33 @@ func _test_visual_binding() -> void:
 	var visual: Node3D = presenter._visuals[cell]["node"]
 	expect_equal(visual.global_position, board.cell_to_world(cell),
 		"Cosmetic mesh aligns with board center.")
-	expect_float(visual.rotation.y, PI * 0.5, "Variant is rotated.")
+	expect_float(visual.rotation.y, -PI * 0.5, "Clockwise cardinal step is negative yaw.")
 	descriptors[0]["rotation_steps"] = 2
 	presenter.apply_updates(descriptors)
 	expect_true(visual == presenter._visuals[cell]["node"],
 		"Changing a rule orientation reuses the same visual.")
-	expect_float(visual.rotation.y, PI, "Existing visual updates rotation.")
+	expect_float(visual.rotation.y, -PI, "Existing visual updates rotation.")
 	descriptors[0]["occupied"] = false
 	presenter.apply_updates(descriptors)
 	expect_equal(presenter._visuals.size(), 0, "Erasure removes cosmetic visuals.")
 	expect_true(board.has_tile(cell), "Cosmetic updates never mutate occupancy.")
 	free_test_node(root)
+
+## The authored -Z connector must meet each logical side after visual rotation.
+func _test_visual_cardinal_geometry() -> void:
+	for side in range(4):
+		var expected: Vector3 = [
+			Vector3(0, 0, -1), Vector3(1, 0, 0),
+			Vector3(0, 0, 1), Vector3(-1, 0, 0),
+		][side]
+		var heading: Vector3 = Basis(
+			Vector3.UP, -float(side) * PI * 0.5
+		) * Vector3.FORWARD
+		expect_true(heading.distance_to(expected) < 0.0001,
+			"Rendered connector points at the matching cardinal neighbor.")
+		var center: Vector3 = Vector3(0, 0, -0.60).rotated(
+			Vector3.UP, -float(side) * PI * 0.5
+		)
+		var endpoint: Vector3 = center + heading * 0.40
+		expect_true(endpoint.distance_to(expected) < 0.0001,
+			"Pipe arm terminates at the exact half-cell boundary.")
