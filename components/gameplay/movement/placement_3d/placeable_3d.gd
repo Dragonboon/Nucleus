@@ -8,6 +8,8 @@ extends Node3D
 @export var target: Node3D
 @export var profile: NucleusPlacementProfile3D
 @export var stable_id: StringName = &""
+## Optional saved identifier of the scene variant used to place this item.
+@export var variant_id: StringName = &""
 
 var _visual_bounds_cache: Dictionary = {}
 
