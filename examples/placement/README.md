@@ -5,6 +5,23 @@ introducir gestores, Autoloads, reglas de construccion ni escenas de juego en el
 framework. Todos los objetos son `PackedScene` con primitivas de Godot y perfiles
 `NucleusPlacementProfile3D` editables por Inspector.
 
+## Atajos del laboratorio actualizado
+
+| Control | Accion |
+| --- | --- |
+| `1`–`5` | Colocar casa, valla, columna, plataforma o caja |
+| `F` | Iniciar valla recta: clic inicio, clic final |
+| `C` | Iniciar cadena curva: clic inicio, clic(s) intermedios, `Enter` para terminar en cursor |
+| `Retroceso` | Borrar ultimo punto de control de curva |
+| `Ctrl+clic` | Alternar pieza dentro de la multiseleccion |
+| `Mayus+arrastrar` | Seleccion por rectangulo de pantalla |
+| `Ctrl+A` | Seleccionar todo lo colocado |
+| `E` | Mover los objetos seleccionados (si el perfil lo permite) |
+| `Q` / `R` | Rotar las previsualizaciones o todo el grupo |
+| `Supr` | Eliminar la seleccion (comprobacion de permisos previa) |
+| `Esc` | Cancelar previsualizacion / restaurar transformaciones originales |
+| Ratón derecho / rueda / central / WASD | Orbitar / zoom / paneo / mover camara |
+
 ## Abrir
 
 En **Nucleus con Runtime Placement 3D ya integrado** (Godot 4.7.2), abre y ejecuta
@@ -36,7 +53,7 @@ modo, si el cursor permite colocar y por que se rechaza un candidato.
 | Pieza | Propiedades a observar |
 | --- | --- |
 | **Casa** | Volumen grande, huella amplia, limite de pendiente 11°, snap a malla 1 m, giro en pasos de 45° |
-| **Valla** | Huella estrecha, orientacion segun normal, giro 15°, cadenas rectas de 2 m y maximo 20 segmentos |
+| **Valla** | Huella estrecha, orientacion segun normal, giro 15°, cadenas rectas y curvas de 2 m y maximo 20 segmentos |
 | **Columna** | Orientacion respecto al suelo, colocacion sobre terreno o plataformas (`kind=platform`) |
 | **Plataforma** | Pendiente maxima 9°, snap 0.5 m, permite encima columnas y cajas |
 | **Caja** | Permite apilar cajas sobre otras cajas o sobre plataformas; editing y retirada independientes |
@@ -57,13 +74,21 @@ en **2|4**. Las mallas decorativas no tienen colision.
    encima. Intenta casa o valla sobre esa plataforma: su perfil no lo permite.
 4. **Cajas:** pon una caja sobre otra y luego retira la superior. Observa
    que se tratan como instancias distintas.
-5. **Valla en cadena:** pulsa F, haz clic en el plano y mueve el raton a
+5. **Valla recta:** pulsa F, haz clic en el plano y mueve el raton a
    varios metros de distancia; confirma 3–6 segmentos. Prueba una cadena
    que atraviese el obstaculo: el conjunto no se debe confirmar.
-6. **Edicion:** elige una pieza confirmada, pulsa E, cambia posicion y giro,
+6. **Valla curva:** pulsa C, haz clic para iniciar, haz clic en varios puntos
+   para bordear el obstaculo y mueve el cursor hasta el extremo deseado.
+   Pulsa Enter para validar y colocar la cadena completa. Retroceso deshace
+   el ultimo punto; Esc cancela. Tramos muy cerrados que se solapen se rechazan.
+7. **Multiseleccion:** Ctrl+clic añade/quita piezas; Mayus+arrastrar dibuja
+   un marco; Ctrl+A selecciona todas. Pulsa E y cambia posicion y giro del
+   grupo. Con Esc recupera exactamente todos los transform originales.
+   Supr solicita eliminar todos, despues de comprobar permisos para el grupo.
+8. **Edicion:** elige una pieza confirmada, pulsa E, cambia posicion y giro,
    pulsa Esc y verifica que vuelve al transform anterior. Repite con clic de
    confirmacion y comprueba que permanece en la nueva ubicacion.
-7. **Retirada:** selecciona una pieza confirmada y usa Supr. La retirada la
+9. **Retirada:** selecciona una pieza confirmada y usa Supr. La retirada la
    ejecuta exclusivamente el controlador del laboratorio tras recibir la
    senal `removal_requested` de la sesion Nucleus.
 
@@ -82,13 +107,22 @@ rendimiento ni apariencia: la bateria manual es necesaria.
 ## Limites y responsabilidades
 
 - Nucleus posee validacion de superficie/ocupacion, preview, edicion y cadena.
-- El laboratorio posee UX, seleccion, camara, coleccion de piezas y borrado.
+- El laboratorio posee UX, seleccion simple/multiple, seleccion por marco, camara, coleccion de piezas
+  y borrado.
 - No persiste partidas, no deduce conexiones de sockets, no calcula costes y no
   gestiona redes. Nunca se confirman cambios de clientes no autoritativos.
 - La inclinacion es **rigida**: se inclina la escena entera; no se deforma la
   malla de una casa ni se adapta cada poste de valla por separado.
-- La cadena es lineal, no curva ni un Mesh unificado. Una cadena solo se confirma
-  si todos los tramos son validos segun el motor de Nucleus.
+- Las cadenas admiten curvas de Catmull-Rom con piezas rigidas a distancia
+  casi constante, **no** mallas deformadas ni conectores de esquina automaticos.
+- Las validaciones se distribuyen entre ticks: AMBAR = aun comprobando, VERDE
+  = admisible segun la ultima previsualizacion, ROJO = rechazado. Confirmar
+  genera una nueva verificacion antes del evento de colocacion.
+- Editar grupos de piezas independientes esta admitido; grupos que se apoyan
+  internamente (por ejemplo, caja sobre plataforma seleccionada) se rechazan.
+  Solo se admiten formas de clearance BoxShape3D para el grupo.
+- `max_checks_per_tick` controla trabajo por frame; el perfilador de Godot es
+  necesario para diagnosticar stutters ajenos a esta cola.
 
 Para los contratos reales revisa
 `docs/components/runtime_placement_3d.md` y

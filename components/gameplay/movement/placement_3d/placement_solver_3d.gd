@@ -46,15 +46,19 @@ static func evaluate_hit(
 	var mean_normal: Vector3 = Vector3.ZERO
 	var sample_heights: Array[float] = []
 	var reference_owner := NucleusPlaceable3D.find_for_collider(collider)
+	# One ray query reused for all footprint samples. The first sample is
+	# the snapped center, so it also supplies the authoritative final height.
+	var query := PhysicsRayQueryParameters3D.create(
+		pos + Vector3.UP * profile.support_cast_above,
+		pos - Vector3.UP * profile.support_cast_below,
+		profile.support_mask,
+		exclude,
+	)
+	query.collide_with_areas = false
 	for offset: Vector3 in offsets:
 		var p: Vector3 = pos + flat_basis * offset
-		var query := PhysicsRayQueryParameters3D.create(
-			p + Vector3.UP * profile.support_cast_above,
-			p - Vector3.UP * profile.support_cast_below,
-			profile.support_mask,
-			exclude,
-		)
-		query.collide_with_areas = false
+		query.from = p + Vector3.UP * profile.support_cast_above
+		query.to = p - Vector3.UP * profile.support_cast_below
 		var sample: Dictionary = space.intersect_ray(query)
 		if sample.is_empty():
 			return _reject(&"unsupported_footprint")
@@ -95,18 +99,9 @@ static func evaluate_hit(
 	if deviation > profile.max_height_spread:
 		return _reject(&"uneven_surface")
 
-	# Use the central, newly snapped sample height; never retain stale Y from
-	# the original cursor hit after snapping X/Z.
-	var center_query := PhysicsRayQueryParameters3D.create(
-		pos + Vector3.UP * profile.support_cast_above,
-		pos - Vector3.UP * profile.support_cast_below,
-		profile.support_mask,
-		exclude,
-	)
-	var center_hit: Dictionary = space.intersect_ray(center_query)
-	if center_hit.is_empty():
-		return _reject(&"unsupported_footprint")
-	pos.y = (center_hit.get("position") as Vector3).y + profile.surface_offset
+	# The central sample is already measured at the snapped X/Z position.
+	# A second center ray was redundant and caused extra allocations/work.
+	pos.y = sample_heights[0] + profile.surface_offset
 
 	var up := Vector3.UP
 	if profile.align_to_surface:

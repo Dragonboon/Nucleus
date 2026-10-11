@@ -79,6 +79,12 @@ func _run() -> void:
 		Vector3.ZERO, Vector3(0, 0, -4.1), 2.0, 20,
 	)
 	_check(layout.size() == 3, "Four-metre chain lays out three independent segments")
+	var bend := NucleusPlacementChain3D.path_layout(
+		[Vector3.ZERO, Vector3(0, 0, -4), Vector3(4, 0, -4)], 2.0, 20,
+	)
+	_check(bend.size() >= 4, "Curved chain samples multiple independently editable segments")
+	_check(session != null and session.max_checks_per_tick == 3,
+		"Live preview enforces a per-frame validation budget")
 	var platform_profile := load(
 		"res://examples/placement/profiles/platform_profile.tres"
 	) as NucleusPlacementProfile3D

@@ -23,6 +23,9 @@ const REASONS := {
 	&"uneven_surface": "La superficie es demasiado irregular.",
 	&"occupied": "Hay un obstaculo u otro objeto en ese volumen.",
 	&"chain_limit": "Cadena demasiado larga o no valida.",
+	&"chain_self_overlap": "La curva hace que varios tramos se solapen.",
+	&"group_self_overlap": "Los objetos del grupo se solapan entre si.",
+	&"checking": "Validando por partes (sin bloquear el frame)...",
 	&"invalid_scene": "No se puede instanciar la pieza.",
 	&"game_policy": "La regla del juego ha rechazado el cambio.",
 }
@@ -32,6 +35,13 @@ const REASONS := {
 
 var _session: NucleusPlacementSession3D
 var _selected: NucleusPlaceable3D
+var _selected_items: Array[NucleusPlaceable3D] = []
+var _extra_selection_markers: Array[MeshInstance3D] = []
+var _path_markers: Array[MeshInstance3D] = []
+var _marquee: ColorRect
+var _marquee_start: Vector2 = Vector2.ZERO
+var _marquee_dragging: bool = false
+var _curve_waiting_for_anchor: PackedScene
 var _selected_marker: MeshInstance3D
 var _chain_waiting_for_anchor: PackedScene
 var _placed: Array[Node3D] = []
@@ -61,6 +71,9 @@ func _ready() -> void:
 	_session.ray_distance = 120.0
 	_session.valid_preview_material = _ghost_material(Color(0.26, 0.95, 0.64, 0.52))
 	_session.invalid_preview_material = _ghost_material(Color(1.0, 0.32, 0.30, 0.53))
+	_session.pending_preview_material = _ghost_material(Color(1.0, 0.73, 0.25, 0.45))
+	_session.max_checks_per_tick = 3
+	_session.preview_interval_ms = 65
 	_session.preview_updated.connect(_on_preview_updated)
 	_session.placement_confirmed.connect(_on_placement_confirmed)
 	_session.placement_cancelled.connect(_on_placement_cancelled)
@@ -73,7 +86,7 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	var horizontal := Vector2.ZERO
-	if Input.is_key_pressed(KEY_A):
+	if Input.is_key_pressed(KEY_A) and not Input.is_key_pressed(KEY_CTRL):
 		horizontal.x -= 1.0
 	if Input.is_key_pressed(KEY_D):
 		horizontal.x += 1.0
@@ -87,6 +100,17 @@ func _process(delta: float) -> void:
 		_camera_target += offset.normalized() * 8.0 * delta
 		_update_camera()
 	_update_marker()
+	_update_path_markers()
+	if _session != null and _status_label != null:
+		var progress := _session.get_validation_progress()
+		if progress.y > 0:
+			_status_label.text = "COMPROBANDO %d / %d tramos" % [progress.x, progress.y]
+	if _marquee_dragging and not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
+		_marquee_dragging = false
+		_marquee.visible = false
+		_select_in_rectangle(Rect2(
+			_marquee_start, get_viewport().get_mouse_position() - _marquee_start,
+		).abs())
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -108,13 +132,31 @@ func _unhandled_input(event: InputEvent) -> void:
 			_camera_distance = minf(70.0, _camera_distance + 2.0)
 			_update_camera()
 			return
-		if button.pressed and button.button_index == MOUSE_BUTTON_LEFT:
-			_world_click(button.position)
-			get_viewport().set_input_as_handled()
-			return
+		if button.button_index == MOUSE_BUTTON_LEFT:
+			if (
+				button.pressed and button.shift_pressed
+				and _session.mode == NucleusPlacementSession3D.Mode.IDLE
+			):
+				_marquee_start = button.position
+				_marquee_dragging = true
+				_show_marquee(_marquee_start, _marquee_start)
+				get_viewport().set_input_as_handled()
+				return
+			if not button.pressed and _marquee_dragging:
+				_marquee_dragging = false
+				_marquee.visible = false
+				_select_in_rectangle(Rect2(_marquee_start, button.position - _marquee_start).abs())
+				get_viewport().set_input_as_handled()
+				return
+			if button.pressed and not _marquee_dragging:
+				_world_click(button.position, button.ctrl_pressed)
+				get_viewport().set_input_as_handled()
+				return
 	if event is InputEventMouseMotion:
 		var motion := event as InputEventMouseMotion
-		if _orbiting:
+		if _marquee_dragging:
+			_show_marquee(_marquee_start, motion.position)
+		elif _orbiting:
 			_orbit_yaw -= motion.relative.x * 0.008
 			_orbit_pitch = clampf(_orbit_pitch + motion.relative.y * 0.008, 0.30, 1.47)
 			_update_camera()
@@ -141,13 +183,22 @@ func _unhandled_input(event: InputEvent) -> void:
 				_select_asset(4)
 			KEY_F:
 				_select_chain()
+			KEY_C:
+				_select_curve()
+			KEY_ENTER, KEY_KP_ENTER:
+				_finish_curve()
+			KEY_BACKSPACE:
+				_remove_last_curve_point()
+			KEY_A:
+				if event.ctrl_pressed:
+					_select_all()
 			KEY_Q:
 				_rotate(-1)
 			KEY_R:
 				_rotate(1)
 			KEY_E:
 				_edit_selection()
-			KEY_DELETE, KEY_BACKSPACE:
+			KEY_DELETE:
 				_remove_selection()
 			KEY_ESCAPE:
 				_cancel_operation()
@@ -159,7 +210,22 @@ func _unhandled_input(event: InputEvent) -> void:
 				_focus_zone(Vector3(10.0, 0.0, -1.0))
 
 
-func _world_click(screen_position: Vector2) -> void:
+func _world_click(screen_position: Vector2, additive: bool = false) -> void:
+	if _curve_waiting_for_anchor != null:
+		var hit := _raycast(screen_position, 1)
+		if hit.is_empty():
+			_set_toast("Necesitas terreno bajo el primer punto de la curva.")
+			return
+		var scene: PackedScene = _curve_waiting_for_anchor
+		_curve_waiting_for_anchor = null
+		var result := _session.begin_path(scene, hit["position"])
+		if result == OK:
+			_session.update_from_screen(screen_position)
+			_set_toast("Clic para añadir giros. Enter confirma hasta el cursor; Retroceso deshace punto.")
+		else:
+			_set_toast("No se pudo iniciar la curva: " + error_string(result))
+		_update_panels()
+		return
 	if _chain_waiting_for_anchor != null:
 		var hit := _raycast(screen_position, 1)
 		if hit.is_empty():
@@ -175,6 +241,17 @@ func _world_click(screen_position: Vector2) -> void:
 			_set_toast("Mueve el raton para ampliar la valla; otro clic confirma toda la cadena.")
 		_update_panels()
 		return
+	if _session.mode == NucleusPlacementSession3D.Mode.PATH:
+		var hit := _raycast(screen_position, 1)
+		if hit.is_empty():
+			_set_toast("Punto de curva sin terreno.")
+			return
+		var error := _session.add_path_control(hit["position"])
+		if error != OK:
+			_set_toast("Punto rechazado: " + error_string(error))
+		else:
+			_set_toast("Punto añadido. Más clics para rodear obstáculos; Enter para confirmar.")
+		return
 	if _session.mode != NucleusPlacementSession3D.Mode.IDLE:
 		var error := _session.confirm()
 		if error != OK:
@@ -182,15 +259,21 @@ func _world_click(screen_position: Vector2) -> void:
 		return
 	var hit := _raycast(screen_position, 2)
 	if hit.is_empty():
-		_set_selected(null)
+		if not additive:
+			_set_selected(null)
 		return
-	_set_selected(NucleusPlaceable3D.find_for_collider(hit.get("collider")))
+	var picked := NucleusPlaceable3D.find_for_collider(hit.get("collider"))
+	if additive:
+		_toggle_selected(picked)
+	else:
+		_set_selected(picked)
 
 
 func _select_asset(index: int) -> void:
 	if index < 0 or index >= SCENES.size():
 		return
 	_chain_waiting_for_anchor = null
+	_curve_waiting_for_anchor = null
 	_set_selected(null)
 	var error := _session.begin_new(SCENES[index])
 	if error != OK:
@@ -204,19 +287,114 @@ func _select_asset(index: int) -> void:
 func _select_chain() -> void:
 	_session.cancel()
 	_set_selected(null)
+	_curve_waiting_for_anchor = null
 	_chain_waiting_for_anchor = FENCE
 	_set_toast("Valla en cadena: haz clic sobre el suelo para fijar el inicio.")
 	_update_panels()
 
 
+func _select_curve() -> void:
+	_session.cancel()
+	_set_selected(null)
+	_chain_waiting_for_anchor = null
+	_curve_waiting_for_anchor = FENCE
+	_set_toast("Cadena CURVA: clic sobre el terreno para iniciar el recorrido.")
+	_update_panels()
+
+
+func _finish_curve() -> void:
+	if _session.mode != NucleusPlacementSession3D.Mode.PATH:
+		return
+	var error := _session.confirm()
+	if error == OK:
+		_set_toast("Comprobando todos los segmentos antes de construir...")
+	else:
+		_set_toast("La curva no se puede confirmar: " + error_string(error))
+
+
+func _remove_last_curve_point() -> void:
+	if _session.mode == NucleusPlacementSession3D.Mode.PATH:
+		if _session.remove_last_path_control() == OK:
+			_set_toast("Último punto de la curva retirado.")
+
+
+func _toggle_selected(placeable: NucleusPlaceable3D) -> void:
+	if placeable == null or not is_instance_valid(placeable):
+		return
+	if placeable in _selected_items:
+		_selected_items.erase(placeable)
+	else:
+		_selected_items.append(placeable)
+	_selected = _selected_items.back() if not _selected_items.is_empty() else null
+	_update_marker()
+	_update_panels()
+
+
+func _select_all() -> void:
+	if _session.mode != NucleusPlacementSession3D.Mode.IDLE:
+		return
+	_selected_items.clear()
+	for root: Node3D in _placed:
+		if is_instance_valid(root):
+			var placeable := NucleusPlaceable3D.find_in(root)
+			if placeable != null:
+				_selected_items.append(placeable)
+	_selected = _selected_items.back() if not _selected_items.is_empty() else null
+	_update_marker()
+	_update_panels()
+
+
+func _show_marquee(a: Vector2, b: Vector2) -> void:
+	var rectangle := Rect2(a, b - a).abs()
+	_marquee.position = rectangle.position
+	_marquee.size = rectangle.size
+	_marquee.visible = true
+
+
+func _select_in_rectangle(rectangle: Rect2) -> void:
+	_selected_items.clear()
+	for root: Node3D in _placed:
+		if not is_instance_valid(root):
+			continue
+		var p := NucleusPlaceable3D.find_in(root)
+		if p == null or _camera.is_position_behind(root.global_position):
+			continue
+		if rectangle.has_point(_camera.unproject_position(root.global_position)):
+			_selected_items.append(p)
+	_selected = _selected_items.back() if not _selected_items.is_empty() else null
+	_update_marker()
+	_update_panels()
+
+
+func _update_path_markers() -> void:
+	if _session == null:
+		return
+	var points: Array[Vector3] = []
+	if _session.mode == NucleusPlacementSession3D.Mode.PATH:
+		points = _session.get_path_controls()
+	while _path_markers.size() < points.size():
+		var marker := MeshInstance3D.new()
+		var sphere := SphereMesh.new()
+		sphere.radius = 0.18
+		sphere.height = 0.36
+		marker.mesh = sphere
+		marker.material_override = _ghost_material(Color(1.0, 0.81, 0.26, 0.95))
+		_world.add_child(marker)
+		_path_markers.append(marker)
+	for i: int in range(_path_markers.size()):
+		_path_markers[i].visible = i < points.size()
+		if i < points.size():
+			_path_markers[i].global_position = points[i] + Vector3.UP * 0.25
+
+
 func _edit_selection() -> void:
-	if _selected == null or not is_instance_valid(_selected):
-		_set_toast("Haz clic sobre una pieza colocada para seleccionarla.")
+	if _selected_items.is_empty():
+		_set_toast("Selecciona una o varias piezas; Ctrl+clic o Mayus+arrastrar.")
 		return
 	if _session.mode != NucleusPlacementSession3D.Mode.IDLE:
 		_set_toast("Confirma o cancela la operacion actual primero.")
 		return
-	var error := _session.begin_edit(_selected)
+	var error := _session.begin_edit_many(_selected_items.duplicate())
 	if error != OK:
 		_set_toast("La pieza no admite edicion: " + error_string(error))
 		return
@@ -225,12 +403,22 @@ func _edit_selection() -> void:
 
 
 func _remove_selection() -> void:
-	if _selected == null or not is_instance_valid(_selected):
-		_set_toast("Selecciona primero un objeto colocado.")
+	if _selected_items.is_empty():
+		_set_toast("Selecciona primero uno o varios objetos colocados.")
 		return
-	var error := _session.request_removal(_selected)
-	if error != OK:
-		_set_toast("No se pudo retirar: " + error_string(error))
+	if _session.mode != NucleusPlacementSession3D.Mode.IDLE:
+		return
+	# Validate all before issuing deletion requests; no partial authoring by mistake.
+	for p: NucleusPlaceable3D in _selected_items:
+		if not is_instance_valid(p) or p.profile == null or not p.profile.can_remove:
+			_set_toast("No todos los seleccionados permiten retirarse.")
+			return
+	for p: NucleusPlaceable3D in _selected_items.duplicate():
+		var error := _session.request_removal(p)
+		if error != OK:
+			_set_toast("No se pudo retirar: " + error_string(error))
+			return
+	_set_selected(null)
 
 
 func _rotate(direction: int) -> void:
@@ -243,7 +431,10 @@ func _rotate(direction: int) -> void:
 
 
 func _cancel_operation() -> void:
-	if _chain_waiting_for_anchor != null:
+	if _curve_waiting_for_anchor != null:
+		_curve_waiting_for_anchor = null
+		_set_toast("Inicio de curva cancelado.")
+	elif _chain_waiting_for_anchor != null:
 		_chain_waiting_for_anchor = null
 		_set_toast("Inicio de cadena cancelado.")
 	elif _session.mode != NucleusPlacementSession3D.Mode.IDLE:
@@ -257,10 +448,16 @@ func _cancel_operation() -> void:
 func _on_preview_updated(valid: bool, reason: StringName, transforms: Array[Transform3D]) -> void:
 	_status_label.text = (
 		"APTO  ·  %d pieza(s)" % transforms.size()
-		if valid else "BLOQUEADO  ·  " + _reason_text(reason)
+		if valid else (
+			"CALCULANDO  ·  " + _reason_text(reason)
+			if reason == &"checking"
+			else "BLOQUEADO  ·  " + _reason_text(reason)
+		)
 	)
 	_status_label.add_theme_color_override(
-		"font_color", Color(0.40, 0.96, 0.68) if valid else Color(1.0, 0.50, 0.46)
+		"font_color", Color(0.40, 0.96, 0.68) if valid else (
+			Color(1.0, 0.82, 0.40) if reason == &"checking" else Color(1.0, 0.50, 0.46)
+		)
 	)
 
 
@@ -268,10 +465,13 @@ func _on_placement_confirmed(roots: Array[Node3D], was_edit: bool) -> void:
 	if not was_edit:
 		for root: Node3D in roots:
 			_placed.append(root)
-		if not roots.is_empty():
-			_set_selected(NucleusPlaceable3D.find_in(roots.back()))
-	else:
-		_set_selected(NucleusPlaceable3D.find_in(roots[0]))
+	_selected_items.clear()
+	for root: Node3D in roots:
+		var p := NucleusPlaceable3D.find_in(root)
+		if p != null:
+			_selected_items.append(p)
+	_selected = _selected_items.back() if not _selected_items.is_empty() else null
+	_update_marker()
 	_set_toast(
 		"Modificacion confirmada." if was_edit
 		else "%d pieza(s) colocada(s). Ahora puedes seleccionarlas y editarlas." % roots.size()
@@ -293,13 +493,20 @@ func _on_removal_requested(root: Node3D) -> void:
 	if root == null or not is_instance_valid(root) or root not in _placed:
 		return
 	_placed.erase(root)
-	_set_selected(null)
+	for p: NucleusPlaceable3D in _selected_items.duplicate():
+		if p.get_root() == root:
+			_selected_items.erase(p)
+	_selected = _selected_items.back() if not _selected_items.is_empty() else null
 	root.queue_free()
+	_update_marker()
 	_set_toast("Pieza retirada del laboratorio.")
 	_update_panels()
 
 
 func _set_selected(placeable: NucleusPlaceable3D) -> void:
+	_selected_items.clear()
+	if placeable != null and is_instance_valid(placeable):
+		_selected_items.append(placeable)
 	_selected = placeable if is_instance_valid(placeable) else null
 	_update_marker()
 	_update_panels()
@@ -308,19 +515,30 @@ func _set_selected(placeable: NucleusPlaceable3D) -> void:
 func _update_marker() -> void:
 	if _selected_marker == null:
 		return
-	var visible_selection := (
-		_selected != null and is_instance_valid(_selected)
-		and _selected.is_inside_tree()
-		and (_session == null or _session.mode == NucleusPlacementSession3D.Mode.IDLE)
-	)
-	_selected_marker.visible = visible_selection
-	if not visible_selection:
-		return
-	var root := _selected.get_root()
-	_selected_marker.global_position = root.global_position + Vector3(0.0, 0.09, 0.0)
-	var extent: Vector2 = _selected.profile.support_half_extents
-	var size: float = maxf(extent.x, extent.y) + 0.33
-	_selected_marker.scale = Vector3(size, 1.0, size)
+	var visible := (_session == null or _session.mode == NucleusPlacementSession3D.Mode.IDLE)
+	while _extra_selection_markers.size() + 1 < _selected_items.size():
+		var new_marker := MeshInstance3D.new()
+		new_marker.mesh = _selected_marker.mesh
+		new_marker.material_override = _selected_marker.material_override
+		_world.add_child(new_marker)
+		_extra_selection_markers.append(new_marker)
+	var markers: Array[MeshInstance3D] = []
+	markers.append(_selected_marker)
+	markers.append_array(_extra_selection_markers)
+	for index: int in range(markers.size()):
+		var marker := markers[index]
+		marker.visible = visible and index < _selected_items.size()
+		if not marker.visible:
+			continue
+		var component: NucleusPlaceable3D = _selected_items[index]
+		if component == null or not is_instance_valid(component) or not component.is_inside_tree():
+			marker.visible = false
+			continue
+		var root := component.get_root()
+		marker.global_position = root.global_position + Vector3(0.0, 0.09, 0.0)
+		var extent: Vector2 = component.profile.support_half_extents
+		var size: float = maxf(extent.x, extent.y) + 0.33
+		marker.scale = Vector3(size, 1.0, size)
 
 
 func _raycast(screen_pos: Vector2, mask: int) -> Dictionary:
@@ -350,7 +568,9 @@ func _update_panels() -> void:
 	if _mode_label == null:
 		return
 	var active := "Exploracion"
-	if _chain_waiting_for_anchor != null:
+	if _curve_waiting_for_anchor != null:
+		active = "Curva: elegir inicio"
+	elif _chain_waiting_for_anchor != null:
 		active = "Cadena: elegir inicio"
 	elif _session != null:
 		match _session.mode:
@@ -360,11 +580,17 @@ func _update_panels() -> void:
 				active = "Cadena de vallas"
 			NucleusPlacementSession3D.Mode.EDIT:
 				active = "Editar objeto existente"
+			NucleusPlacementSession3D.Mode.PATH:
+				active = "Cadena CURVA: puntos de control"
+			NucleusPlacementSession3D.Mode.EDIT_GROUP:
+				active = "Editar grupo"
 	_mode_label.text = "MODO  /  " + active
 	var selected_name := "Ninguna"
 	if _selected != null and is_instance_valid(_selected):
 		selected_name = str(_selected.profile.kind).capitalize()
-	_selection_label.text = "Seleccionado: " + selected_name
+	_selection_label.text = (
+		"Seleccionados: %d  |  Ultimo: %s" % [_selected_items.size(), selected_name]
+	)
 	var kept := 0
 	for root: Node3D in _placed:
 		if is_instance_valid(root):
@@ -511,12 +737,18 @@ func _build_ui() -> void:
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layer.add_child(root)
+	_marquee = ColorRect.new()
+	_marquee.name = "Marquee multiseleccion"
+	_marquee.color = Color(0.35, 0.73, 1.0, 0.18)
+	_marquee.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_marquee.visible = false
+	root.add_child(_marquee)
 
 	var left := _panel()
 	left.offset_left = 16.0
 	left.offset_top = 15.0
 	left.offset_right = 322.0
-	left.offset_bottom = 590.0
+	left.offset_bottom = 710.0
 	root.add_child(left)
 	var stack := VBoxContainer.new()
 	stack.add_theme_constant_override("separation", 7)
@@ -527,7 +759,9 @@ func _build_ui() -> void:
 	for index: int in range(SCENES.size()):
 		var idx := index
 		_add_button(stack, "%d   %s" % [index + 1, NAMES[index]], func() -> void: _select_asset(idx))
-	_add_button(stack, "F   Valla en cadena (2 clics)", _select_chain)
+	_add_button(stack, "F   Valla recta (2 clics)", _select_chain)
+	_add_button(stack, "C   Valla CURVA (puntos)", _select_curve)
+	_add_button(stack, "Enter   Confirmar curva", _finish_curve)
 	_add_label(stack, "EDITAR SELECCION", 14, Color(0.42, 0.92, 0.78))
 	_selection_label = _add_label(stack, "Seleccionado: Ninguna", 12, Color(0.88, 0.91, 0.94))
 	var row := HBoxContainer.new()
@@ -540,11 +774,15 @@ func _build_ui() -> void:
 	stack.add_child(rotate_row)
 	_add_button(rotate_row, "Q  ↶ Rotar", func() -> void: _rotate(-1), true)
 	_add_button(rotate_row, "R  ↷ Rotar", func() -> void: _rotate(1), true)
+	_add_button(stack, "Ctrl+A   Seleccionar todo", _select_all)
 	_add_button(stack, "Esc   Cancelar / Revertir", _cancel_operation)
 	_add_label(
 		stack,
 		"Raton derecho: orbitar · Rueda: zoom\n"
 		+ "Raton central: mover · WASD: desplazar\n"
+		+ "Ctrl+clic: sumar/quitar seleccion\n"
+		+ "Mayus+arrastrar: seleccionar por marco\n"
+		+ "Curva: clic=vertice, Retroceso=deshacer, Enter=fin\n"
 		+ "H/J/K: pendientes / plano",
 		12, Color(0.69, 0.81, 0.89),
 	)

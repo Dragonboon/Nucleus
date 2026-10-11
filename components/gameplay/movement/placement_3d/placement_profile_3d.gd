@@ -49,6 +49,9 @@ extends Resource
 ## Local -Z points along the chain tangent (e.g. a fence segment).
 @export_range(0.01, 100.0, 0.01, "or_greater") var chain_spacing: float = 2.0
 @export_range(1, 256, 1) var chain_max_count: int = 32
+## Control-point limit for curved chains (at least start + end).
+@export_range(2, 32, 1) var chain_max_control_points: int = 12
+@export_range(2, 32, 1) var chain_curve_subdivisions: int = 12
 
 
 func validate() -> PackedStringArray:
@@ -78,6 +81,10 @@ func validate() -> PackedStringArray:
 		errors.append("Both grid steps must be positive when snapping.")
 	if chain_spacing <= 0.0 or chain_max_count < 1:
 		errors.append("Chain spacing and count must be positive.")
+	if chain_max_control_points < 2 or chain_max_control_points > 32:
+		errors.append("Curve control-point limit must be in 2..32.")
+	if chain_curve_subdivisions < 2 or chain_curve_subdivisions > 32:
+		errors.append("Curve subdivisions must be in 2..32.")
 	if allow_chains and chain_spacing < 2.0 * support_half_extents.y:
 		errors.append("Chain spacing is shorter than the authored forward footprint.")
 	if support_cast_above <= 0.0 or support_cast_below <= 0.0:
