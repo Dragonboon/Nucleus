@@ -182,7 +182,9 @@ func get_variant_id() -> StringName:
 
 
 func select_variant(variant_id: StringName) -> Error:
-	if variant_set == null or not variant_set.validate().is_empty():
+	if _variant_index < 0 or variant_set == null:
+		return ERR_UNAVAILABLE
+	if not variant_set.validate().is_empty():
 		return ERR_UNCONFIGURED
 	var index: int = variant_set.find_index(variant_id)
 	if index < 0:
@@ -191,7 +193,9 @@ func select_variant(variant_id: StringName) -> Error:
 
 
 func cycle_variant(direction: int = 1) -> Error:
-	if variant_set == null or not variant_set.validate().is_empty():
+	if _variant_index < 0 or variant_set == null:
+		return ERR_UNAVAILABLE
+	if not variant_set.validate().is_empty():
 		return ERR_UNCONFIGURED
 	if direction == 0:
 		return ERR_INVALID_PARAMETER
