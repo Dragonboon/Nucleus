@@ -3,6 +3,7 @@ extends "res://tests/headless/test_case.gd"
 func run() -> Dictionary:
 	_test_geometry()
 	_test_limits()
+	_test_roadbed()
 	_test_surface_and_component()
 	return finish()
 
@@ -88,3 +89,34 @@ func _test_surface_and_component() -> void:
 	binding.clear_generated()
 	expect_true(output.mesh == null, "Clearing removes generated geometry.")
 	free_test_node(root)
+
+func _test_roadbed() -> void:
+	var profile := NucleusSplinePathProfile3D.new()
+	profile.roadbed_enabled = true
+	profile.width = 2.0
+	profile.shoulder_width = 0.5
+	profile.crown_height = 0.18
+	profile.shoulder_drop = 0.08
+	profile.roadbed_thickness = 0.3
+	profile.sample_spacing = 1.0
+	profile.surface_offset = 0.0
+	var result: Dictionary = NucleusSplinePathMeshBuilder3D.build(_line(), profile)
+	expect_equal(result["error"], OK, "Extruded roadbed builds successfully.")
+	if result["error"] != OK:
+		return
+	var mesh: ArrayMesh = result["mesh"]
+	var arrays: Array = mesh.surface_get_arrays(0)
+	var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+	var texcoords: PackedVector2Array = arrays[Mesh.ARRAY_TEX_UV]
+	var faces: PackedInt32Array = arrays[Mesh.ARRAY_INDEX]
+	expect_equal(vertices.size(), int(result["sections"]) * 7,
+		"Seven vertices per roadbed section.")
+	expect_equal(faces.size(), (int(result["sections"]) - 1) * 7 * 6,
+		"Four road lanes and three lower surfaces are indexed.")
+	expect_float(vertices[2].y, 0.18, "Road crown is raised.")
+	expect_float(vertices[0].y, -0.08, "Left shoulder is lowered.")
+	expect_float(vertices[5].y, -0.38, "Roadbed lower skirt has depth.")
+	expect_float(texcoords[vertices.size() - 1].y, 2.5,
+		"Extruded road preserves world-distance UVs.")
+	profile.roadbed_thickness = 0.0
+	expect_false(profile.validate().is_empty(), "Zero thickness is rejected.")
