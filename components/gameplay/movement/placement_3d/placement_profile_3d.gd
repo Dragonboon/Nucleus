@@ -4,6 +4,10 @@ extends Resource
 ## Authored, mechanics-neutral placement constraints for one scene instance.
 ## A profile describes spatial admission, not build costs or player permissions.
 
+## INHERIT uses the session unless an older profile opted into snap_to_grid.
+## ENABLED uses this asset's grid; DISABLED ignores the session grid.
+enum SnapMode { INHERIT, ENABLED, DISABLED }
+
 @export_group("Identity / support")
 @export var kind: StringName = &"object"
 ## Existing placeable kinds this kind may rest on; empty means ground only.
@@ -36,9 +40,14 @@ extends Resource
 @export_range(0.0, 0.25, 0.001) var collision_margin: float = 0.0
 
 @export_group("Position / rotation")
+## Legacy opt-in: retains the behavior of existing .tres profiles.
 @export var snap_to_grid: bool = false
 @export var grid_step: Vector2 = Vector2.ONE
 @export var grid_origin: Vector2 = Vector2.ZERO
+## INHERIT follows session defaults unless legacy snap_to_grid is true.
+@export var snap_mode: SnapMode = SnapMode.INHERIT
+## For INHERIT, use this asset's grid instead of the session's grid.
+@export var use_custom_snap_grid: bool = false
 @export var can_move: bool = true
 @export var can_rotate: bool = true
 @export var can_remove: bool = true
@@ -52,6 +61,38 @@ extends Resource
 ## Control-point limit for curved chains (at least start + end).
 @export_range(2, 32, 1) var chain_max_control_points: int = 12
 @export_range(2, 32, 1) var chain_curve_subdivisions: int = 12
+
+
+## Small, side-effect-free policy resolution. No physics state or transform is changed.
+func resolve_snap(
+	session_enabled: bool = false,
+	session_step: Vector2 = Vector2.ONE,
+	session_origin: Vector2 = Vector2.ZERO,
+) -> Dictionary:
+	var enabled := session_enabled
+	var use_asset_grid := use_custom_snap_grid
+	var source := &"session"
+	match snap_mode:
+		SnapMode.ENABLED:
+			enabled = true
+			use_asset_grid = true
+			source = &"asset"
+		SnapMode.DISABLED:
+			enabled = false
+			source = &"asset_off"
+		_:
+			if snap_to_grid:
+				enabled = true
+				use_asset_grid = true
+				source = &"legacy_asset"
+			elif use_custom_snap_grid:
+				source = &"asset_grid"
+	return {
+		"enabled": enabled,
+		"step": grid_step if use_asset_grid else session_step,
+		"origin": grid_origin if use_asset_grid else session_origin,
+		"source": source,
+	}
 
 
 func validate() -> PackedStringArray:
@@ -77,7 +118,10 @@ func validate() -> PackedStringArray:
 		errors.append("obstacle_mask cannot be zero (placement must fail closed).")
 	if support_half_extents.x < 0.0 or support_half_extents.y < 0.0:
 		errors.append("support_half_extents must be nonnegative.")
-	if snap_to_grid and (grid_step.x <= 0.0 or grid_step.y <= 0.0):
+	if (
+		(snap_mode == SnapMode.ENABLED or use_custom_snap_grid or snap_to_grid)
+		and (grid_step.x <= 0.0 or grid_step.y <= 0.0)
+	):
 		errors.append("Both grid steps must be positive when snapping.")
 	if chain_spacing <= 0.0 or chain_max_count < 1:
 		errors.append("Chain spacing and count must be positive.")

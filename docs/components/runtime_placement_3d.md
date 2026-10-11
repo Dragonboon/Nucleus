@@ -108,6 +108,75 @@ with no active physics collider, admission fails closed even when an analytical
 height source is available. A game can explicitly implement a distinct
 analytical adapter, but must still validate overlap and surface readiness.
 
+## Optional grid snap: session default and per-asset policy
+
+Snap is **world-X/Z quantization**, not a terrain-height snap or a substitute
+for collision checks. After X/Z has been quantized, the native physics solver
+samples support again at the new cell center and the footprint corners. It
+rechecks slope, stacking permission, and clearance; it may therefore reject a
+visually close grid cell rather than moving it onto unsuitable terrain.
+World Y remains dictated by the actual surface plus `surface_offset`.
+
+`NucleusPlacementSession3D` owns only the **default** grid for the active
+placement/edit session:
+
+```gdscript
+@onready var placement: NucleusPlacementSession3D = $PlacementSession
+
+func _ready() -> void:
+    placement.set_snap_defaults(true, Vector2(0.5, 0.5), Vector2.ZERO)
+
+func set_grid_from_ui(enabled: bool) -> void:
+    var error := placement.set_snap_defaults(
+        enabled, placement.snap_grid_step, placement.snap_grid_origin,
+    )
+    if error != OK:
+        push_warning(error_string(error))
+```
+
+`set_snap_defaults(enabled, step, origin)` rejects zero/negative/nonfinite
+steps and origins and returns `ERR_BUSY` while confirmation is already pending.
+When used during a preview it **invalidates and revalidates** the candidate;
+never rely on an earlier green result. All commits still perform a fresh
+bounded physics verification.
+
+Each `NucleusPlacementProfile3D` may override that default with `snap_mode`:
+
+| `snap_mode` | Behavior |
+| --- | --- |
+| `INHERIT` (default) | Follows session default; optionally uses asset's grid when `use_custom_snap_grid` is true |
+| `ENABLED` | Forces snap on, using asset `grid_step` / `grid_origin` |
+| `DISABLED` | Forces snap off even when the session default is enabled |
+
+**Backward compatibility:** pre-existing `.tres` profiles using
+`snap_to_grid = true` still force their authored `grid_step` and `grid_origin`
+when `snap_mode = INHERIT`. `snap_mode = DISABLED` explicitly overrides that
+legacy flag. For new authored profiles prefer `snap_mode` instead of setting
+`snap_to_grid`; the older property remains for unchanged resources.
+
+`grid_step` is a `Vector2` of strictly positive X/Z spacing (world units).
+`grid_origin` is a world-X/Z offset, useful for aligning cells to a foundation's
+corner or architectural grid. It does **not** make two unrelated meshes flush:
+account for their authored pivots, footprint sizes, and intended edge offsets.
+Gizmos, sockets, and rotation-aware edge snapping are separate asset-specific
+mechanisms and are intentionally not invented by this grid contract. Rotation
+remains the explicit `rotation_increment_degrees` input step.
+
+**Stacking:** center and corners must still land on one permitted support.
+The snapped X/Z cell may move off a supporting platform and will then be
+rejected rather than accepting stale cursor-hit metadata.
+
+**Chains:** the default snap applies to each independent segment only when its
+profile inherits it. For continuous fences/curved layouts prefer
+`snap_mode = DISABLED` unless segment spacing, grid and bends are designed to
+quantize together. `chain_max_count` remains independently configurable (the
+example fence is authored as 20, not a fixed Nucleus limit).
+
+**Group edits:** the first selected piece determines the group's effective
+snap policy. Only the shared pivot is quantized, preserving the exact relative
+positions of all members; each member's own grid is not independently imposed.
+Existing support-stack/group safety restrictions still apply.
+
 ## Mutually authorized stacks
 
 A shelf placed on a foundation requires both:

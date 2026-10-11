@@ -10,6 +10,8 @@ func run() -> Dictionary:
 	_test_curved_chain_layout()
 	_test_curve_self_overlap()
 	_test_group_edit_cancel()
+	_test_snap_resolution()
+	_test_snap_horizontal()
 	return finish()
 
 
@@ -211,6 +213,16 @@ func _test_group_edit_cancel() -> void:
 		"Configured multiple components share one edit session.")
 	expect_equal(session.mode, NucleusPlacementSession3D.Mode.EDIT_GROUP,
 		"Group edit mode is explicit.")
+	expect_equal(session.set_snap_defaults(true, Vector2.ONE), OK,
+		"Editing may enable session snap without restarting group selection.")
+	var entries := session._layout_entries({"position": Vector3(1.3, 1.0, 4.8)})
+	expect_equal(entries.size(), 2, "Snapped group retains both pieces.")
+	var first_position: Vector3 = entries[0]["position"]
+	var second_position: Vector3 = entries[1]["position"]
+	expect_float(second_position.x - first_position.x, 3.0,
+		"Group snapping preserves relative horizontal spacing.")
+	expect_float(second_position.z - first_position.z, 0.0,
+		"Group snapping does not destroy the original row layout.")
 	for i: int in range(2):
 		expect_equal(colliders[i].collision_layer, 0,
 			"All group colliders are temporarily excluded from physics.")
@@ -224,3 +236,54 @@ func _test_group_edit_cancel() -> void:
 	expect_equal(session.mode, NucleusPlacementSession3D.Mode.IDLE,
 		"Cancel leaves the editor idle.")
 	free_test_node(world)
+
+
+func _test_snap_resolution() -> void:
+	var p := _profile()
+	var inherited := p.resolve_snap(true, Vector2(0.5, 2.0), Vector2(0.25, -1.0))
+	expect_true(inherited["enabled"], "Default session snap reaches inheriting assets.")
+	expect_equal(inherited["step"], Vector2(0.5, 2.0), "Inherited steps match session.")
+	expect_equal(inherited["origin"], Vector2(0.25, -1.0), "Origin is world anchored.")
+	p.snap_mode = NucleusPlacementProfile3D.SnapMode.DISABLED
+	expect_false(p.resolve_snap(true)["enabled"], "Asset can force snap off.")
+	p.snap_mode = NucleusPlacementProfile3D.SnapMode.ENABLED
+	p.grid_step = Vector2(0.5, 0.5)
+	expect_true(p.resolve_snap(false)["enabled"], "Asset can force snap on.")
+	expect_equal(p.resolve_snap(false)["step"], Vector2(0.5, 0.5),
+		"Explicit asset grid has precedence over session.")
+	p.snap_mode = NucleusPlacementProfile3D.SnapMode.INHERIT
+	p.snap_to_grid = true
+	expect_true(p.resolve_snap(false)["enabled"], "Legacy snap_to_grid stays effective.")
+	p.snap_to_grid = false
+	p.use_custom_snap_grid = true
+	expect_false(p.resolve_snap(false)["enabled"],
+		"Custom grid alone does not force the default session mode on.")
+	expect_equal(p.resolve_snap(true, Vector2(3.0, 3.0))["step"],
+		Vector2(0.5, 0.5), "Inheriting asset may customize the active grid.")
+	var session := NucleusPlacementSession3D.new()
+	expect_equal(session.set_snap_defaults(true, Vector2(0.5, 1.0)), OK,
+		"Live session accepts positive, finite grid steps.")
+	expect_true(session.get_snap_settings(p)["enabled"],
+		"Session resolves the authored asset without replacing the profile.")
+	expect_equal(session.set_snap_defaults(true, Vector2.ZERO), ERR_INVALID_PARAMETER,
+		"Session refuses a zero grid step.")
+	expect_true(session.snap_enabled_by_default,
+		"Invalid configuration cannot mutate the active default.")
+	session.free()
+
+
+func _test_snap_horizontal() -> void:
+	var point := Vector3(-2.27, 4.25, 3.61)
+	var result := NucleusPlacementSolver3D.snap_horizontal(
+		point, Vector2(0.5, 2.0), Vector2(0.25, -1.0),
+	)
+	expect_float(result.x, -2.25, "Snap supports negative world coordinates.")
+	expect_float(result.z, 3.0, "Snap uses an authored offset origin.")
+	expect_float(result.y, point.y, "Snap never quantizes terrain/stack height.")
+	expect_equal(NucleusPlacementSolver3D.snap_horizontal(
+		point, Vector2.ZERO, Vector2.ZERO,
+	), point, "Invalid grid cannot produce a misleading snapped position.")
+	expect_true(NucleusPlacementSolver3D.valid_grid(Vector2.ONE, Vector2.ZERO),
+		"A finite, positive grid is usable.")
+	expect_false(NucleusPlacementSolver3D.valid_grid(Vector2(INF, 1), Vector2.ZERO),
+		"Nonfinite steps must be rejected.")

@@ -14,6 +14,7 @@ const NAMES: Array[String] = ["Casa", "Valla", "Columna", "Plataforma", "Caja"]
 const REASONS := {
 	&"no_surface": "No hay una superficie de apoyo.",
 	&"invalid_profile": "El perfil del objeto no es valido.",
+	&"invalid_snap": "La cuadricula del snap no es valida.",
 	&"forbidden_support": "Este objeto no puede apoyarse aqui.",
 	&"surface_tags": "La superficie no tiene las etiquetas necesarias.",
 	&"steep_surface": "La pendiente supera el limite del objeto.",
@@ -47,6 +48,9 @@ var _chain_waiting_for_anchor: PackedScene
 var _placed: Array[Node3D] = []
 var _status_label: Label
 var _mode_label: Label
+var _snap_label: Label
+var _snap_toggle: CheckButton
+var _snap_steps: OptionButton
 var _selection_label: Label
 var _info_label: Label
 var _toast_label: Label
@@ -74,6 +78,7 @@ func _ready() -> void:
 	_session.pending_preview_material = _ghost_material(Color(1.0, 0.73, 0.25, 0.45))
 	_session.max_checks_per_tick = 3
 	_session.preview_interval_ms = 65
+	_session.set_snap_defaults(false, Vector2.ONE)
 	_session.preview_updated.connect(_on_preview_updated)
 	_session.placement_confirmed.connect(_on_placement_confirmed)
 	_session.placement_cancelled.connect(_on_placement_cancelled)
@@ -198,6 +203,8 @@ func _unhandled_input(event: InputEvent) -> void:
 				_rotate(1)
 			KEY_E:
 				_edit_selection()
+			KEY_G:
+				_toggle_default_snap()
 			KEY_DELETE:
 				_remove_selection()
 			KEY_ESCAPE:
@@ -267,6 +274,46 @@ func _world_click(screen_position: Vector2, additive: bool = false) -> void:
 		_toggle_selected(picked)
 	else:
 		_set_selected(picked)
+
+
+## Only changes the session default. Profiles may override it independently.
+func _toggle_default_snap() -> void:
+	if _session == null:
+		return
+	var next := not _session.snap_enabled_by_default
+	var error := _session.set_snap_defaults(
+		next, _session.snap_grid_step, _session.snap_grid_origin,
+	)
+	if error != OK:
+		if _snap_toggle != null:
+			_snap_toggle.set_pressed_no_signal(_session.snap_enabled_by_default)
+		_set_toast("Snap ocupado o configuración no válida: " + error_string(error))
+		return
+	if _snap_toggle != null:
+		_snap_toggle.set_pressed_no_signal(next)
+	_set_toast("Snap global %s. Los perfiles pueden forzar su propio ajuste." % (
+		"activado" if next else "desactivado"
+	))
+	_update_panels()
+
+
+func _set_snap_step(index: int) -> void:
+	if _session == null:
+		return
+	var choices := [0.5, 1.0, 2.0]
+	if index < 0 or index >= choices.size():
+		return
+	var step: float = choices[index]
+	var error := _session.set_snap_defaults(
+		_session.snap_enabled_by_default, Vector2(step, step),
+		_session.snap_grid_origin,
+	)
+	if error != OK:
+		if _snap_steps != null:
+			_snap_steps.select(choices.find(_session.snap_grid_step.x))
+		_set_toast("No se pudo cambiar el paso: " + error_string(error))
+		return
+	_update_panels()
 
 
 func _select_asset(index: int) -> void:
@@ -585,6 +632,20 @@ func _update_panels() -> void:
 			NucleusPlacementSession3D.Mode.EDIT_GROUP:
 				active = "Editar grupo"
 	_mode_label.text = "MODO  /  " + active
+	if _snap_label != null and _session != null:
+		var effective := _session.get_snap_settings()
+		if _session.mode == NucleusPlacementSession3D.Mode.IDLE:
+			if _selected != null and is_instance_valid(_selected):
+				effective = _session.get_snap_settings(_selected.profile)
+		var active_snap: bool = bool(effective.get("enabled", false))
+		var grid: Vector2 = effective.get("step", Vector2.ONE)
+		var source := str(effective.get("source", &"session"))
+		var author := "asset" if source in ["asset", "asset_off", "legacy_asset"] else (
+			"rejilla de asset" if source == "asset_grid" else "sesion"
+		)
+		_snap_label.text = "SNAP EFECTIVO: %s  |  X/Z %.2f / %.2f  |  %s" % [
+			"ON" if active_snap else "OFF", grid.x, grid.y, author,
+		]
 	var selected_name := "Ninguna"
 	if _selected != null and is_instance_valid(_selected):
 		selected_name = str(_selected.profile.kind).capitalize()
@@ -783,6 +844,7 @@ func _build_ui() -> void:
 		+ "Ctrl+clic: sumar/quitar seleccion\n"
 		+ "Mayus+arrastrar: seleccionar por marco\n"
 		+ "Curva: clic=vertice, Retroceso=deshacer, Enter=fin\n"
+		+ "G: snap global (perfiles pueden sobrescribirlo)\n"
 		+ "H/J/K: pendientes / plano",
 		12, Color(0.69, 0.81, 0.89),
 	)
@@ -793,7 +855,7 @@ func _build_ui() -> void:
 	right.offset_left = -388.0
 	right.offset_top = 15.0
 	right.offset_right = -16.0
-	right.offset_bottom = 160.0
+	right.offset_bottom = 278.0
 	root.add_child(right)
 	var right_stack := VBoxContainer.new()
 	right_stack.add_theme_constant_override("separation", 7)
@@ -803,6 +865,25 @@ func _build_ui() -> void:
 	_status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_info_label = _add_label(right_stack, "Colocados: 0", 12, Color(0.69, 0.82, 0.92))
 	_info_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	var snap_heading := _add_label(
+		right_stack, "AJUSTE DE CUADRICULA", 12, Color(0.42, 0.92, 0.78),
+	)
+	snap_heading.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_snap_toggle = CheckButton.new()
+	_snap_toggle.name = "SnapGlobal"
+	_snap_toggle.text = "G  Activar snap global"
+	right_stack.add_child(_snap_toggle)
+	_snap_toggle.toggled.connect(func(_pressed: bool) -> void: _toggle_default_snap())
+	_snap_steps = OptionButton.new()
+	_snap_steps.name = "SnapStep"
+	_snap_steps.add_item("Paso global: 0,5 m")
+	_snap_steps.add_item("Paso global: 1 m")
+	_snap_steps.add_item("Paso global: 2 m")
+	_snap_steps.select(1)
+	_snap_steps.item_selected.connect(_set_snap_step)
+	right_stack.add_child(_snap_steps)
+	_snap_label = _add_label(right_stack, "SNAP EFECTIVO: OFF", 11, Color(0.81, 0.89, 0.96))
+	_snap_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
 	var footer := _panel()
 	footer.anchor_left = 0.0

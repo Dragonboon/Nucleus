@@ -27,6 +27,12 @@ enum Mode { IDLE, SINGLE, CHAIN, EDIT, PATH, EDIT_GROUP }
 @export_range(0.0, 1.0, 0.01) var cursor_tolerance: float = 0.04
 @export_range(1, 128, 1) var max_group_count: int = 32
 
+@export_group("Default snap")
+## Applied only when the asset inherits snapping. The asset can force ON/OFF.
+@export var snap_enabled_by_default: bool = false
+@export var snap_grid_step: Vector2 = Vector2.ONE
+@export var snap_grid_origin: Vector2 = Vector2.ZERO
+
 ## Game policy: (Array[Transform3D], Array[NucleusPlaceable3D]) -> Error.
 var admission: Callable
 var mode: Mode = Mode.IDLE
@@ -69,6 +75,38 @@ func _physics_process(_delta: float) -> void:
 		update_from_screen(get_viewport().get_mouse_position())
 	elif _validation_pending:
 		_pump_validation()
+
+
+## Changes the session default; active previews revalidate without a stale green state.
+func set_snap_defaults(
+	enabled: bool,
+	step: Vector2 = Vector2.ONE,
+	origin: Vector2 = Vector2.ZERO,
+) -> Error:
+	if not NucleusPlacementSolver3D.valid_grid(step, origin):
+		return ERR_INVALID_PARAMETER
+	if _confirm_pending:
+		return ERR_BUSY
+	snap_enabled_by_default = enabled
+	snap_grid_step = step
+	snap_grid_origin = origin
+	if mode != Mode.IDLE:
+		_refresh_from_current_hit()
+	return OK
+
+
+func get_snap_settings(profile: NucleusPlacementProfile3D = null) -> Dictionary:
+	var target := profile
+	if target == null and not _placeables.is_empty():
+		target = _placeables[0].profile
+	if target == null:
+		return {
+			"enabled": snap_enabled_by_default,
+			"step": snap_grid_step,
+			"origin": snap_grid_origin,
+			"source": &"session",
+		}
+	return target.resolve_snap(snap_enabled_by_default, snap_grid_step, snap_grid_origin)
 
 
 func begin_new(scene: PackedScene) -> Error:
@@ -397,6 +435,11 @@ func _layout_entries(hit: Dictionary) -> Array[Dictionary]:
 		var rotation := Basis(Vector3.UP, _yaw - _initial_heading)
 		var first_origin := _previous_transforms[0].origin
 		var destination_pivot := point + (_group_pivot - first_origin)
+		var snap := get_snap_settings(profile)
+		if bool(snap.get("enabled", false)):
+			destination_pivot = NucleusPlacementSolver3D.snap_horizontal(
+				destination_pivot, snap["step"], snap["origin"],
+			)
 		for index: int in range(_previous_transforms.size()):
 			var previous: Transform3D = _previous_transforms[index]
 			result.append({
@@ -431,19 +474,24 @@ func _pump_validation(limit: int = -1) -> void:
 		var entry: Dictionary = _pending_entries[_pending_index]
 		var placeable: NucleusPlaceable3D = _placeables[_pending_index]
 		var profile: NucleusPlacementProfile3D = placeable.profile
+		var snap := get_snap_settings(profile)
+		if mode == Mode.EDIT_GROUP or (mode == Mode.EDIT and not profile.can_move):
+			# Group positions already share one quantized pivot, retaining offsets.
+			# Rotation-only editing must not translate an existing object.
+			snap = {"enabled": false}
 		var result: Dictionary
 		if mode == Mode.SINGLE or mode == Mode.EDIT:
 			if mode == Mode.EDIT and not profile.can_move:
 				result = NucleusPlacementSolver3D.evaluate_at(
-					space, profile, entry["position"], entry["yaw"], exclusions,
+					space, profile, entry["position"], entry["yaw"], exclusions, snap,
 				)
 			else:
 				result = NucleusPlacementSolver3D.evaluate_hit(
-					space, profile, _candidate_hit, entry["yaw"], exclusions,
+					space, profile, _candidate_hit, entry["yaw"], exclusions, snap,
 				)
 		else:
 			result = NucleusPlacementSolver3D.evaluate_at(
-				space, profile, entry["position"], entry["yaw"], exclusions,
+				space, profile, entry["position"], entry["yaw"], exclusions, snap,
 			)
 		work += 1
 		if not bool(result.get("valid", false)):

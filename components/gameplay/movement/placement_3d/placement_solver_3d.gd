@@ -10,16 +10,42 @@ static func evaluate_hit(
 	hit: Dictionary,
 	yaw: float = 0.0,
 	exclude: Array[RID] = [],
+	snap_settings: Dictionary = {},
 ) -> Dictionary:
 	if space == null or profile == null or not profile.validate().is_empty():
 		return _reject(&"invalid_profile")
 	if hit.is_empty() or not hit.get("collider") is CollisionObject3D:
 		return _reject(&"no_surface")
-	var normal: Vector3 = hit.get("normal", Vector3.ZERO)
 	var point: Vector3 = hit.get("position", Vector3.INF)
-	if not _finite(point) or not _valid_normal(normal):
+	if not _finite(point):
 		return _reject(&"no_surface")
+	var snap := snap_settings if not snap_settings.is_empty() else profile.resolve_snap()
+	var pos: Vector3 = point
+	if bool(snap.get("enabled", false)):
+		var step: Vector2 = snap.get("step", Vector2.ZERO)
+		var origin: Vector2 = snap.get("origin", Vector2.ZERO)
+		if not valid_grid(step, origin):
+			return _reject(&"invalid_snap")
+		pos = snap_horizontal(pos, step, origin)
+		if Vector2(pos.x - point.x, pos.z - point.z).length_squared() > 0.000001:
+			# Snap may switch support (ground vs platform). Recast BEFORE policy checks.
+			var ray := PhysicsRayQueryParameters3D.create(
+				pos + Vector3.UP * profile.support_cast_above,
+				pos - Vector3.UP * profile.support_cast_below,
+				profile.support_mask, exclude,
+			)
+			ray.collide_with_areas = false
+			hit = space.intersect_ray(ray)
+			if hit.is_empty():
+				return _reject(&"no_surface")
+			point = hit.get("position", Vector3.INF)
+			if not _finite(point):
+				return _reject(&"no_surface")
+			pos = point
 
+	var normal: Vector3 = hit.get("normal", Vector3.ZERO)
+	if not _valid_normal(normal):
+		return _reject(&"no_surface")
 	var collider: Object = hit["collider"]
 	if not _allowed_support(profile, collider):
 		return _reject(&"forbidden_support")
@@ -27,11 +53,6 @@ static func evaluate_hit(
 		return _reject(&"surface_tags")
 	if _slope_degrees(normal) > profile.max_slope_degrees:
 		return _reject(&"steep_surface")
-
-	var pos: Vector3 = point
-	if profile.snap_to_grid:
-		pos.x = snappedf(pos.x - profile.grid_origin.x, profile.grid_step.x) + profile.grid_origin.x
-		pos.z = snappedf(pos.z - profile.grid_origin.y, profile.grid_step.y) + profile.grid_origin.y
 
 	var flat_basis := Basis(Vector3.UP, yaw)
 	var offsets: Array[Vector3] = [Vector3.ZERO]
@@ -138,16 +159,44 @@ static func evaluate_at(
 	position: Vector3,
 	yaw: float = 0.0,
 	exclude: Array[RID] = [],
+	snap_settings: Dictionary = {},
 ) -> Dictionary:
-	if space == null or profile == null:
+	if space == null or profile == null or not _finite(position):
 		return _reject(&"invalid_profile")
+	var snap := snap_settings if not snap_settings.is_empty() else profile.resolve_snap()
+	if bool(snap.get("enabled", false)):
+		var step: Vector2 = snap.get("step", Vector2.ZERO)
+		var origin: Vector2 = snap.get("origin", Vector2.ZERO)
+		if not valid_grid(step, origin):
+			return _reject(&"invalid_snap")
+		position = snap_horizontal(position, step, origin)
 	var query := PhysicsRayQueryParameters3D.create(
 		position + Vector3.UP * profile.support_cast_above,
 		position - Vector3.UP * profile.support_cast_below,
 		profile.support_mask,
 		exclude,
 	)
-	return evaluate_hit(space, profile, space.intersect_ray(query), yaw, exclude)
+	query.collide_with_areas = false
+	return evaluate_hit(space, profile, space.intersect_ray(query), yaw, exclude, snap)
+
+
+## Grid quantization is world-X/Z only; Y always comes from actual support.
+static func snap_horizontal(position: Vector3, step: Vector2, origin: Vector2) -> Vector3:
+	if not _finite(position) or not valid_grid(step, origin):
+		return position
+	return Vector3(
+		snappedf(position.x - origin.x, step.x) + origin.x,
+		position.y,
+		snappedf(position.z - origin.y, step.y) + origin.y,
+	)
+
+
+static func valid_grid(step: Vector2, origin: Vector2) -> bool:
+	return (
+		is_finite(step.x) and is_finite(step.y)
+		and is_finite(origin.x) and is_finite(origin.y)
+		and step.x > 0.0 and step.y > 0.0
+	)
 
 
 static func _allowed_support(profile: NucleusPlacementProfile3D, collider: Object) -> bool:

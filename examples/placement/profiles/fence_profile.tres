@@ -18,6 +18,7 @@ clearance_shape = SubResource("Clearance")
 clearance_offset = Vector3(0, 0.82, 0)
 obstacle_mask = 6
 rotation_increment_degrees = 15
+snap_mode = 2
 allow_chains = true
 chain_spacing = 2
 chain_max_count = 20

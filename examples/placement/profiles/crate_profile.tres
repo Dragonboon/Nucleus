@@ -20,4 +20,7 @@ clearance_shape = SubResource("Clearance")
 clearance_offset = Vector3(0, 0.49, 0)
 obstacle_mask = 6
 rotation_increment_degrees = 15
+snap_mode = 1
+use_custom_snap_grid = true
+grid_step = Vector2(1, 1)
 allow_chains = false

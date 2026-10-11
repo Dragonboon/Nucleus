@@ -75,6 +75,15 @@ func _run() -> void:
 	) as NucleusPlacementProfile3D
 	_check(fence_profile != null and fence_profile.allow_chains,
 		"Fence explicitly supports chains")
+	_check(fence_profile != null and fence_profile.chain_max_count == 20,
+		"Lab fence maximum is authored per asset and editable in Inspector")
+	_check(fence_profile != null and not fence_profile.resolve_snap(true)["enabled"],
+		"Fence opts out of global snap to preserve smooth curved chains")
+	var crate_profile := load(
+		"res://examples/placement/profiles/crate_profile.tres"
+	) as NucleusPlacementProfile3D
+	_check(crate_profile != null and crate_profile.resolve_snap(false)["enabled"],
+		"Crates explicitly snap on their own grid")
 	var layout: Array[Vector3] = NucleusPlacementChain3D.points(
 		Vector3.ZERO, Vector3(0, 0, -4.1), 2.0, 20,
 	)
@@ -85,6 +94,14 @@ func _run() -> void:
 	_check(bend.size() >= 4, "Curved chain samples multiple independently editable segments")
 	_check(session != null and session.max_checks_per_tick == 3,
 		"Live preview enforces a per-frame validation budget")
+	_check(session != null and not session.snap_enabled_by_default,
+		"Snap is opt-in for inheriting placeables")
+	var canvas := lab.get_node_or_null("Interfaz del laboratorio")
+	_check(canvas != null, "Interactive lab owns one UI canvas")
+	_check(canvas != null and canvas.find_child("SnapGlobal", true, false) != null,
+		"Lab exposes its session snap toggle")
+	_check(canvas != null and canvas.find_child("SnapStep", true, false) != null,
+		"Lab exposes a choice of grid cell sizes")
 	var platform_profile := load(
 		"res://examples/placement/profiles/platform_profile.tres"
 	) as NucleusPlacementProfile3D

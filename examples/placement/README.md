@@ -18,6 +18,7 @@ framework. Todos los objetos son `PackedScene` con primitivas de Godot y perfile
 | `Ctrl+A` | Seleccionar todo lo colocado |
 | `E` | Mover los objetos seleccionados (si el perfil lo permite) |
 | `Q` / `R` | Rotar las previsualizaciones o todo el grupo |
+| `G` | Alternar el snap global de la sesion (no fuerza los assets) |
 | `Supr` | Eliminar la seleccion (comprobacion de permisos previa) |
 | `Esc` | Cancelar previsualizacion / restaurar transformaciones originales |
 | Ratón derecho / rueda / central / WASD | Orbitar / zoom / paneo / mover camara |
@@ -47,6 +48,36 @@ ni la escena principal. Puedes ejecutar este laboratorio independientemente.
 
 Los botones controlan las mismas operaciones que el teclado. El HUD informa del
 modo, si el cursor permite colocar y por que se rechaza un candidato.
+
+## Snap configurable (nuevo)
+
+La interfaz derecha ofrece **G / Activar snap global** y un selector de pasos
+`0,5 m`, `1 m` o `2 m`. El indicador **SNAP EFECTIVO** muestra el resultado
+final y si proviene de la sesion o del perfil de asset. Se puede cambiar
+mientras una pieza se previsualiza; al hacerlo se revalida la posicion.
+
+El ajuste global es un **valor por defecto**, no una imposicion universal:
+
+- **Caja**: snap siempre activo de **1 m**, incluso con G apagado; util para
+  construir filas y apilar cajas con pivotes alineados.
+- **Casa**: conserva su snap antiguo de **1 m**, ya existente en el perfil.
+- **Plataforma**: conserva el snap antiguo de **0,5 m**.
+- **Columna**: hereda la opcion G y el paso global para comparar colocacion libre
+  frente a colocacion organizada.
+- **Valla**: fuerza snap desactivado; las cadenas rectas y curvas no pierden
+  continuidad por redondear cada tramo a una celda distinta.
+
+Para cambiar un asset, abre por ejemplo
+`res://examples/placement/profiles/crate_profile.tres` en el Inspector y
+modifica `snap_mode` (`INHERIT` / `ENABLED` / `DISABLED`), `grid_step` y
+`grid_origin`. Los perfiles anteriores con `snap_to_grid = true` siguen siendo
+compatibles. El grid afecta **X/Z**, la altura Y sigue el terreno o la plataforma
+real, y la validacion sigue rechazando pendientes y solapes.
+
+El limite de la cadena de la valla es **`chain_max_count = 20` en el perfil**
+`fence_profile.tres`; puedes aumentar ese valor (hasta 256 desde Inspector),
+pero el coste de validar y materializar todos los tramos aumenta. No es un
+limite fijo de la herramienta de curvas.
 
 ## Cinco tipos de prueba
 
