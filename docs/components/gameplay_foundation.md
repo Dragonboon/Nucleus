@@ -63,6 +63,40 @@ explicit action requirements/effects.
 Animation consumes state through AnimationTree adapters; the FSM does not own
 animation playback.
 
+### Optional buffered transitions
+
+The default `change_state(id, context)` retains immediate-only semantics:
+a denied exit returns `ERR_UNAVAILABLE`, and a reentrant transition returns
+`ERR_BUSY`. This is important for transactional action effects and AI.
+
+To defer requests, assign a `NucleusStateTransitionPolicy` Resource to
+`transition_policy` and call `request_state(id, context)` instead.
+Accepted requests return `OK` even while queued: this is **acceptance, not
+completion**. The optional policy controls queue capacity (1-16), rejection
+or replacement of the newest item when full, and optional expiration.
+`transition_queued` and `transition_request_discarded` report outcomes;
+`state_changed` reports the actual committed transition.
+
+At most one pending request is attempted per physics tick. Use
+`process_pending_request()` for explicit processing after unlocking a
+state. The head of the queue blocks later requests until it can exit;
+requests for invalid destinations or expired requests are discarded.
+Disabling the machine, leaving the scene, manually transitioning, or
+restoring state clears queued requests. Contexts are copied defensively.
+
+`restart_state(context)` deliberately performs exit/enter of the active
+state without pushing a duplicate history entry. Ordinary same-state
+`change_state()` remains a no-op.
+
+An optional `actor` reference defaults to the machine's parent and is
+accessible to state scripts through `get_actor()`. Actor logic and
+movement remain game-owned. No new autoloads are required.
+
+`restore_state()` now commits saved history only after a successful
+transition, preventing partially applied saves when state guards reject a
+restore. Pending requests are deliberately transient and are not persisted.
+
+
 ## Editor validation
 
 `NucleusRegenerator` exposes editor configuration warnings so missing ValuePool
