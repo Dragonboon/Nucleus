@@ -39,6 +39,7 @@ static func build(
 	var previous_center := Vector3.ZERO
 	var traveled: float = 0.0
 	var last_heading := Vector3.ZERO
+	var stride: int = 7 if profile.roadbed_enabled else 2
 	for i in range(segments + 1):
 		var offset: float = length * float(i) / float(segments)
 		var center: Vector3 = curve_to_world * curve.sample_baked(offset, true)
@@ -78,17 +79,61 @@ static func build(
 				return _fail(ERR_INVALID_DATA)
 			traveled += advance
 		previous_center = middle
-		positions.append(mesh_from_world * left)
-		positions.append(mesh_from_world * right)
 		var v: float = traveled / profile.uv_repeat_meters
-		uvs.append(Vector2(0.0, v))
-		uvs.append(Vector2(1.0, v))
-		if i > 0:
-			var a: int = 2 * (i - 1)
-			var b: int = a + 1
-			var c: int = 2 * i
-			var d: int = c + 1
-			indices.append_array(PackedInt32Array([a, b, c, b, d, c]))
+		if profile.roadbed_enabled:
+			var shoulder: float = profile.shoulder_width
+			var full_half: float = half_width + shoulder
+			var center_height: float = (left.y + right.y) * 0.5
+			var outer_left: Vector3 = center - across * full_half
+			var outer_right: Vector3 = center + across * full_half
+			if surface_sampler != null:
+				var hit_left: NucleusSurfaceSample3D = surface_sampler.sample(outer_left)
+				var hit_right: NucleusSurfaceSample3D = surface_sampler.sample(outer_right)
+				if hit_left == null or hit_right == null:
+					return _fail(ERR_UNAVAILABLE)
+				outer_left.y = hit_left.position.y + profile.surface_offset
+				outer_right.y = hit_right.position.y + profile.surface_offset
+			else:
+				outer_left.y = center_height
+				outer_right.y = center_height
+			outer_left.y -= profile.shoulder_drop
+			outer_right.y -= profile.shoulder_drop
+			var crown: Vector3 = center
+			crown.y = center_height + profile.crown_height
+			var lower_left: Vector3 = outer_left - Vector3.UP * profile.roadbed_thickness
+			var lower_right: Vector3 = outer_right - Vector3.UP * profile.roadbed_thickness
+			var section: Array[Vector3] = [
+				outer_left, left, crown, right, outer_right,
+				lower_left, lower_right,
+			]
+			for j in range(section.size()):
+				if not section[j].is_finite():
+					return _fail(ERR_INVALID_DATA)
+				positions.append(mesh_from_world * section[j])
+				var u: float = [
+					0.0, shoulder / (full_half * 2.0),
+					0.5, 1.0 - shoulder / (full_half * 2.0), 1.0,
+					0.0, 1.0,
+				][j]
+				uvs.append(Vector2(u, v))
+			if i > 0:
+				var prev: int = (i - 1) * stride
+				var next: int = i * stride
+				for lane in range(4):
+					_append_quad(indices, prev + lane, prev + lane + 1,
+						next + lane, next + lane + 1)
+				_append_quad(indices, prev + 5, prev, next + 5, next)
+				_append_quad(indices, prev + 4, prev + 6, next + 4, next + 6)
+				_append_quad(indices, prev + 6, prev + 5, next + 6, next + 5)
+		else:
+			positions.append(mesh_from_world * left)
+			positions.append(mesh_from_world * right)
+			uvs.append(Vector2(0.0, v))
+			uvs.append(Vector2(1.0, v))
+			if i > 0:
+				var previous: int = 2 * (i - 1)
+				var current: int = 2 * i
+				_append_quad(indices, previous, previous + 1, current, current + 1)
 
 	var normals := PackedVector3Array()
 	normals.resize(positions.size())
@@ -123,6 +168,16 @@ static func build(
 		"sections": segments + 1,
 		"length": traveled,
 	}
+
+
+static func _append_quad(
+	indices: PackedInt32Array,
+	a: int,
+	b: int,
+	c: int,
+	d: int,
+) -> void:
+	indices.append_array(PackedInt32Array([a, b, c, b, d, c]))
 
 
 static func _fail(error: Error) -> Dictionary:
