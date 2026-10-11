@@ -3,6 +3,8 @@ extends SceneTree
 ## Checks composition and lifetime, not render appearance or every physics contact.
 
 const LAB_PATH := "res://examples/placement/placement_lab.tscn"
+const HOUSE_FLAT := "res://examples/placement/assets/house_flat.tscn"
+const HOUSE_HIP := "res://examples/placement/assets/house_hip.tscn"
 const WORLD_DOCUMENT = preload("res://examples/placement/placement_world_document.gd")
 const ASSET_PATHS: Array[String] = [
 	"res://examples/placement/assets/house.tscn",
@@ -38,6 +40,15 @@ func _run() -> void:
 				"Native collider: " + asset_path)
 		root_node.free()
 
+	for variant_path: String in [HOUSE_FLAT, HOUSE_HIP]:
+		var variant_scene := load(variant_path) as PackedScene
+		_check(variant_scene != null, "Roof variant scene loads: " + variant_path)
+		if variant_scene != null:
+			var variant_root := variant_scene.instantiate()
+			var meta := NucleusPlaceable3D.find_in(variant_root)
+			_check(meta != null and meta.profile != null,
+				"Roof variant has a placement profile: " + variant_path)
+			variant_root.free()
 	var resource: Resource = load(LAB_PATH)
 	_check(resource is PackedScene, "Placement lab scene loads")
 	if not resource is PackedScene:
@@ -46,6 +57,8 @@ func _run() -> void:
 	var lab := (resource as PackedScene).instantiate() as Node3D
 	root.add_child(lab)
 	await physics_frame
+	_check(lab.find_child("FreeRotationToggle", true, false) != null,
+		"Lab exposes a free-versus-stepped rotation mode.")
 	var world := lab.get_node_or_null("World") as Node3D
 	var session := lab.get_node_or_null("RuntimePlacementSession") as NucleusPlacementSession3D
 	_check(world != null, "Lab owns one World node")
@@ -274,6 +287,25 @@ func _test_authored_world_document(lab: Node3D) -> void:
 		"transform": WORLD_DOCUMENT.encode_transform(transform),
 	}
 	var document := {"schema_version": 1, "objects": [piece]}
+	var catalog_with_roofs := catalog.duplicate()
+	catalog_with_roofs["house:roof_gable"] = load(ASSET_PATHS[0])
+	catalog_with_roofs["house:roof_flat"] = load(HOUSE_FLAT)
+	catalog_with_roofs["house:roof_hip"] = load(HOUSE_HIP)
+	var roof_document := {"schema_version": 1, "objects": [{
+		"id": "p_30", "kind": "house", "variant": "roof_flat",
+		"transform": WORLD_DOCUMENT.encode_transform(transform),
+	}]}
+	_check(WORLD_DOCUMENT.validate(roof_document, catalog_with_roofs)["error"] == OK,
+		"Variant saves accept catalog allowlisted asset IDs.")
+	var roof_candidate := roof_document.duplicate(true)
+	roof_candidate["objects"][0]["variant"] = "roof_untrusted"
+	_check(WORLD_DOCUMENT.validate(roof_candidate, catalog_with_roofs)["error"] != OK,
+		"Unknown variant IDs cannot inject arbitrary scenes.")
+	_check(lab.call("_restore_document", roof_document) == OK,
+		"Lab can restore a roof variant.")
+	var roof_restored: Dictionary = lab.call("_capture_document")
+	_check(roof_restored["objects"][0].get("variant", "") == "roof_flat",
+		"Roof identity survives serialization.")
 	_check(WORLD_DOCUMENT.validate(document, catalog)["error"] == OK,
 		"Versioned world document accepts a whitelisted placeable")
 	var from_json: Variant = JSON.parse_string(JSON.stringify(document))
