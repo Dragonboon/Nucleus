@@ -67,3 +67,19 @@ Both are registered in `tests/headless/test_manifest.gd`.
 Run the pinned engine with `godot --headless --path . --import` followed by `godot --headless --path . res://tests/headless/test_runner.tscn`.
 
 These tests do **not** establish a live multi-process dedicated server or prove collision determinism. Before release, also exercise ENet sockets, lost packets, reconnection, mixed 2D/3D actors and scene-lifetime teardown in an actual consuming game.
+
+## Optional localhost packet impairment
+
+The standard-library-only tool `tools/networking/udp_impairment_proxy.py` delays,
+jitters and drops real UDP datagrams in both directions for one local client.
+Run a game server on `127.0.0.1:42069`, then:
+
+```bash
+python3 tools/networking/udp_impairment_proxy.py --listen 42070 --target 42069 --delay 100 --jitter 25 --loss 5
+```
+
+Connect one client to `127.0.0.1:42070`. Each additional test client needs a
+separate proxy listener. This tool is for development testing on loopback;
+it is not an Internet relay, NAT traversal mechanism, or rate-limit defense.
+Its design was informed by the MIT-licensed
+[CodingQuests godot-multiplayer-starter](https://github.com/CodingQuests/godot-multiplayer-starter).
