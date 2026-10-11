@@ -163,6 +163,7 @@ func shared_corner_count() -> int:
 	var total: int = 0
 	for key: Vector3i in _corners:
 		var group: Array = _corners[key]
+		@warning_ignore("integer_division")
 		total += group.size() * (group.size() - 1) / 2
 	return total
 
