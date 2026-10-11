@@ -148,6 +148,20 @@ transport.
 
 Use it for "Find LAN games", not as identity or authentication.
 
+## Optional client prediction and world readiness
+
+For locally controlled actors, `NucleusNetworkInputBuffer` and
+`NucleusNetworkReconciler2D/3D` support bounded command replay after a
+server-confirmed input sequence. They are side-effect-free helpers and do
+not move actors or replace `NucleusNetworkIntentChannel`.
+
+`NucleusNetworkWorldReadiness` provides an opt-in, scene-owned gate for
+replication visibility until an authenticated peer acknowledges that its
+world paths are ready. It does not perform authentication or spawn actors.
+
+See [Network prediction and readiness](network_prediction.md) for contracts,
+limitations and test instructions.
+
 ## Gameplay replication
 
 The online replication helpers add:
