@@ -38,6 +38,7 @@ static func slice(
 		var arrays: Array = mesh.surface_get_arrays(surface_index)
 		for attribute in [
 			Mesh.ARRAY_BONES, Mesh.ARRAY_WEIGHTS,
+			Mesh.ARRAY_TANGENT, Mesh.ARRAY_COLOR, Mesh.ARRAY_TEX_UV2,
 			Mesh.ARRAY_CUSTOM0, Mesh.ARRAY_CUSTOM1,
 			Mesh.ARRAY_CUSTOM2, Mesh.ARRAY_CUSTOM3,
 		]:
@@ -47,6 +48,10 @@ static func slice(
 		var normals: PackedVector3Array = arrays[Mesh.ARRAY_NORMAL]
 		var uvs: PackedVector2Array = arrays[Mesh.ARRAY_TEX_UV]
 		var indices: PackedInt32Array = arrays[Mesh.ARRAY_INDEX]
+		if not normals.is_empty() and normals.size() != positions.size():
+			return _failure(&"invalid_normals")
+		if not uvs.is_empty() and uvs.size() != positions.size():
+			return _failure(&"invalid_uvs")
 		var vertex_count: int = indices.size() if not indices.is_empty() else positions.size()
 		if vertex_count < 3 or vertex_count % 3 != 0:
 			return _failure(&"invalid_triangles")
