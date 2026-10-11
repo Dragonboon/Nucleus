@@ -33,7 +33,7 @@ func apply_updates(updates: Array[Dictionary]) -> void:
 		if old.get("variant_id", &"") == variant_id:
 			var old_node: Node3D = old.get("node")
 			if is_instance_valid(old_node):
-				old_node.rotation.y = float(rotation_steps) * PI * 0.5
+				old_node.rotation.y = -float(rotation_steps) * PI * 0.5
 				continue
 		var scene: PackedScene = catalog.variants[index].scene
 		var instance: Node = scene.instantiate()
@@ -51,7 +51,7 @@ func apply_updates(updates: Array[Dictionary]) -> void:
 		_remove_visual(cell)
 		add_child(visual)
 		visual.global_position = square_board.cell_to_world(cell)
-		visual.global_rotation.y = square_board.global_rotation.y + float(rotation_steps) * PI * 0.5
+		visual.global_rotation.y = square_board.global_rotation.y - float(rotation_steps) * PI * 0.5
 		_visuals[cell] = {"node": visual, "variant_id": variant_id}
 		variant_applied.emit(cell, variant_id)
 
