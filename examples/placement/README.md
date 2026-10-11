@@ -170,3 +170,92 @@ rendimiento ni apariencia: la bateria manual es necesaria.
 Para los contratos reales revisa
 `docs/components/runtime_placement_3d.md` y
 `docs/components/safe_placement_queries.md`.
+
+## World Authoring Tools — guardar, duplicar, deshacer (nueva iteración)
+
+Este laboratorio también funciona como un **mini editor de mundos en runtime**.
+El flujo de selección, colocación libre y snap, cadenas rectas/curvas,
+multiselección y validación física permanece sin cambios.
+
+| Control | Operación |
+| --- | --- |
+| `Ctrl+Z` | Deshacer una operación **confirmada** completa |
+| `Ctrl+Y` / `Ctrl+Mayús+Z` | Rehacer |
+| `Ctrl+C` | Copiar la selección al portapapeles interno |
+| `Ctrl+V` | Pegar el grupo, desplazado 4 m a la derecha de la cámara |
+| `Ctrl+D` | Duplicar la selección (copiar + pegar) |
+| Selector **Mundo 1–3** | Elegir una de las tres ranuras de mundo independientes |
+| `Ctrl+S` | Guardar el mundo actual en la ranura seleccionada |
+| `Ctrl+O` | Cargar un mundo guardado, con confirmación |
+| `Ctrl+N` | Vaciar el mundo, con confirmación; operación reversible |
+
+Los botones del panel izquierdo exponen también estas acciones; ahora el panel es
+**desplazable**, para que siga siendo accesible en ventanas pequeñas. El panel
+de estado informa de piezas, acciones deshacibles y cambios sin guardar.
+
+**Deshacer/rehacer** utiliza el componente Nucleus existente
+`NucleusValidatedActionHistory` (24 operaciones en el laboratorio). Una cadena
+entera, una multiedición y una eliminación múltiple consumen **una sola**
+operación cada una. Los estados se vuelven a construir desde descriptores de
+escena, no desde punteros a nodos liberados. No se guarda el historial en disco.
+Una nueva operación después de deshacer descarta la rama de rehacer.
+
+**Duplicación:** solo se admiten grupos de hasta **8** piezas por operación.
+La herramienta revalida cada pieza contra terreno, soportes y obstáculos,
+y verifica los posibles solapes dentro del grupo antes de crear nada. Si no
+existe una posición admisible exactamente a 4 m a la derecha de la cámara,
+se rechaza la operación sin crear piezas parciales. Los conjuntos apilados entre
+sí no están soportados para copia conjunta: requieren una operación atómica de
+soportes relativos específica de un editor avanzado. El portapapeles es local
+a esta sesión; no contiene rutas de archivos ejecutables ni se expone al SO.
+
+**Persistencia:** `Ctrl+S` escribe
+`user://placement_lab_world_1.json`, `_2.json` o `_3.json` (segun la ranura
+seleccionada) mediante un archivo temporal y sustitución;
+`Ctrl+O` lee la ranura seleccionada. Cambiar la ranura por si solo no
+sustituye el mundo que se esta editando. La escena no se carga automáticamente al iniciar el
+laboratorio. El formato `schema_version = 1` almacena exclusivamente `{id,
+kind, transform}`: identidad estable, tipo cerrado del catálogo y 12 valores
+de una transformación rígida. El usuario **no puede** introducir una ruta a
+una escena arbitraria, un recurso externo o un script a través del JSON.
+
+Antes de restaurar, `placement_world_document.gd` comprueba: versión, campos,
+tipos numéricos, IDs únicos, tipo autorizado, límites de coordenadas,
+transformaciones sin escala/reflexión y hasta **384 piezas / 512 KiB**.
+Preinstancia los nodos antes de sustituir el mundo: los archivos inválidos
+no destruyen el escenario actual. No revalida todas las colisiones de una
+partida guardada, porque la geometría de terreno del juego podría cambiar.
+Por ello **este documento es un formato de autoría local, no una prueba de
+legalidad para un servidor multijugador**. Un juego publicado debe validar de
+nuevo sobre su estado autoritativo y migrar explícitamente futuros esquemas.
+
+Los IDs se asignan al confirmar, no durante la previsualización. Los ajustes
+de cuadrícula se aplican al colocar, pero **guardar/cargar y deshacer nunca
+vuelven a redondear** las posiciones previamente confirmadas.
+
+### Comprobación de aceptación
+
+1. Coloca una casa y una valla curva: una sola pulsación de `Ctrl+Z` debe
+   deshacer **toda la valla**, otra deshace la casa. `Ctrl+Y` las recupera.
+2. Selecciona dos cajas, `Ctrl+C`, `Ctrl+V`. Si el destino está libre y el
+   soporte es válido, aparecen ambas con IDs nuevos. En caso contrario no
+   aparece ninguna. `Ctrl+Z` elimina las dos copias de una vez.
+3. Mueve una pieza, confirma y deshaz; luego rehace. La transformación
+   restaurada debe coincidir con la anterior, incluso con `G` libre.
+4. Guarda con `Ctrl+S`, limpia con `Ctrl+N` y carga con `Ctrl+O`; compara la
+   cantidad, el tipo, las orientaciones y las posiciones originales.
+5. Edita una pieza y pulsa `Ctrl+S` durante la previsualización: debe rechazar
+   el guardado hasta confirmar o cancelar. `Esc` restaura la transformación.
+6. Comprueba que un archivo JSON de mundo con `kind` desconocido o una
+   transformación no numérica se rechaza sin modificar la escena.
+
+**Ejecutar smoke:**
+
+```bash
+godot --headless --path . --script res://examples/placement/placement_lab_smoke.gd
+```
+
+El smoke incluye deserialización, denegaciones por esquema y seguridad,
+restauración atómica y operaciones de historial. La validación de colisiones,
+latencia de vista previa, render y usabilidad requieren además abrir la escena
+con F6 en Godot.

@@ -350,3 +350,29 @@ func remove_existing(placed_scene_root: Node3D) -> Error:
 
 Connect `placement_confirmed` to an authoritative game-owned commit operation.
 Record all chain instances in one save/undo transaction when applicable.
+
+## Consumidor: creación de mundos en runtime
+
+El laboratorio opcional `examples/placement` muestra cómo construir herramientas
+de autoría alrededor de esta API **sin añadir un servicio global**:
+
+- **Autoridad de transformaciones:** `NucleusPlacementSession3D` acepta/rechaza
+  colocaciones y ediciones; el juego confirma los cambios en el árbol.
+- **Historial:** reutilizar `NucleusValidatedActionHistory` para documentos
+  de estado sin referencias a Node. Una confirmación de cadena/grupo equivale
+  a una única acción. Validar y preparar todo antes de confirmar un undo/redo.
+- **Documento persistente:** versionar `{stable_id, catalog_kind, transform}`,
+  escoger escenas solo desde un catálogo explícito y aplicar límites de
+  archivos, entidades y geometría. El ejemplo mantiene su codec en
+  `examples/placement/placement_world_document.gd`; **no es un formato de save
+  universal de Nucleus**.
+- **Multijugador:** los permisos de colocación, economía, propiedad, prevención
+  de abuso y validación de servidor siguen siendo del producto. Ni el JSON
+  local ni la previsualización del cliente conceden autoridad.
+- **Límites editoriales:** la duplicación de grupos apilados y la edición
+  simultánea de soportes dependientes no se admiten hasta disponer de una
+  validación de soporte del conjunto. No ocultar este rechazo.
+
+La nueva herramienta de mundo se construye enteramente con Godot,
+`NucleusPlacementSession3D` y `NucleusValidatedActionHistory`. No introduce
+Autoload, un controlador de cámara genérico ni gestión paralela de escenas.

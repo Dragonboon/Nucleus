@@ -8,7 +8,12 @@ const PILLAR: PackedScene = preload("res://examples/placement/assets/pillar.tscn
 const PLATFORM: PackedScene = preload("res://examples/placement/assets/platform.tscn")
 const CRATE: PackedScene = preload("res://examples/placement/assets/crate.tscn")
 
+const WORLD_DOCUMENT = preload("res://examples/placement/placement_world_document.gd")
+const WORLD_SAVE_PREFIX: String = "user://placement_lab_world_"
+const WORLD_SLOT_COUNT: int = 3
+const MAX_DUPLICATE_GROUP: int = 8
 const SCENES: Array[PackedScene] = [HOUSE, FENCE, PILLAR, PLATFORM, CRATE]
+const KINDS: Array[String] = ["house", "fence", "pillar", "platform", "crate"]
 const NAMES: Array[String] = ["Casa", "Valla", "Columna", "Plataforma", "Caja"]
 
 const REASONS := {
@@ -46,6 +51,15 @@ var _curve_waiting_for_anchor: PackedScene
 var _selected_marker: MeshInstance3D
 var _chain_waiting_for_anchor: PackedScene
 var _placed: Array[Node3D] = []
+var _history := NucleusValidatedActionHistory.new()
+var _catalog: Dictionary = {}
+var _next_piece_id: int = 1
+var _before_edit_document: Dictionary = {}
+var _saved_document: Dictionary = {}
+var _slot_documents: Dictionary = {}
+var _active_world_slot: int = 1
+var _clipboard: Dictionary = {}
+var _confirmation: ConfirmationDialog
 var _status_label: Label
 var _mode_label: Label
 var _snap_label: Label
@@ -65,6 +79,11 @@ var _panning: bool = false
 
 
 func _ready() -> void:
+	for i: int in range(KINDS.size()):
+		_catalog[KINDS[i]] = SCENES[i]
+	_history.max_actions = 24
+	_history.max_snapshot_bytes = WORLD_DOCUMENT.MAX_FILE_BYTES
+	_history.max_snapshot_items = 25000
 	_build_world()
 	_build_selection_marker()
 	_build_ui()
@@ -74,6 +93,7 @@ func _ready() -> void:
 	_session.world_parent = _world
 	_session.camera = _camera
 	_session.ray_distance = 120.0
+	_session.admission = Callable(self, "_admit_placement")
 	_session.valid_preview_material = _ghost_material(Color(0.26, 0.95, 0.64, 0.52))
 	_session.invalid_preview_material = _ghost_material(Color(1.0, 0.32, 0.30, 0.53))
 	_session.pending_preview_material = _ghost_material(Color(1.0, 0.73, 0.25, 0.45))
@@ -86,6 +106,8 @@ func _ready() -> void:
 	_session.placement_cancelled.connect(_on_placement_cancelled)
 	_session.placement_rejected.connect(_on_placement_rejected)
 	_session.removal_requested.connect(_on_removal_requested)
+	# A file from a previous run is not the current world until explicitly loaded.
+	_saved_document = {}
 	_update_camera()
 	_update_panels()
 	_set_toast("Elige una pieza. Clic izquierdo para colocar; E para editar.")
@@ -95,11 +117,11 @@ func _process(delta: float) -> void:
 	var horizontal := Vector2.ZERO
 	if Input.is_key_pressed(KEY_A) and not Input.is_key_pressed(KEY_CTRL):
 		horizontal.x -= 1.0
-	if Input.is_key_pressed(KEY_D):
+	if Input.is_key_pressed(KEY_D) and not Input.is_key_pressed(KEY_CTRL):
 		horizontal.x += 1.0
 	if Input.is_key_pressed(KEY_W):
 		horizontal.y -= 1.0
-	if Input.is_key_pressed(KEY_S):
+	if Input.is_key_pressed(KEY_S) and not Input.is_key_pressed(KEY_CTRL):
 		horizontal.y += 1.0
 	if not horizontal.is_zero_approx():
 		var basis := Basis(Vector3.UP, _orbit_yaw)
@@ -177,6 +199,33 @@ func _unhandled_input(event: InputEvent) -> void:
 			_update_camera()
 		return
 	if event is InputEventKey and event.pressed and not event.echo:
+		if event.ctrl_pressed:
+			match event.keycode:
+				KEY_Z:
+					if event.shift_pressed:
+						_redo()
+					else:
+						_undo()
+				KEY_Y:
+					_redo()
+				KEY_D:
+					_duplicate_selection()
+				KEY_C:
+					_copy_selection()
+				KEY_V:
+					_paste_selection()
+				KEY_A:
+					_select_all()
+				KEY_S:
+					_save_world()
+				KEY_O:
+					_confirm_world_replacement(false)
+				KEY_N:
+					_confirm_world_replacement(true)
+				_:
+					return
+			get_viewport().set_input_as_handled()
+			return
 		match event.keycode:
 			KEY_1, KEY_KP_1:
 				_select_asset(0)
@@ -446,10 +495,12 @@ func _edit_selection() -> void:
 	if _session.mode != NucleusPlacementSession3D.Mode.IDLE:
 		_set_toast("Confirma o cancela la operacion actual primero.")
 		return
+	var before := _capture_document()
 	var error := _session.begin_edit_many(_selected_items.duplicate())
 	if error != OK:
 		_set_toast("La pieza no admite edicion: " + error_string(error))
 		return
+	_before_edit_document = before
 	_set_toast("Editando pieza. Mueve el raton, Q/R para rotar, clic confirma, Esc restaura.")
 	_update_panels()
 
@@ -465,12 +516,14 @@ func _remove_selection() -> void:
 		if not is_instance_valid(p) or p.profile == null or not p.profile.can_remove:
 			_set_toast("No todos los seleccionados permiten retirarse.")
 			return
+	var before := _capture_document()
 	for p: NucleusPlaceable3D in _selected_items.duplicate():
 		var error := _session.request_removal(p)
 		if error != OK:
 			_set_toast("No se pudo retirar: " + error_string(error))
 			return
 	_set_selected(null)
+	_record_action(before, &"remove")
 
 
 func _rotate(direction: int) -> void:
@@ -514,9 +567,14 @@ func _on_preview_updated(valid: bool, reason: StringName, transforms: Array[Tran
 
 
 func _on_placement_confirmed(roots: Array[Node3D], was_edit: bool) -> void:
+	var before := _before_edit_document if was_edit else _capture_document()
 	if not was_edit:
 		for root: Node3D in roots:
+			var p := NucleusPlaceable3D.find_in(root)
+			if p != null:
+				p.stable_id = _issue_piece_id()
 			_placed.append(root)
+	_before_edit_document = {}
 	_selected_items.clear()
 	for root: Node3D in roots:
 		var p := NucleusPlaceable3D.find_in(root)
@@ -524,6 +582,7 @@ func _on_placement_confirmed(roots: Array[Node3D], was_edit: bool) -> void:
 			_selected_items.append(p)
 	_selected = _selected_items.back() if not _selected_items.is_empty() else null
 	_update_marker()
+	_record_action(before, &"transform" if was_edit else &"place")
 	_set_toast(
 		"Modificacion confirmada." if was_edit
 		else "%d pieza(s) colocada(s). Ahora puedes seleccionarlas y editarlas." % roots.size()
@@ -532,6 +591,7 @@ func _on_placement_confirmed(roots: Array[Node3D], was_edit: bool) -> void:
 
 
 func _on_placement_cancelled(was_edit: bool) -> void:
+	_before_edit_document = {}
 	_set_toast("Edicion revertida." if was_edit else "Colocacion cancelada.")
 	_update_panels()
 
@@ -549,7 +609,7 @@ func _on_removal_requested(root: Node3D) -> void:
 		if p.get_root() == root:
 			_selected_items.erase(p)
 	_selected = _selected_items.back() if not _selected_items.is_empty() else null
-	root.queue_free()
+	root.free()
 	_update_marker()
 	_set_toast("Pieza retirada del laboratorio.")
 	_update_panels()
@@ -663,7 +723,12 @@ func _update_panels() -> void:
 	for root: Node3D in _placed:
 		if is_instance_valid(root):
 			kept += 1
-	_info_label.text = "Colocados: %d    |    Zonas: plano, rampa 18°, rampa 43°" % kept
+	var has_save := FileAccess.file_exists(_slot_path())
+	var dirty := not has_save or _capture_document() != _saved_document
+	_info_label.text = "Mundo %d | Piezas: %d | Undo: %d Redo: %d | %s" % [
+		_active_world_slot, kept, _history.undo_count(), _history.redo_count(),
+		"SIN GUARDAR" if dirty else "GUARDADO",
+	]
 	if _session == null or _session.mode == NucleusPlacementSession3D.Mode.IDLE:
 		_status_label.text = "LISTO  ·  Elige una pieza o selecciona una existente"
 		_status_label.add_theme_color_override("font_color", Color(0.68, 0.83, 0.96))
@@ -818,11 +883,18 @@ func _build_ui() -> void:
 	left.offset_left = 16.0
 	left.offset_top = 15.0
 	left.offset_right = 322.0
-	left.offset_bottom = 710.0
+	left.anchor_bottom = 1.0
+	left.offset_bottom = -87.0
 	root.add_child(left)
+	var scrolling := ScrollContainer.new()
+	scrolling.name = "Herramientas desplazables"
+	scrolling.custom_minimum_size = Vector2(280.0, 0.0)
+	scrolling.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	left.add_child(scrolling)
 	var stack := VBoxContainer.new()
+	stack.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	stack.add_theme_constant_override("separation", 7)
-	left.add_child(stack)
+	scrolling.add_child(stack)
 	_add_label(stack, "NUCLEUS  /  PLACEMENT LAB", 18, Color(0.85, 0.96, 1.0))
 	_add_label(stack, "Geometria de prueba · Godot 4", 12, Color(0.70, 0.81, 0.88))
 	_add_label(stack, "CREAR PIEZA", 14, Color(0.42, 0.92, 0.78))
@@ -845,6 +917,28 @@ func _build_ui() -> void:
 	_add_button(rotate_row, "Q  ↶ Rotar", func() -> void: _rotate(-1), true)
 	_add_button(rotate_row, "R  ↷ Rotar", func() -> void: _rotate(1), true)
 	_add_button(stack, "Ctrl+A   Seleccionar todo", _select_all)
+	var edit_tools := HBoxContainer.new()
+	stack.add_child(edit_tools)
+	_add_button(edit_tools, "Ctrl+C  Copiar", _copy_selection, true)
+	_add_button(edit_tools, "Ctrl+V  Pegar", _paste_selection, true)
+	_add_button(stack, "Ctrl+D   Duplicar seleccion", _duplicate_selection)
+	var undo_tools := HBoxContainer.new()
+	stack.add_child(undo_tools)
+	_add_button(undo_tools, "Ctrl+Z  Deshacer", _undo, true)
+	_add_button(undo_tools, "Ctrl+Y  Rehacer", _redo, true)
+	_add_label(stack, "MUNDO / PERSISTENCIA", 14, Color(0.42, 0.92, 0.78))
+	var slot_picker := OptionButton.new()
+	slot_picker.name = "WorldSlot"
+	for slot: int in range(1, WORLD_SLOT_COUNT + 1):
+		slot_picker.add_item("Mundo %d" % slot)
+	slot_picker.select(0)
+	slot_picker.item_selected.connect(_select_world_slot)
+	stack.add_child(slot_picker)
+	var save_tools := HBoxContainer.new()
+	stack.add_child(save_tools)
+	_add_button(save_tools, "Ctrl+S  Guardar", _save_world, true)
+	_add_button(save_tools, "Ctrl+O  Cargar", func() -> void: _confirm_world_replacement(false), true)
+	_add_button(stack, "Ctrl+N   Nuevo mundo vacio", func() -> void: _confirm_world_replacement(true))
 	_add_button(stack, "Esc   Cancelar / Revertir", _cancel_operation)
 	_add_label(
 		stack,
@@ -854,6 +948,9 @@ func _build_ui() -> void:
 		+ "Mayus+arrastrar: seleccionar por marco\n"
 		+ "Curva: clic=vertice, Retroceso=deshacer, Enter=fin\n"
 		+ "G: libre absoluto / snap por asset\n"
+		+ "Ctrl+C/V/D: copiar, pegar, duplicar\n"
+		+ "Ctrl+Z/Y: deshacer/rehacer\n"
+		+ "Ctrl+S/O/N: guardar/cargar/nuevo\n"
 		+ "H/J/K: pendientes / plano",
 		12, Color(0.69, 0.81, 0.89),
 	)
@@ -906,6 +1003,347 @@ func _build_ui() -> void:
 	root.add_child(footer)
 	_toast_label = _add_label(footer, "", 14, Color(0.92, 0.94, 0.97))
 	_toast_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_confirmation = ConfirmationDialog.new()
+	_confirmation.name = "Confirmar sustitucion de mundo"
+	_confirmation.title = "Placement Lab"
+	layer.add_child(_confirmation)
+
+
+func _slot_path() -> String:
+	return WORLD_SAVE_PREFIX + "%d.json" % _active_world_slot
+
+
+func _slot_temp_path() -> String:
+	return _slot_path() + ".tmp"
+
+
+func _select_world_slot(index: int) -> void:
+	if index < 0 or index >= WORLD_SLOT_COUNT:
+		return
+	_active_world_slot = index + 1
+	_saved_document = _slot_documents.get(_active_world_slot, {})
+	_update_panels()
+	_set_toast("Ranura Mundo %d. Guardar y cargar afectan solo esta ranura." % _active_world_slot)
+
+
+## Prevent the authoring demo from growing past its bounded save/history limits.
+func _admit_placement(
+	transforms: Array[Transform3D],
+	_components: Array[NucleusPlaceable3D],
+) -> Error:
+	if _session.mode in [
+		NucleusPlacementSession3D.Mode.EDIT,
+		NucleusPlacementSession3D.Mode.EDIT_GROUP,
+	]:
+		return OK
+	if _placed.size() + transforms.size() > WORLD_DOCUMENT.MAX_PIECES:
+		return ERR_OUT_OF_MEMORY
+	return OK
+
+
+## Keep the document authoring policy local to the example, not Nucleus core.
+func _capture_document() -> Dictionary:
+	return WORLD_DOCUMENT.capture(_placed)
+
+
+func _issue_piece_id() -> StringName:
+	var id := StringName("p_%d" % _next_piece_id)
+	_next_piece_id += 1
+	return id
+
+
+func _record_action(before: Dictionary, label: StringName) -> void:
+	var after := _capture_document()
+	if before.is_empty() or before == after:
+		_update_panels()
+		return
+	var error := _history.record(before, after, label)
+	if error != OK:
+		# Do not keep mutations that cannot be represented in undo history.
+		var restore_error := _restore_document(before)
+		_set_toast("Historial lleno/invalido; cambio revertido: %s / %s" % [
+			error_string(error), error_string(restore_error),
+		])
+	_update_panels()
+
+
+## Stage every PackedScene BEFORE destroying the old world. No partial restore.
+func _restore_document(document: Dictionary) -> Error:
+	if _session.mode != NucleusPlacementSession3D.Mode.IDLE:
+		return ERR_BUSY
+	var staged: Dictionary = WORLD_DOCUMENT.instantiate_validated(document, _catalog)
+	if int(staged.get("error", ERR_INVALID_DATA)) != OK:
+		return ERR_INVALID_DATA
+	var roots: Array[Node3D] = staged["roots"]
+	_set_selected(null)
+	for existing: Node3D in _placed:
+		if is_instance_valid(existing):
+			existing.free()
+	_placed.clear()
+	var maximum_id := _next_piece_id - 1
+	for instance: Node3D in roots:
+		_world.add_child(instance)
+		_placed.append(instance)
+		var component := NucleusPlaceable3D.find_in(instance)
+		var n: int = str(component.stable_id).substr(2).to_int()
+		maximum_id = maxi(maximum_id, n)
+	_next_piece_id = maximum_id + 1
+	_update_marker()
+	_update_panels()
+	return OK
+
+
+func _undo() -> void:
+	if _session.mode != NucleusPlacementSession3D.Mode.IDLE:
+		_set_toast("Finaliza o cancela el placement antes de deshacer.")
+		return
+	var preview := _history.peek_undo()
+	if preview.is_empty():
+		_set_toast("No hay acciones anteriores.")
+		return
+	var error := _restore_document(preview["snapshot"])
+	if error != OK:
+		_history.cancel_preview()
+		_set_toast("Restauracion rechazada: " + error_string(error))
+		return
+	var confirmed := _history.confirm_undo(int(preview["ticket"]))
+	_set_toast("Deshecho: %s" % str(preview["label"]) if confirmed == OK
+		else "No se pudo confirmar el deshacer.")
+	_update_panels()
+
+
+func _redo() -> void:
+	if _session.mode != NucleusPlacementSession3D.Mode.IDLE:
+		_set_toast("Finaliza o cancela el placement antes de rehacer.")
+		return
+	var preview := _history.peek_redo()
+	if preview.is_empty():
+		_set_toast("No hay acciones para rehacer.")
+		return
+	var error := _restore_document(preview["snapshot"])
+	if error != OK:
+		_history.cancel_preview()
+		_set_toast("Restauracion rechazada: " + error_string(error))
+		return
+	var confirmed := _history.confirm_redo(int(preview["ticket"]))
+	_set_toast("Rehecho: %s" % str(preview["label"]) if confirmed == OK
+		else "No se pudo confirmar el rehacer.")
+	_update_panels()
+
+
+func _duplicate_selection() -> void:
+	if _selected_items.is_empty():
+		_set_toast("Selecciona objetos antes de duplicar.")
+		return
+	_copy_selection()
+	if not _clipboard.is_empty():
+		_paste_selection()
+
+
+func _copy_selection() -> void:
+	if _session.mode != NucleusPlacementSession3D.Mode.IDLE:
+		_set_toast("Termina primero el placement activo.")
+		return
+	var roots: Array[Node3D] = []
+	for p: NucleusPlaceable3D in _selected_items:
+		if is_instance_valid(p) and is_instance_valid(p.get_root()):
+			roots.append(p.get_root())
+	if roots.is_empty():
+		_clipboard = {}
+		_set_toast("Selecciona objetos antes de copiar.")
+		return
+	if roots.size() > MAX_DUPLICATE_GROUP:
+		_clipboard = {}
+		_set_toast("Copia limitada a %d piezas por operacion." % MAX_DUPLICATE_GROUP)
+		return
+	_clipboard = WORLD_DOCUMENT.capture(roots)
+	_set_toast("Copiados %d objeto(s). Ctrl+V para pegar con validacion." % roots.size())
+
+
+## The lab pastes a bounded group next to its source, never into an occupied volume.
+## Unlike placement previews, this action is immediate: one solver pass per item.
+func _paste_selection() -> void:
+	if _session.mode != NucleusPlacementSession3D.Mode.IDLE:
+		_set_toast("Termina primero el placement activo.")
+		return
+	if _clipboard.is_empty():
+		_set_toast("El portapapeles interno esta vacio (Ctrl+C).")
+		return
+	var validated: Dictionary = WORLD_DOCUMENT.validate(_clipboard, _catalog)
+	if int(validated["error"]) != OK:
+		_set_toast("Copia invalida: " + str(validated["message"]))
+		return
+	var entries: Array[Dictionary] = validated["objects"]
+	if entries.is_empty() or entries.size() > MAX_DUPLICATE_GROUP:
+		return
+	if _placed.size() + entries.size() > WORLD_DOCUMENT.MAX_PIECES:
+		_set_toast("Limite de piezas del laboratorio alcanzado.")
+		return
+	var before := _capture_document()
+	var right: Vector3 = _camera.global_basis.x
+	right.y = 0.0
+	right = right.normalized()
+	if right.is_zero_approx():
+		right = Vector3.RIGHT
+	var delta := right * 4.0
+	var space := _world.get_world_3d().direct_space_state
+	var transforms: Array[Transform3D] = []
+	var profiles: Array[NucleusPlacementProfile3D] = []
+	for entry: Dictionary in entries:
+		var scene := _catalog[entry["kind"]] as PackedScene
+		var template := scene.instantiate() as Node3D
+		if template == null:
+			_set_toast("No se puede crear la escena copiada.")
+			return
+		var component := NucleusPlaceable3D.find_in(template)
+		var source: Transform3D = WORLD_DOCUMENT.decode_transform(entry["transform"])
+		var heading := NucleusPlacementSession3D._heading_of(source.basis)
+		var solved := NucleusPlacementSolver3D.evaluate_at(
+			space, component.profile, source.origin + delta, heading, [],
+			{"enabled": false},
+		)
+		profiles.append(component.profile)
+		template.free()
+		if not bool(solved.get("valid", false)):
+			_set_toast("Pegado bloqueado: " + _reason_text(solved.get("reason", &"invalid")))
+			return
+		transforms.append(solved["transform"])
+	# One preflight per candidate and pure pairwise bounds: no extra scene churn.
+	for i: int in range(transforms.size()):
+		var p1: NucleusPlacementProfile3D = profiles[i]
+		var first_box := p1.clearance_shape as BoxShape3D
+		for j: int in range(i + 1, transforms.size()):
+			var p2: NucleusPlacementProfile3D = profiles[j]
+			var second_box := p2.clearance_shape as BoxShape3D
+			var overlapping := first_box == null or second_box == null
+			if not overlapping:
+				overlapping = NucleusPlacementChain3D.box_footprints_overlap(
+					transforms[i], transforms[j], first_box.size, p1.clearance_offset,
+					0.01, second_box.size, p2.clearance_offset,
+				)
+			if overlapping:
+				_set_toast("La copia forma solapes o un apilado no compatible.")
+				return
+
+	var staged_entries: Array[Dictionary] = []
+	for i: int in range(entries.size()):
+		staged_entries.append({
+			"id": "p_%d" % (_next_piece_id + i),
+			"kind": entries[i]["kind"],
+			"transform": WORLD_DOCUMENT.encode_transform(transforms[i]),
+		})
+	var staged := WORLD_DOCUMENT.instantiate_validated(
+		{"schema_version": 1, "objects": staged_entries}, _catalog,
+	)
+	if int(staged.get("error", ERR_INVALID_DATA)) != OK:
+		_set_toast("No se pudieron preparar las copias.")
+		return
+	var clones: Array[Node3D] = staged["roots"]
+	_next_piece_id += clones.size()
+	_set_selected(null)
+	for clone: Node3D in clones:
+		_world.add_child(clone)
+		_placed.append(clone)
+		var p := NucleusPlaceable3D.find_in(clone)
+		_selected_items.append(p)
+	_selected = _selected_items.back() if not _selected_items.is_empty() else null
+	_record_action(before, &"duplicate")
+	_update_marker()
+	_set_toast("Duplicadas %d pieza(s), desplazadas 4 m." % clones.size())
+	_update_panels()
+
+
+func _save_world() -> void:
+	if _session.mode != NucleusPlacementSession3D.Mode.IDLE:
+		_set_toast("Confirma o cancela antes de guardar.")
+		return
+	var document := _capture_document()
+	var checked := WORLD_DOCUMENT.validate(document, _catalog)
+	if int(checked["error"]) != OK:
+		_set_toast("No se puede guardar: " + str(checked["message"]))
+		return
+	var json := JSON.stringify(document, "  ") + "\n"
+	if json.to_utf8_buffer().size() > WORLD_DOCUMENT.MAX_FILE_BYTES:
+		_set_toast("El mundo supera el limite de archivo del lab.")
+		return
+	var file := FileAccess.open(_slot_temp_path(), FileAccess.WRITE)
+	if file == null:
+		_set_toast("No se pudo abrir el archivo temporal.")
+		return
+	file.store_string(json)
+	file.flush()
+	var write_error: Error = file.get_error()
+	file.close()
+	if write_error != OK:
+		_set_toast("Fallo al escribir: " + error_string(write_error))
+		return
+	var error := DirAccess.rename_absolute(
+		ProjectSettings.globalize_path(_slot_temp_path()),
+		ProjectSettings.globalize_path(_slot_path()),
+	)
+	if error != OK:
+		_set_toast("No se pudo sustituir el guardado: " + error_string(error))
+		return
+	_saved_document = document.duplicate(true)
+	_slot_documents[_active_world_slot] = _saved_document.duplicate(true)
+	_set_toast("Mundo %d guardado en: %s" % [_active_world_slot, _slot_path()])
+	_update_panels()
+
+
+func _confirm_world_replacement(new_world: bool) -> void:
+	if _session.mode != NucleusPlacementSession3D.Mode.IDLE:
+		_set_toast("Finaliza primero la operacion en curso.")
+		return
+	_confirmation.dialog_text = (
+		"¿Crear un mundo vacio? Los cambios no guardados se perderan."
+		if new_world else
+		"¿Cargar el mundo guardado? El mundo actual se sustituira."
+	)
+	var method: Callable = _new_world if new_world else _load_world
+	for callback: Dictionary in _confirmation.confirmed.get_connections():
+		_confirmation.confirmed.disconnect(callback["callable"])
+	_confirmation.confirmed.connect(method, CONNECT_ONE_SHOT)
+	_confirmation.popup_centered()
+
+
+func _new_world() -> void:
+	var before := _capture_document()
+	var empty := {"schema_version": 1, "objects": []}
+	var error := _restore_document(empty)
+	if error == OK:
+		_record_action(before, &"clear_world")
+		_set_toast("Nuevo mundo vacio. Ctrl+Z recupera el anterior.")
+
+
+func _load_world() -> void:
+	if not FileAccess.file_exists(_slot_path()):
+		_set_toast("No hay mundo guardado todavia.")
+		return
+	var size := FileAccess.get_size(_slot_path())
+	if size < 0 or size > WORLD_DOCUMENT.MAX_FILE_BYTES:
+		_set_toast("Archivo de mundo demasiado grande o inaccesible.")
+		return
+	var file := FileAccess.open(_slot_path(), FileAccess.READ)
+	if file == null:
+		_set_toast("No se pudo leer el mundo guardado.")
+		return
+	var json: String = file.get_buffer(size).get_string_from_utf8()
+	file.close()
+	var parsed: Variant = JSON.parse_string(json)
+	var checked := WORLD_DOCUMENT.validate(parsed, _catalog)
+	if int(checked.get("error", ERR_INVALID_DATA)) != OK:
+		_set_toast("Carga rechazada: " + str(checked["message"]))
+		return
+	var before := _capture_document()
+	var error := _restore_document(parsed)
+	if error != OK:
+		_set_toast("Error cargando mundo: " + error_string(error))
+		return
+	_record_action(before, &"load_world")
+	_saved_document = _capture_document()
+	_slot_documents[_active_world_slot] = _saved_document.duplicate(true)
+	_set_toast("Mundo %d cargado. Puedes deshacer la carga con Ctrl+Z." % _active_world_slot)
+	_update_panels()
 
 
 func _panel() -> PanelContainer:

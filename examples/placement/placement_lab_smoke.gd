@@ -3,6 +3,7 @@ extends SceneTree
 ## Checks composition and lifetime, not render appearance or every physics contact.
 
 const LAB_PATH := "res://examples/placement/placement_lab.tscn"
+const WORLD_DOCUMENT = preload("res://examples/placement/placement_world_document.gd")
 const ASSET_PATHS: Array[String] = [
 	"res://examples/placement/assets/house.tscn",
 	"res://examples/placement/assets/fence.tscn",
@@ -107,6 +108,8 @@ func _run() -> void:
 		"Lab exposes its session snap toggle")
 	_check(canvas != null and canvas.find_child("SnapStep", true, false) != null,
 		"Lab exposes a choice of grid cell sizes")
+	_check(canvas != null and canvas.find_child("WorldSlot", true, false) != null,
+		"Lab exposes independent world save slots")
 	if world != null and session != null and crate_profile != null and fence_profile != null:
 		var grid := world.get_node_or_null(
 			"Cuadricula visual sin colision"
@@ -138,8 +141,79 @@ func _run() -> void:
 		and platform_profile.kind in pillar_profile.supported_by_kinds,
 		"Pillar/platform support is explicitly mutual")
 
+	_test_authored_world_document(lab)
 	lab.free()
 	_finish()
+
+
+func _test_authored_world_document(lab: Node3D) -> void:
+	var catalog := {
+		"house": load(ASSET_PATHS[0]),
+		"fence": load(ASSET_PATHS[1]),
+		"pillar": load(ASSET_PATHS[2]),
+		"platform": load(ASSET_PATHS[3]),
+		"crate": load(ASSET_PATHS[4]),
+	}
+	var original: Dictionary = lab.call("_capture_document")
+	var transform := Transform3D(Basis.IDENTITY, Vector3(2.0, 0.03, 8.0))
+	var piece := {
+		"id": "p_17", "kind": "crate",
+		"transform": WORLD_DOCUMENT.encode_transform(transform),
+	}
+	var document := {"schema_version": 1, "objects": [piece]}
+	_check(WORLD_DOCUMENT.validate(document, catalog)["error"] == OK,
+		"Versioned world document accepts a whitelisted placeable")
+	var from_json: Variant = JSON.parse_string(JSON.stringify(document))
+	_check(WORLD_DOCUMENT.validate(from_json, catalog)["error"] == OK,
+		"JSON round-trip accepts the saved schema version and transforms")
+	_check(lab.call("_restore_document", document) == OK,
+		"A valid world restores its complete scene from a staged catalog")
+	var after: Dictionary = lab.call("_capture_document")
+	_check(after["objects"].size() == 1,
+		"Restoration creates exactly one authored placeable")
+	_check(after["objects"][0]["id"] == "p_17",
+		"Restoration preserves the stable ID")
+	_check(after["objects"][0]["transform"] == piece["transform"],
+		"Restoration preserves every authored transform component")
+	var malicious := document.duplicate(true)
+	malicious["objects"][0]["kind"] = "res://scripts/evil.gd"
+	_check(WORLD_DOCUMENT.validate(malicious, catalog)["error"] != OK,
+		"Save documents cannot request arbitrary resource paths")
+	_check(lab.call("_restore_document", malicious) != OK,
+		"Invalid world restores fail before mutating live pieces")
+	_check(lab.call("_capture_document") == after,
+		"Rejected world cannot partially erase the previous scene")
+	var repeated := {"schema_version": 1, "objects": [piece, piece.duplicate(true)]}
+	_check(WORLD_DOCUMENT.validate(repeated, catalog)["error"] != OK,
+		"World documents reject duplicate stable IDs")
+	var oversized := document.duplicate(true)
+	oversized["objects"][0]["transform"][0] = 20.0
+	_check(WORLD_DOCUMENT.validate(oversized, catalog)["error"] != OK,
+		"World documents reject arbitrary scale and non-rotation matrices")
+	var bad_coordinate := document.duplicate(true)
+	bad_coordinate["objects"][0]["transform"][9] = 40000.0
+	_check(WORLD_DOCUMENT.validate(bad_coordinate, catalog)["error"] != OK,
+		"Out-of-bounds objects are rejected")
+	var bad_type := document.duplicate(true)
+	bad_type["objects"][0]["transform"][0] = "1.0"
+	_check(WORLD_DOCUMENT.validate(bad_type, catalog)["error"] != OK,
+		"Numeric strings are not silently converted to float")
+	_check(lab.call("_restore_document", original) == OK,
+		"The previous world can be restored before a history test")
+	var before := lab.call("_capture_document") as Dictionary
+	_check(lab.call("_restore_document", document) == OK,
+		"World can be recreated for reversible action testing")
+	lab.call("_record_action", before, &"create_test_world")
+	var history := lab.get("_history") as NucleusValidatedActionHistory
+	_check(history.can_undo(), "World changes register one bounded history action")
+	lab.call("_undo")
+	_check(lab.call("_capture_document") == before,
+		"Undo reconstructs the exact previous world")
+	lab.call("_redo")
+	_check(lab.call("_capture_document") == after,
+		"Redo reconstructs the exact later world")
+	_check(lab.call("_restore_document", original) == OK,
+		"The smoke test clears the authored world before exiting")
 
 
 func _check(condition: bool, description: String) -> void:
