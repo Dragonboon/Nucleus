@@ -3,6 +3,8 @@ extends Node3D
 ## Deliberately lives in examples/: Nucleus only owns the placement mechanics.
 
 const HOUSE: PackedScene = preload("res://examples/placement/assets/house.tscn")
+const HOUSE_FLAT: PackedScene = preload("res://examples/placement/assets/house_flat.tscn")
+const HOUSE_HIP: PackedScene = preload("res://examples/placement/assets/house_hip.tscn")
 const FENCE: PackedScene = preload("res://examples/placement/assets/fence.tscn")
 const PILLAR: PackedScene = preload("res://examples/placement/assets/pillar.tscn")
 const PLATFORM: PackedScene = preload("res://examples/placement/assets/platform.tscn")
@@ -68,6 +70,10 @@ var _snap_label: Label
 var _snap_toggle: CheckButton
 var _repeat_toggle: CheckButton
 var _repeat_placement: bool = true
+var _free_rotation: bool = false
+var _rotation_toggle: CheckButton
+var _roof_catalog: NucleusPlacementVariantSet3D
+var _repeat_variant_id: StringName = &""
 var _brush_scene: PackedScene
 ## Optional paint tool; the regular click-to-place session is unchanged.
 var _paint_mode: bool = false
@@ -101,6 +107,7 @@ var _panning: bool = false
 func _ready() -> void:
 	for i: int in range(KINDS.size()):
 		_catalog[KINDS[i]] = SCENES[i]
+	_roof_catalog = _build_roof_catalog()
 	_history.max_actions = 24
 	_history.max_snapshot_bytes = WORLD_DOCUMENT.MAX_FILE_BYTES
 	_history.max_snapshot_items = 25000
@@ -127,6 +134,7 @@ func _ready() -> void:
 	_session.placement_cancelled.connect(_on_placement_cancelled)
 	_session.placement_rejected.connect(_on_placement_rejected)
 	_session.removal_requested.connect(_on_removal_requested)
+	_session.variant_changed.connect(_on_variant_changed)
 	# NucleusSave handles storage and integrity; the lab owns scene reconstruction.
 	if not NucleusSave.is_initialized():
 		push_warning("Placement lab: NucleusSave is not initialized.")
@@ -144,6 +152,10 @@ func _physics_process(_delta: float) -> void:
 
 
 func _process(delta: float) -> void:
+	if _free_rotation and _session != null and not _paint_dragging:
+		var direction := float(int(Input.is_key_pressed(KEY_R)) - int(Input.is_key_pressed(KEY_Q)))
+		if not is_zero_approx(direction) and not Input.is_key_pressed(KEY_CTRL):
+			_session.rotate_held(direction, delta)
 	var horizontal := Vector2.ZERO
 	if Input.is_key_pressed(KEY_A) and not Input.is_key_pressed(KEY_CTRL):
 		horizontal.x -= 1.0
@@ -312,9 +324,17 @@ func _unhandled_input(event: InputEvent) -> void:
 				if event.ctrl_pressed:
 					_select_all()
 			KEY_Q:
-				_rotate(-1)
+				if not _free_rotation:
+					_rotate(-1)
 			KEY_R:
-				_rotate(1)
+				if not _free_rotation:
+					_rotate(1)
+			KEY_T:
+				_toggle_rotation_mode()
+			KEY_V:
+				_cycle_roof(1)
+			KEY_X:
+				_cycle_roof(-1)
 			KEY_E:
 				_edit_selection()
 			KEY_G:
@@ -462,7 +482,11 @@ func _resume_brush(scene: PackedScene) -> void:
 		return
 	if _session.mode != NucleusPlacementSession3D.Mode.IDLE:
 		return
-	var result := _session.begin_new(scene)
+	var result: Error = (
+		_session.begin_variants(_roof_catalog, _repeat_variant_id)
+		if scene == HOUSE and _repeat_variant_id != &""
+		else _session.begin_new(scene)
+	)
 	if result == OK:
 		_session.update_from_screen(get_viewport().get_mouse_position())
 		_update_panels()
@@ -601,12 +625,16 @@ func _select_asset(index: int) -> void:
 	_curve_waiting_for_anchor = null
 	_brush_scene = SCENES[index]
 	_set_selected(null)
-	var error := _session.begin_new(SCENES[index])
+	_repeat_variant_id = &""
+	var error: Error = (
+		_session.begin_variants(_roof_catalog) if index == 0
+		else _session.begin_new(SCENES[index])
+	)
 	if error != OK:
 		_set_toast("No se pudo cargar: " + error_string(error))
 		return
 	_session.update_from_screen(get_viewport().get_mouse_position())
-	_set_toast("Colocando " + NAMES[index] + ". Q/R rota; clic confirma; Esc cancela.")
+	_set_toast("Colocando " + NAMES[index] + ". Q/R rota; T alterna giro; V/X cambia tejado.")
 	_update_panels()
 
 
@@ -773,6 +801,41 @@ func _remove_selection() -> void:
 			return
 	_set_selected(null)
 	_record_action(before, &"remove")
+
+
+func _toggle_rotation_mode() -> void:
+	_free_rotation = not _free_rotation
+	if _rotation_toggle != null:
+		_rotation_toggle.set_pressed_no_signal(_free_rotation)
+	_set_toast("Giro libre: mantén Q/R." if _free_rotation else "Giro por pasos: pulsa Q/R.")
+
+
+func _cycle_roof(direction: int) -> void:
+	if _session == null or _session.get_variant_id() == &"":
+		return
+	var result: Error = _session.cycle_variant(direction)
+	if result != OK:
+		_set_toast("No se pudo cambiar el tejado: " + error_string(result))
+
+
+func _on_variant_changed(variant_id: StringName, _index: int) -> void:
+	_repeat_variant_id = variant_id
+	_set_toast("Variante de casa: %s" % str(variant_id))
+
+
+func _build_roof_catalog() -> NucleusPlacementVariantSet3D:
+	var catalog := NucleusPlacementVariantSet3D.new()
+	catalog.default_variant_id = &"roof_gable"
+	for option: Dictionary in [
+		{"id": &"roof_gable", "scene": HOUSE},
+		{"id": &"roof_flat", "scene": HOUSE_FLAT},
+		{"id": &"roof_hip", "scene": HOUSE_HIP},
+	]:
+		var entry := NucleusPlacementVariant3D.new()
+		entry.variant_id = option["id"]
+		entry.scene = option["scene"]
+		catalog.variants.append(entry)
+	return catalog
 
 
 func _rotate(direction: int) -> void:
@@ -1242,6 +1305,17 @@ func _build_ui() -> void:
 	stack.add_child(rotate_row)
 	_add_button(rotate_row, "Q  ↶ Rotar", func() -> void: _rotate(-1), true)
 	_add_button(rotate_row, "R  ↷ Rotar", func() -> void: _rotate(1), true)
+	_rotation_toggle = CheckButton.new()
+	_rotation_toggle.name = "FreeRotationToggle"
+	_rotation_toggle.text = "T   Rotacion libre (mantener Q/R)"
+	_rotation_toggle.toggled.connect(func(value: bool) -> void:
+		if _free_rotation != value:
+			_toggle_rotation_mode())
+	stack.add_child(_rotation_toggle)
+	var variants_row := HBoxContainer.new()
+	stack.add_child(variants_row)
+	_add_button(variants_row, "X  Tejado anterior", func() -> void: _cycle_roof(-1), true)
+	_add_button(variants_row, "V  Tejado siguiente", func() -> void: _cycle_roof(1), true)
 	_add_button(stack, "Ctrl+A   Seleccionar todo", _select_all)
 	var edit_tools := HBoxContainer.new()
 	stack.add_child(edit_tools)
@@ -1275,6 +1349,7 @@ func _build_ui() -> void:
 		+ "Mayus+arrastrar: seleccionar por marco\n"
 		+ "Curva: izq.=colocar, der.=giro, Retroceso=deshacer\n"
 		+ "G: libre absoluto / snap por asset\n"
+		+ "T: giro libre; mantener Q/R · V/X: tejado siguiente/anterior\n"
 		+ "P: pincel para pintar piezas arrastrando (max. 64)\n"
 		+ "Ctrl+C/V/D: copiar, pegar, duplicar\n"
 		+ "Ctrl+Z/Y: deshacer/rehacer\n"
