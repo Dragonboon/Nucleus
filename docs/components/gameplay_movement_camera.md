@@ -119,6 +119,18 @@ motor.request_jump()
 
 rather than manufacturing fake input events.
 
+Jump press/release callbacks queue intent; the motor consumes it in its physics
+tick. A press and release between two ticks still produces a short jump. A
+release queued during jump buffering is retained until consumption or expiry.
+Disabling the motor discards pending jump input, and disabled motors ignore
+release events. Re-enabling does not replay a stale jump.
+
+Planar input preserves analog magnitude and clamps diagonals. At a vertical
+camera angle, the camera's projected right axis preserves heading instead of
+falling back immediately to world Z. Use a stable camera/heading pivot as
+`orientation_source`; rotating the gameplay root to face its own relative
+movement can otherwise create feedback.
+
 ## Godot-native motion
 
 `CharacterBody2D`, `CharacterBody3D`, their `velocity`, and `move_and_slide()`
@@ -179,6 +191,16 @@ Movement components do not select clips directly.
 A production 3D model remains a presentation child of the stable
 `CharacterBody3D` gameplay root. See `animation_integration.md`.
 
+For a physical regression scene, run:
+
+```bash
+godot --headless --path . res://tests/smoke/locomotion_3d_smoke.tscn
+```
+
+This checks contact transitions, short/held jumps, release timing, acceleration
+and braking over real physics frames. It does not validate animation quality,
+stairs, water transitions, moving boats or network latency.
+
 ## Multiplayer
 
 Local-player ownership belongs to the input layer.
@@ -186,6 +208,12 @@ Local-player ownership belongs to the input layer.
 For authoritative AI, run decision/navigation/movement on the authority and
 replicate the gameplay state/results required by the game. Do not make visual
 animation the network authority.
+
+On a remote snapshot-driven actor, disable the motor and local motion input:
+the replicator and motor must not both write the actor transform. A motion
+source is an intent adapter, not client prediction or reconciliation. A future
+dedicated server must be able to run collision/movement without a camera,
+AnimationTree or IK rig. See `../modules/online_replication.md`.
 
 ## Extension rule
 

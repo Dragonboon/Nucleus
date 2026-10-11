@@ -76,6 +76,13 @@ jobs:
             --path . \
             res://tests/smoke/smoke_main.tscn
 
+      - name: Run 3D locomotion physics smoke scene
+        run: |
+          "${{ steps.godot.outputs.bin }}" \
+            --headless \
+            --path . \
+            res://tests/smoke/locomotion_3d_smoke.tscn
+
       - name: Run resource loading smoke scene
         run: |
           "${{ steps.godot.outputs.bin }}" \

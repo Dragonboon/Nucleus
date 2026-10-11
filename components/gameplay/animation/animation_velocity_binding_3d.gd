@@ -41,22 +41,22 @@ func _ready() -> void:
 
 func _process(_delta: float) -> void:
 	var velocity: Vector3 = body.velocity
-	var local_velocity: Vector3 = velocity
+	var up: Vector3 = body.up_direction.normalized()
+	if up.is_zero_approx():
+		up = Vector3.UP
+	var planar: Vector3 = NucleusMotionMath.planar_component_3d(velocity, up)
+	var heading_basis: Basis = Basis.IDENTITY
 
 	if use_local_velocity and orientation_source:
-		local_velocity = (
-			orientation_source.global_basis.inverse()
-			* velocity
-		)
+		heading_basis = orientation_source.global_basis
 
-	var horizontal := Vector2(
-		local_velocity.x,
-		-local_velocity.z,
+	# Use the same planar heading as movement, independent of art scale/pitch.
+	var right: Vector3 = NucleusMotionMath.planar_direction_3d(
+		Vector2.RIGHT, heading_basis, up,
 	)
-	var speed: float = Vector2(
-		velocity.x,
-		velocity.z,
-	).length()
+	var back: Vector3 = right.cross(up)
+	var horizontal := Vector2(planar.dot(right), -planar.dot(back))
+	var speed: float = planar.length()
 
 	if blend_magnitude_reference > 0.0:
 		horizontal /= blend_magnitude_reference
@@ -81,7 +81,7 @@ func _process(_delta: float) -> void:
 	if vertical_speed_parameter != &"":
 		animation_tree.set(
 			vertical_speed_parameter,
-			velocity.y,
+			velocity.dot(up),
 		)
 
 	if moving_parameter != &"":

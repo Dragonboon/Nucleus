@@ -157,6 +157,20 @@ stays near the center and full gait speed reaches the outer points. This avoids
 the common problem where a normalized direction instantly jumps from idle to a
 full locomotion clip.
 
+The 3D velocity binding projects velocity onto the plane perpendicular to
+`CharacterBody3D.up_direction` before producing blend values. Speed is the length
+of that planar component; vertical speed is the dot product with the up axis.
+The orientation source supplies heading only: positive art scale and pitch do
+not attenuate gait speed or turn a jump into a locomotion blend. With
+`use_local_velocity = false`, heading comes from world axes projected onto that
+same movement plane. Blend axes remain X=right, Y=forward.
+
+Compatibility: upright, unit-scale actors keep their existing values. Projects
+that compensated for scaled/tilted orientation sources should remove that
+compensation and retune their authored reference speed. No serialized fields,
+public names or default settings have changed; these are correctness fixes in
+the current development version, not a release/version bump.
+
 This directional scaffold represents **one gait**. Games with distinct
 walk/run/sprint directional sets should compose multiple native BlendSpaces or
 state-machine states instead of forcing every project through one generated
@@ -381,6 +395,44 @@ PhysicalBoneSimulator3D
 ```
 
 Nucleus only coordinates reusable integration points and quality policy.
+
+### Grounded feet: integration recipe
+
+For biped legs, start with native `TwoBoneIK3D` and an explicitly authored knee
+pole. It solves the leg; it does not decide when a foot should be planted.
+See the [Godot 4.7 TwoBoneIK3D reference](https://docs.godotengine.org/en/4.7/classes/class_twoboneik3d.html)
+and [SkeletonModifier3D processing contract](https://docs.godotengine.org/en/4.7/classes/class_skeletonmodifier3d.html).
+
+Keep these responsibilities separate in the consuming character scene:
+
+1. Physics probes sample support below the animated foot, excluding the actor.
+   Check collision validity explicitly: a contact at world origin is valid.
+   Reject unreachable contacts and slopes outside the actor's support policy.
+2. Animation-authored contact curves/events determine stance and swing. Avoid
+   hardcoded foot Euler-angle thresholds; they depend on rig and clip axes.
+3. Blend target position, surface-normal orientation and influence with elapsed
+   time. In air, swimming, climbing or missing support, fade back to animation.
+   Never reuse a previous ray hit indefinitely after support disappears.
+4. On moving platforms, store a planted contact in the platform's local space
+   and reconstruct it each frame. Release it when support is freed or the actor
+   leaves; a world-space lock alone makes feet slide across a moving deck.
+5. Limit leg reach and pelvis correction. Apply pelvis adjustment only to the
+   visual hierarchy, never move the collision capsule to satisfy an IK target.
+6. Respect skeleton modifier order. Read the animated pose before IK when
+   building targets; use completion signals for observing solved poses. Do not
+   feed the previous solved foot back as the next animation reference.
+
+The supplied seakrill foot-IK sample illustrates ray targets and per-foot
+influence, but its fixed per-tick lerps, Mixamo rotation threshold, unchecked
+hit-point truthiness and root-motion policy should not be copied into the motor.
+The supplied monxa GodotIK implementation demonstrates FABRIK effectors and
+constraints, but introduces native extension builds and its own solver contract.
+Neither dependency is bundled. Prefer native IK unless the actual character
+demonstrates a requirement it cannot satisfy.
+
+Validate the real rig on slopes, ledges, stairs, turning in place and translating
+and rotating decks. Include low/high render rates and remote actors. The motor
+regression scene has no skeleton and cannot establish that feet look correct.
 
 ## AI-controlled characters
 

@@ -51,12 +51,18 @@ var jump_buffer_time: float = 0.10
 var jump_release_multiplier: float = 0.5
 
 @export_group("Behavior")
-@export var enabled: bool = true
+@export var enabled: bool = true:
+	set(value):
+		enabled = value
+		if not enabled:
+			_jump_buffer_remaining = 0.0
+			_jump_release_pending = false
 
 var desired_direction: Vector3 = Vector3.ZERO
 var desired_velocity: Vector3 = Vector3.ZERO
 
 var _jump_buffer_remaining: float = 0.0
+var _jump_release_pending: bool = false
 var _coyote_remaining: float = 0.0
 var _air_jumps_used: int = 0
 var _was_on_floor: bool = false
@@ -98,6 +104,9 @@ func _physics_process(delta: float) -> void:
 
 	_apply_planar_motion(delta)
 	_try_consume_jump()
+	if _jump_release_pending and _jump_buffer_remaining <= 0.0:
+		_shorten_jump()
+		_jump_release_pending = false
 	_apply_gravity(delta)
 
 	body.move_and_slide()
@@ -114,6 +123,7 @@ func request_jump() -> void:
 	if not enabled:
 		return
 
+	_jump_release_pending = false
 	_jump_buffer_remaining = maxf(
 		0.0001,
 		jump_buffer_time,
@@ -291,7 +301,7 @@ func _try_consume_jump() -> void:
 
 
 func _shorten_jump() -> void:
-	if not shorten_jump_on_release or body == null:
+	if not enabled or not shorten_jump_on_release or body == null:
 		return
 
 	var up: Vector3 = _get_up_direction()
@@ -329,6 +339,8 @@ func _decay_jump_buffer(delta: float) -> void:
 		0.0,
 		_jump_buffer_remaining - delta,
 	)
+	if _jump_buffer_remaining <= 0.0:
+		_jump_release_pending = false
 
 
 func _emit_ground_transitions() -> void:
@@ -351,7 +363,8 @@ func _get_up_direction() -> Vector3:
 
 func _on_input_event(event: InputEvent) -> void:
 	if (
-		jump_action == &""
+		not enabled
+		or jump_action == &""
 		or not InputMap.has_action(jump_action)
 	):
 		return
@@ -359,7 +372,7 @@ func _on_input_event(event: InputEvent) -> void:
 	if event.is_action_pressed(jump_action):
 		request_jump()
 	elif event.is_action_released(jump_action):
-		_shorten_jump()
+		_jump_release_pending = true
 
 
 func _resolve_dependencies() -> void:

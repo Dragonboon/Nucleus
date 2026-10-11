@@ -33,7 +33,12 @@ static func planar_direction_3d(
 	var back: Vector3 = basis.z.slide(up)
 
 	if back.is_zero_approx():
-		back = Vector3.BACK.slide(up)
+		# At a camera pole, retain its right axis instead of snapping to world Z.
+		back = basis.x.slide(up).cross(up)
+
+	if back.is_zero_approx():
+		var fallback: Vector3 = Vector3.BACK if absf(up.z) < 0.9 else Vector3.RIGHT
+		back = fallback.slide(up)
 
 	back = back.normalized()
 
