@@ -265,6 +265,12 @@
     ],
     "components/world/spline_paths": [
       "docs/components/spline_paths.md"
+    ],
+    "components/world/biomes": [
+      "docs/components/biome_poi.md"
+    ],
+    "components/world/poi": [
+      "docs/components/biome_poi.md"
     ]
   }
 }
