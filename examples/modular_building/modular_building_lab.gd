@@ -116,10 +116,10 @@ func _build_catalog() -> NucleusPlacementVariantSet3D:
 		for side: int in sides:
 			var arm := MeshInstance3D.new()
 			var arm_mesh := BoxMesh.new()
-			arm_mesh.size = Vector3(0.26, 0.3, 0.72)
+			arm_mesh.size = Vector3(0.30, 0.30, 0.80)
 			arm.mesh = arm_mesh
-			arm.position = Vector3(0.0, 0.0, -0.52).rotated(Vector3.UP, float(side) * PI * 0.5)
-			arm.rotation.y = float(side) * PI * 0.5
+			arm.position = Vector3(0.0, 0.0, -0.60).rotated(Vector3.UP, -float(side) * PI * 0.5)
+			arm.rotation.y = -float(side) * PI * 0.5
 			arm.material_override = color
 			visual.add_child(arm)
 			arm.owner = visual
