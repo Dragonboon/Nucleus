@@ -1,0 +1,70 @@
+[gd_scene load_steps=11 format=3]
+
+[ext_resource type="Script" path="res://components/gameplay/movement/placement_3d/placeable_3d.gd" id="1_placeable"]
+[ext_resource type="Resource" path="res://examples/placement/profiles/pillar_profile.tres" id="2_profile"]
+
+[sub_resource type="StandardMaterial3D" id="Material_stone"]
+albedo_color = Color(0.66, 0.75, 0.8, 1)
+roughness = 0.82
+
+[sub_resource type="StandardMaterial3D" id="Material_caps"]
+albedo_color = Color(0.83, 0.88, 0.9, 1)
+roughness = 0.82
+
+[sub_resource type="StandardMaterial3D" id="Material_band"]
+albedo_color = Color(0.4, 0.55, 0.6, 1)
+roughness = 0.82
+
+[sub_resource type="CylinderMesh" id="Mesh_Shaft"]
+top_radius = 0.33
+bottom_radius = 0.33
+height = 1.64
+radial_segments = 20
+
+[sub_resource type="BoxMesh" id="Mesh_Base"]
+size = Vector3(0.94, 0.24, 0.94)
+
+[sub_resource type="BoxMesh" id="Mesh_Capital"]
+size = Vector3(0.9, 0.2, 0.9)
+
+[sub_resource type="CylinderMesh" id="Mesh_Band"]
+top_radius = 0.38
+bottom_radius = 0.38
+height = 0.13
+radial_segments = 20
+
+[sub_resource type="CylinderShape3D" id="BodyShape"]
+radius = 0.32
+height = 1.85
+
+[node name="Pillar" type="Node3D"]
+script = ExtResource("1_placeable")
+profile = ExtResource("2_profile")
+
+[node name="Shaft" type="MeshInstance3D" parent="."]
+mesh = SubResource("Mesh_Shaft")
+material_override = SubResource("Material_stone")
+position = Vector3(0, 0.99, 0)
+
+[node name="Base" type="MeshInstance3D" parent="."]
+mesh = SubResource("Mesh_Base")
+material_override = SubResource("Material_caps")
+position = Vector3(0, 0.13, 0)
+
+[node name="Capital" type="MeshInstance3D" parent="."]
+mesh = SubResource("Mesh_Capital")
+material_override = SubResource("Material_caps")
+position = Vector3(0, 1.9, 0)
+
+[node name="Band" type="MeshInstance3D" parent="."]
+mesh = SubResource("Mesh_Band")
+material_override = SubResource("Material_band")
+position = Vector3(0, 1.64, 0)
+
+[node name="Solid" type="StaticBody3D" parent="."]
+collision_layer = 2
+collision_mask = 0
+
+[node name="BodyCollision" type="CollisionShape3D" parent="Solid"]
+shape = SubResource("BodyShape")
+position = Vector3(0, 0.99, 0)

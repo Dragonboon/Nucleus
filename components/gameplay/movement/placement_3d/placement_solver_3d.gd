@@ -1,0 +1,201 @@
+class_name NucleusPlacementSolver3D
+extends RefCounted
+## Stateless terrain/support/occupancy admission using native PhysicsDirectSpaceState3D.
+## An invalid or unverified surface always produces an explicit rejection.
+
+
+static func evaluate_hit(
+	space: PhysicsDirectSpaceState3D,
+	profile: NucleusPlacementProfile3D,
+	hit: Dictionary,
+	yaw: float = 0.0,
+	exclude: Array[RID] = [],
+) -> Dictionary:
+	if space == null or profile == null or not profile.validate().is_empty():
+		return _reject(&"invalid_profile")
+	if hit.is_empty() or not hit.get("collider") is CollisionObject3D:
+		return _reject(&"no_surface")
+	var normal: Vector3 = hit.get("normal", Vector3.ZERO)
+	var point: Vector3 = hit.get("position", Vector3.INF)
+	if not _finite(point) or not _valid_normal(normal):
+		return _reject(&"no_surface")
+
+	var collider: Object = hit["collider"]
+	if not _allowed_support(profile, collider):
+		return _reject(&"forbidden_support")
+	if not _required_tags_match(profile, hit):
+		return _reject(&"surface_tags")
+	if _slope_degrees(normal) > profile.max_slope_degrees:
+		return _reject(&"steep_surface")
+
+	var pos: Vector3 = point
+	if profile.snap_to_grid:
+		pos.x = snappedf(pos.x - profile.grid_origin.x, profile.grid_step.x) + profile.grid_origin.x
+		pos.z = snappedf(pos.z - profile.grid_origin.y, profile.grid_step.y) + profile.grid_origin.y
+
+	var flat_basis := Basis(Vector3.UP, yaw)
+	var offsets: Array[Vector3] = [Vector3.ZERO]
+	var h := profile.support_half_extents
+	if h.x > 0.0 or h.y > 0.0:
+		for x: float in [-h.x, h.x]:
+			for z: float in [-h.y, h.y]:
+				offsets.append(Vector3(x, 0.0, z))
+
+	var min_height: float = INF
+	var max_height: float = -INF
+	var mean_normal: Vector3 = Vector3.ZERO
+	var sample_heights: Array[float] = []
+	var reference_owner := NucleusPlaceable3D.find_for_collider(collider)
+	for offset: Vector3 in offsets:
+		var p: Vector3 = pos + flat_basis * offset
+		var query := PhysicsRayQueryParameters3D.create(
+			p + Vector3.UP * profile.support_cast_above,
+			p - Vector3.UP * profile.support_cast_below,
+			profile.support_mask,
+			exclude,
+		)
+		query.collide_with_areas = false
+		var sample: Dictionary = space.intersect_ray(query)
+		if sample.is_empty():
+			return _reject(&"unsupported_footprint")
+		if not _allowed_support(profile, sample.get("collider")):
+			return _reject(&"forbidden_support")
+		if not _required_tags_match(profile, sample):
+			return _reject(&"surface_tags")
+		var sample_owner := NucleusPlaceable3D.find_for_collider(sample.get("collider"))
+		if sample_owner != reference_owner:
+			return _reject(&"mixed_support")
+		var sample_normal: Vector3 = sample.get("normal", Vector3.ZERO)
+		if not _valid_normal(sample_normal):
+			return _reject(&"unsupported_footprint")
+		if _slope_degrees(sample_normal) > profile.max_slope_degrees:
+			return _reject(&"steep_surface")
+		var sample_position: Vector3 = sample.get("position", Vector3.INF)
+		if not _finite(sample_position):
+			return _reject(&"unsupported_footprint")
+		sample_heights.append(sample_position.y)
+		min_height = minf(min_height, sample_position.y)
+		max_height = maxf(max_height, sample_position.y)
+		mean_normal += sample_normal.normalized()
+
+	var deviation: float = max_height - min_height
+	if profile.align_to_surface:
+		# A rigid piece can tilt to follow a planar slope. Measure the
+		# residual variation *from that plane*, not absolute corner heights.
+		var plane_normal := mean_normal.normalized()
+		if not _valid_normal(plane_normal):
+			return _reject(&"invalid_normal")
+		deviation = 0.0
+		for index: int in range(offsets.size()):
+			var offset: Vector3 = flat_basis * offsets[index]
+			var expected_y: float = sample_heights[0] - (
+				plane_normal.x * offset.x + plane_normal.z * offset.z
+			) / plane_normal.y
+			deviation = maxf(deviation, absf(sample_heights[index] - expected_y))
+	if deviation > profile.max_height_spread:
+		return _reject(&"uneven_surface")
+
+	# Use the central, newly snapped sample height; never retain stale Y from
+	# the original cursor hit after snapping X/Z.
+	var center_query := PhysicsRayQueryParameters3D.create(
+		pos + Vector3.UP * profile.support_cast_above,
+		pos - Vector3.UP * profile.support_cast_below,
+		profile.support_mask,
+		exclude,
+	)
+	var center_hit: Dictionary = space.intersect_ray(center_query)
+	if center_hit.is_empty():
+		return _reject(&"unsupported_footprint")
+	pos.y = (center_hit.get("position") as Vector3).y + profile.surface_offset
+
+	var up := Vector3.UP
+	if profile.align_to_surface:
+		up = mean_normal.normalized()
+		if not _valid_normal(up):
+			return _reject(&"invalid_normal")
+	var forward := flat_basis * Vector3.FORWARD
+	forward = (forward - up * forward.dot(up)).normalized()
+	if forward.is_zero_approx():
+		return _reject(&"invalid_normal")
+	var right := forward.cross(up).normalized()
+	var basis := Basis(right, up, right.cross(up)).orthonormalized()
+	var transform := Transform3D(basis, pos)
+	var shape_transform := transform * Transform3D(Basis.IDENTITY, profile.clearance_offset)
+	if not NucleusPlacementQueries3D.is_transform_free(
+		space,
+		profile.clearance_shape,
+		shape_transform,
+		profile.obstacle_mask,
+		exclude,
+		true,
+		profile.check_areas,
+		profile.collision_margin,
+	):
+		return _reject(&"occupied")
+
+	return {"valid": true, "reason": &"", "transform": transform, "support": collider}
+
+
+## Cast vertically from an authored point, for chain points or custom cursor tools.
+static func evaluate_at(
+	space: PhysicsDirectSpaceState3D,
+	profile: NucleusPlacementProfile3D,
+	position: Vector3,
+	yaw: float = 0.0,
+	exclude: Array[RID] = [],
+) -> Dictionary:
+	if space == null or profile == null:
+		return _reject(&"invalid_profile")
+	var query := PhysicsRayQueryParameters3D.create(
+		position + Vector3.UP * profile.support_cast_above,
+		position - Vector3.UP * profile.support_cast_below,
+		profile.support_mask,
+		exclude,
+	)
+	return evaluate_hit(space, profile, space.intersect_ray(query), yaw, exclude)
+
+
+static func _allowed_support(profile: NucleusPlacementProfile3D, collider: Object) -> bool:
+	if not is_instance_valid(collider) or not collider is CollisionObject3D:
+		return false
+	var owner := NucleusPlaceable3D.find_for_collider(collider)
+	if owner == null:
+		return (
+			profile.allow_unowned_ground
+			and (collider is StaticBody3D or profile.allow_nonstatic_support)
+		)
+	if owner.profile == null:
+		return false
+	return (
+		owner.profile.kind in profile.supported_by_kinds
+		and profile.kind in owner.profile.accepts_on_top_kinds
+	)
+
+
+static func _required_tags_match(profile: NucleusPlacementProfile3D, hit: Dictionary) -> bool:
+	if profile.required_surface_tags.is_empty():
+		return true
+	var semantic := NucleusSurfaceResolver3D.resolve_collider(
+		hit.get("collider"),
+		hit.get("position", Vector3.ZERO),
+		hit.get("normal", Vector3.UP),
+		int(hit.get("shape", -1)),
+		int(hit.get("face_index", -1)),
+	)
+	return semantic != null and semantic.has_all_tags(profile.required_surface_tags)
+
+
+static func _valid_normal(value: Vector3) -> bool:
+	return _finite(value) and value.length_squared() > 0.001 and value.dot(Vector3.UP) > 0.0
+
+
+static func _finite(v: Vector3) -> bool:
+	return is_finite(v.x) and is_finite(v.y) and is_finite(v.z)
+
+
+static func _slope_degrees(value: Vector3) -> float:
+	return rad_to_deg(acos(clampf(value.normalized().dot(Vector3.UP), -1.0, 1.0)))
+
+
+static func _reject(reason: StringName) -> Dictionary:
+	return {"valid": false, "reason": reason}

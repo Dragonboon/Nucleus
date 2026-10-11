@@ -1,0 +1,71 @@
+[gd_scene load_steps=12 format=3]
+
+[ext_resource type="Script" path="res://components/gameplay/movement/placement_3d/placeable_3d.gd" id="1_placeable"]
+[ext_resource type="Resource" path="res://examples/placement/profiles/platform_profile.tres" id="2_profile"]
+
+[sub_resource type="StandardMaterial3D" id="Material_top"]
+albedo_color = Color(0.47, 0.56, 0.62, 1)
+roughness = 0.82
+
+[sub_resource type="StandardMaterial3D" id="Material_edge"]
+albedo_color = Color(0.25, 0.35, 0.42, 1)
+roughness = 0.82
+
+[sub_resource type="StandardMaterial3D" id="Material_stud"]
+albedo_color = Color(0.73, 0.8, 0.81, 1)
+roughness = 0.82
+
+[sub_resource type="BoxMesh" id="Mesh_Deck"]
+size = Vector3(3.08, 0.4, 3.08)
+
+[sub_resource type="BoxMesh" id="Mesh_EdgeLeft"]
+size = Vector3(0.1, 0.35, 3.16)
+
+[sub_resource type="BoxMesh" id="Mesh_EdgeRight"]
+size = Vector3(0.1, 0.35, 3.16)
+
+[sub_resource type="BoxMesh" id="Mesh_EdgeBack"]
+size = Vector3(3.16, 0.35, 0.1)
+
+[sub_resource type="BoxMesh" id="Mesh_EdgeFront"]
+size = Vector3(3.16, 0.35, 0.1)
+
+[sub_resource type="BoxShape3D" id="BodyShape"]
+size = Vector3(3, 0.46, 3)
+
+[node name="Platform" type="Node3D"]
+script = ExtResource("1_placeable")
+profile = ExtResource("2_profile")
+
+[node name="Deck" type="MeshInstance3D" parent="."]
+mesh = SubResource("Mesh_Deck")
+material_override = SubResource("Material_top")
+position = Vector3(0, 0.24, 0)
+
+[node name="EdgeLeft" type="MeshInstance3D" parent="."]
+mesh = SubResource("Mesh_EdgeLeft")
+material_override = SubResource("Material_edge")
+position = Vector3(-1.53, 0.31, 0)
+
+[node name="EdgeRight" type="MeshInstance3D" parent="."]
+mesh = SubResource("Mesh_EdgeRight")
+material_override = SubResource("Material_edge")
+position = Vector3(1.53, 0.31, 0)
+
+[node name="EdgeBack" type="MeshInstance3D" parent="."]
+mesh = SubResource("Mesh_EdgeBack")
+material_override = SubResource("Material_edge")
+position = Vector3(0, 0.31, 1.53)
+
+[node name="EdgeFront" type="MeshInstance3D" parent="."]
+mesh = SubResource("Mesh_EdgeFront")
+material_override = SubResource("Material_edge")
+position = Vector3(0, 0.31, -1.53)
+
+[node name="Solid" type="StaticBody3D" parent="."]
+collision_layer = 2
+collision_mask = 0
+
+[node name="BodyCollision" type="CollisionShape3D" parent="Solid"]
+shape = SubResource("BodyShape")
+position = Vector3(0, 0.26, 0)

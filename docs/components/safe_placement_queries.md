@@ -112,3 +112,12 @@ list and requests at most one intersection result per candidate.
 Keep candidate lists small and ordered by desirability. This is intended for
 transitions and placement events, not for scanning thousands of positions every
 physics frame.
+
+## Runtime asset placement (optional composition)
+
+The independent [Runtime Placement 3D Contract](runtime_placement_3d.md)
+composes this **existing stateless collision query** with explicit surface
+admission, authored stack permissions, bounded straight-line chain placement
+and move/rotate preview sessions. Its collision-layer changes apply **only to
+temporary placeable previews**, never to this stateless query API. It remains
+scene-owned; construction rules and multiplayer authority belong to the game.

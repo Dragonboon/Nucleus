@@ -1,0 +1,71 @@
+[gd_scene load_steps=12 format=3]
+
+[ext_resource type="Script" path="res://components/gameplay/movement/placement_3d/placeable_3d.gd" id="1_placeable"]
+[ext_resource type="Resource" path="res://examples/placement/profiles/crate_profile.tres" id="2_profile"]
+
+[sub_resource type="StandardMaterial3D" id="Material_wood"]
+albedo_color = Color(0.66, 0.44, 0.25, 1)
+roughness = 0.82
+
+[sub_resource type="StandardMaterial3D" id="Material_metal"]
+albedo_color = Color(0.29, 0.35, 0.37, 1)
+roughness = 0.82
+
+[sub_resource type="StandardMaterial3D" id="Material_light"]
+albedo_color = Color(0.81, 0.61, 0.39, 1)
+roughness = 0.82
+
+[sub_resource type="BoxMesh" id="Mesh_Case"]
+size = Vector3(0.89, 0.89, 0.89)
+
+[sub_resource type="BoxMesh" id="Mesh_BandBase"]
+size = Vector3(0.94, 0.095, 0.94)
+
+[sub_resource type="BoxMesh" id="Mesh_BandLid"]
+size = Vector3(0.94, 0.095, 0.94)
+
+[sub_resource type="BoxMesh" id="Mesh_StripLeft"]
+size = Vector3(0.1, 0.7, 0.96)
+
+[sub_resource type="BoxMesh" id="Mesh_StripRight"]
+size = Vector3(0.1, 0.7, 0.96)
+
+[sub_resource type="BoxShape3D" id="BodyShape"]
+size = Vector3(0.89, 0.89, 0.89)
+
+[node name="Crate" type="Node3D"]
+script = ExtResource("1_placeable")
+profile = ExtResource("2_profile")
+
+[node name="Case" type="MeshInstance3D" parent="."]
+mesh = SubResource("Mesh_Case")
+material_override = SubResource("Material_wood")
+position = Vector3(0, 0.45, 0)
+
+[node name="BandBase" type="MeshInstance3D" parent="."]
+mesh = SubResource("Mesh_BandBase")
+material_override = SubResource("Material_metal")
+position = Vector3(0, 0.07, 0)
+
+[node name="BandLid" type="MeshInstance3D" parent="."]
+mesh = SubResource("Mesh_BandLid")
+material_override = SubResource("Material_metal")
+position = Vector3(0, 0.86, 0)
+
+[node name="StripLeft" type="MeshInstance3D" parent="."]
+mesh = SubResource("Mesh_StripLeft")
+material_override = SubResource("Material_light")
+position = Vector3(-0.4, 0.47, 0)
+
+[node name="StripRight" type="MeshInstance3D" parent="."]
+mesh = SubResource("Mesh_StripRight")
+material_override = SubResource("Material_light")
+position = Vector3(0.4, 0.47, 0)
+
+[node name="Solid" type="StaticBody3D" parent="."]
+collision_layer = 2
+collision_mask = 0
+
+[node name="BodyCollision" type="CollisionShape3D" parent="Solid"]
+shape = SubResource("BodyShape")
+position = Vector3(0, 0.46, 0)

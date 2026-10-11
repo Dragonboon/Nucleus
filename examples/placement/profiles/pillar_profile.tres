@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="NucleusPlacementProfile3D" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://components/gameplay/movement/placement_3d/placement_profile_3d.gd" id="1_profile"]
+
+[sub_resource type="CylinderShape3D" id="Clearance"]
+radius = 0.5
+height = 2.05
+
+[resource]
+script = ExtResource("1_profile")
+kind = &"pillar"
+supported_by_kinds = Array[StringName]([&"platform"])
+support_mask = 3
+max_slope_degrees = 30
+align_to_surface = true
+surface_offset = 0.025
+support_half_extents = Vector2(0.37, 0.37)
+max_height_spread = 0.22
+clearance_shape = SubResource("Clearance")
+clearance_offset = Vector3(0, 1.055, 0)
+obstacle_mask = 6
+rotation_increment_degrees = 15
+allow_chains = false
