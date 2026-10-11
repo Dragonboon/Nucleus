@@ -11,6 +11,8 @@ signal region_failed(region_id: StringName, error: Error)
 @export var region_id: StringName = &"region"
 @export var region_size: Vector2 = Vector2(32.0, 32.0)
 @export var density_volumes: Array[NucleusScatterDensityVolume3D] = []
+## Runtime callback; bind it before start_build(). Kept out of authored Resources.
+var density_filter: Callable
 @export_range(1, 4096, 1) var candidates_per_step: int = 128
 @export_range(1, 512, 1) var batch_size_limit: int = 256
 @export_range(1.0, 4096.0, 1.0) var spatial_batch_size: float = 16.0
@@ -95,6 +97,7 @@ func start_build(queue: NucleusMaterializationQueue) -> Error:
 		region_size,
 		region_id,
 		density_volumes,
+		density_filter,
 	)
 	if error != OK:
 		return error

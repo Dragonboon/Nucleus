@@ -14,6 +14,8 @@ var cells_per_step: int = 128
 var _profile: NucleusScatterProfile3D
 var _surface: NucleusSurfaceSampler3D
 var _modulators: Array[NucleusScatterDensityVolume3D] = []
+## Optional deterministic main-thread density filter (world XZ -> [0, 1]).
+var _density_filter: Callable
 var _region_min: Vector2 = Vector2.ZERO
 var _region_end: Vector2 = Vector2.ZERO
 var _start_cell: Vector2i = Vector2i.ZERO
@@ -32,6 +34,7 @@ func configure(
 	region_size: Vector2,
 	stable_region_id: StringName,
 	modulators: Array[NucleusScatterDensityVolume3D] = [],
+	density_filter: Callable = Callable(),
 ) -> Error:
 	if get_state() != State.PENDING:
 		return ERR_UNAVAILABLE
@@ -74,6 +77,7 @@ func configure(
 	_accepted_count = 0
 	_groups.clear()
 	_modulators.assign(modulators)
+	_density_filter = density_filter
 	region_id = stable_region_id
 	set_progress(0, width * height)
 	return OK
@@ -185,6 +189,14 @@ func _effective_density(world_xz: Vector2) -> float:
 	for volume: NucleusScatterDensityVolume3D in _modulators:
 		if volume != null and is_instance_valid(volume):
 			probability *= volume.get_density_multiplier(world_position)
+	if _density_filter.is_valid():
+		var value: Variant = _density_filter.call(world_xz)
+		if not value is int and not value is float:
+			return 0.0
+		var multiplier: float = float(value)
+		if not is_finite(multiplier):
+			return 0.0
+		probability *= clampf(multiplier, 0.0, 1.0)
 	return clampf(probability, 0.0, 1.0)
 
 
