@@ -49,6 +49,7 @@ func run() -> Dictionary:
 	)
 	expect_equal(descriptors["error"], OK, "POIs use existing analytical surface.")
 	free_test_node(root)
+	_test_actual_lab_scene()
 	return finish()
 
 
@@ -71,3 +72,33 @@ func _build(
 	if not result is Dictionary:
 		return {"error": ERR_INVALID_DATA}
 	return {"error": OK, "accepted": int(result["accepted_count"])}
+
+## Regression: admission must result in actual rendered region children, not only data.
+func _test_actual_lab_scene() -> void:
+	var scene := load("res://examples/world_composition/world_composition_lab.tscn") as PackedScene
+	expect_true(scene != null, "Composition lab PackedScene loads.")
+	if scene == null:
+		return
+	var lab := scene.instantiate() as Node3D
+	expect_true(attach_test_node(lab), "Composition lab enters SceneTree.")
+	if not lab.is_inside_tree():
+		lab.free()
+		return
+	var active: Node = lab.get_node_or_null("Region_0_0")
+	expect_true(active != null, "First region is created on ready.")
+	if active != null:
+		var mesh_count: int = 0
+		for child: Node in active.get_children():
+			if child is MeshInstance3D:
+				mesh_count += 1
+		expect_true(mesh_count >= 64, "Initial region has at least 64 visual tiles.")
+	expect_equal(lab.lifecycle.get_region_state(&"0:0"),
+		NucleusWorldStreamLifecycle.RegionState.LOADED,
+		"Initial load admission is acknowledged.")
+	lab._toggle_region()
+	expect_true(lab.get_node_or_null("Region_1_0") != null,
+		"Next region materializes after switching.")
+	expect_equal(lab.lifecycle.get_region_state(&"0:0"),
+		NucleusWorldStreamLifecycle.RegionState.UNLOADED,
+		"Previous region is acknowledged as unloaded.")
+	free_test_node(lab)
