@@ -92,13 +92,18 @@ func _test_actual_lab_scene() -> void:
 			if child is MeshInstance3D:
 				mesh_count += 1
 		expect_true(mesh_count >= 64, "Initial region has at least 64 visual tiles.")
-	expect_equal(lab.lifecycle.get_region_state(&"0:0"),
+	var lifecycle: NucleusWorldStreamLifecycle = lab.get("lifecycle")
+	expect_true(lifecycle != null, "Lab owns the streaming lifecycle.")
+	if lifecycle == null:
+		free_test_node(lab)
+		return
+	expect_equal(lifecycle.get_region_state(&"0:0"),
 		NucleusWorldStreamLifecycle.RegionState.LOADED,
 		"Initial load admission is acknowledged.")
-	lab._toggle_region()
+	lab.call("_toggle_region")
 	expect_true(lab.get_node_or_null("Region_1_0") != null,
 		"Next region materializes after switching.")
-	expect_equal(lab.lifecycle.get_region_state(&"0:0"),
+	expect_equal(lifecycle.get_region_state(&"0:0"),
 		NucleusWorldStreamLifecycle.RegionState.UNLOADED,
 		"Previous region is acknowledged as unloaded.")
 	free_test_node(lab)
