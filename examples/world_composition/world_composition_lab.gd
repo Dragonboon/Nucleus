@@ -10,6 +10,7 @@ var query: NucleusBiomeSurfaceQuery3D
 var recipe: NucleusPOIDistributionProfile3D
 var _regions: Dictionary = {}
 var _status: Label
+var _camera: Camera3D
 
 func _ready() -> void:
 	surface = NucleusPlaneSurfaceSampler3D.new()
@@ -29,6 +30,7 @@ func _ready() -> void:
 	query = NucleusBiomeSurfaceQuery3D.new(surface, composer)
 	recipe = NucleusPOIDistributionProfile3D.new()
 	recipe.grid_spacing = 12.0
+	recipe.minimum_separation = 8.0
 	recipe.density = 0.6
 	var kind := NucleusPOIType3D.new()
 	kind.poi_id = &"landmark"
@@ -38,11 +40,11 @@ func _ready() -> void:
 	add_child(lifecycle)
 	lifecycle.load_requested.connect(_load_region)
 	lifecycle.unload_requested.connect(_unload_region)
-	var camera := Camera3D.new()
-	camera.position = Vector3(20, 48, 56)
-	add_child(camera)
-	camera.look_at(Vector3(12, 0, 0))
-	camera.current = true
+	_camera = Camera3D.new()
+	_camera.position = Vector3(20, 48, 56)
+	add_child(_camera)
+	_camera.look_at(Vector3(12, 0, 12))
+	_camera.current = true
 	var light := DirectionalLight3D.new()
 	light.rotation_degrees = Vector3(-55, -25, 0)
 	add_child(light)
@@ -59,8 +61,11 @@ func _ready() -> void:
 	column.add_child(button)
 	_status = Label.new()
 	column.add_child(_status)
-	lifecycle.set_desired_regions([&"0:0"])
-	lifecycle.pump()
+	var admission: Error = lifecycle.set_desired_regions([&"0:0"])
+	if admission == OK:
+		lifecycle.pump()
+	else:
+		_show_error("Unable to set initial region", admission)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
@@ -70,8 +75,11 @@ func _unhandled_input(event: InputEvent) -> void:
 func _toggle_region() -> void:
 	var current: Array[StringName] = lifecycle.get_desired_regions()
 	var next: StringName = &"1:0" if current.has(&"0:0") else &"0:0"
-	lifecycle.set_desired_regions([next])
-	lifecycle.pump()
+	var admission: Error = lifecycle.set_desired_regions([next])
+	if admission == OK:
+		lifecycle.pump()
+	else:
+		_show_error("Unable to switch regions", admission)
 
 func _bounds(region_id: StringName) -> Vector2:
 	return Vector2(0, 0) if region_id == &"0:0" else Vector2(REGION_SIZE, 0)
@@ -82,12 +90,14 @@ func _load_region(region_id: StringName, token: int) -> void:
 		minimum, Vector2.ONE * REGION_SIZE, recipe, composer, query.sample_poi
 	)
 	if plan["error"] != OK:
+		var failure: Error = plan["error"]
+		_show_error("Cannot load region %s" % region_id, failure)
 		lifecycle.mark_request_failed(
-			region_id, token, NucleusWorldStreamLifecycle.Operation.LOAD, plan["error"]
+			region_id, token, NucleusWorldStreamLifecycle.Operation.LOAD, failure
 		)
 		return
 	var region := Node3D.new()
-	region.name = "Region_" + str(region_id)
+	region.name = "Region_" + str(region_id).replace(":", "_")
 	add_child(region)
 	for z in range(8):
 		for x in range(8):
@@ -118,7 +128,15 @@ func _load_region(region_id: StringName, token: int) -> void:
 		marker.position = descriptor["position"] + Vector3.UP
 		region.add_child(marker)
 	_regions[region_id] = region
-	lifecycle.mark_loaded(region_id, token)
+	var acknowledgement: Error = lifecycle.mark_loaded(region_id, token)
+	if acknowledgement != OK:
+		_show_error("Region acknowledgement failed", acknowledgement)
+		region.queue_free()
+		_regions.erase(region_id)
+		return
+	var center: Vector2 = minimum + Vector2.ONE * REGION_SIZE * 0.5
+	_camera.position = Vector3(center.x + 14.0, 42.0, center.y + 43.0)
+	_camera.look_at(Vector3(center.x, 0.0, center.y))
 	_status.text = "Resident region: %s · POIs: %d" % [
 		region_id, (plan["points"] as Array).size()
 	]
@@ -129,3 +147,9 @@ func _unload_region(region_id: StringName, token: int) -> void:
 		region.queue_free()
 	_regions.erase(region_id)
 	lifecycle.mark_unloaded(region_id, token)
+
+func _show_error(context: String, error: Error) -> void:
+	var message: String = "%s (%s)" % [context, error_string(error)]
+	push_error(message)
+	if _status != null:
+		_status.text = message
