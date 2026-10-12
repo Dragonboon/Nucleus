@@ -92,7 +92,7 @@ func _test_actual_lab_scene() -> void:
 			if child is MeshInstance3D:
 				mesh_count += 1
 		expect_true(mesh_count >= 64, "Initial region has at least 64 visual tiles.")
-	var lifecycle: NucleusWorldStreamLifecycle = lab.get("lifecycle")
+	var lifecycle := lab.get("lifecycle") as NucleusWorldStreamLifecycle
 	expect_true(lifecycle != null, "Lab owns the streaming lifecycle.")
 	if lifecycle == null:
 		free_test_node(lab)
