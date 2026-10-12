@@ -455,3 +455,47 @@ manifest. Test cases cover limits, degraded windows, recovery, stale and
 missing snapshots, insufficient evidence, disabled recovery and node
 lifetime. End-to-end real-frame reaction and user-approved temporary
 application belong to the subsequent quality-binding iteration.
+
+## Adaptive Quality Binding (opt-in, temporary)
+
+`NucleusAdaptiveQualityBinding` connects the existing
+`NucleusAdaptivePerformanceController.render_scale_recommended` signal to
+the **sole** rendering scale writer,
+`NucleusDisplaySettingsApplier.request_temporary_render_scale(requester, scale)`.
+Set its `controller` and `display_applier` references explicitly; no new
+autoload or sampler is introduced.
+
+`NucleusDisplaySettingsApplier` now supports a **single scene-owned
+temporary owner**: `request_temporary_render_scale()`,
+`release_temporary_render_scale()`, `get_temporary_render_scale()`
+and `get_effective_render_scale()`. It always applies the *smaller* of
+the player's authored scale and the adaptive recommendation. The persisted
+`graphics/render_scale` setting is not changed, and this temporary request
+does not mark settings dirty.
+
+Enabling is an explicit user action (`start_enabled=false` by default).
+Disabling, freeing the binding, or exiting the scene releases the temporary
+override. A manual user setting change or settings reload revokes the
+binding immediately and emits `temporary_render_scale_revoked`; the user
+must opt in again. A second simultaneous temporary requester receives
+`ERR_BUSY`, rather than overwriting the active binding.
+
+The sample `res://examples/adaptive_performance/adaptive_quality_lab.tscn`
+has an explicit enable/disable control, sends simulated slow/healthy
+snapshots through the existing policy and displays **saved preference**,
+**recommended scale** and **effective scale** separately. Unlike the
+original observation lab, enabling this one *does change real render scale*,
+but never the persisted preference. The lab does not simulate device
+FPS as if it were real hardware data.
+
+The headless regression `adaptive_quality_binding_test.gd` checks
+consent, single-owner exclusion, scale changes through the existing
+display applier, manual override revocation, persistence isolation,
+scene teardown and the actual demo wiring.
+
+Known boundaries: One optional owner may control the temporary root
+viewport scale at a time; authored settings changes take priority. Current
+signals distinguish policy recommendations from applied effective values.
+No GPU-bottleneck identification, CPU/physics changes, TDP controls or FPS
+guarantees are implied. Screen-space / hardware benchmarking should be
+validated in an actual Godot graphical build.
