@@ -66,8 +66,8 @@ removes batches; returning regenerates the same decoration from the same seed.
 The status label distinguishes loading from residency and shows instance count.
 
 The terrain stays resident in this bounded example; only decoration streams.
-Tree/rock meshes are visualization content without collision. Terrain material
-is uniform: biome material painting and POI clearings are not implemented here.
+Tree/rock meshes are visualization content without collision. Terrain base colors now come from biome material profiles. POI clearings use
+existing density volumes; landmark state persists through World State and SaveSession.
 
 ## Validation
 
@@ -76,10 +76,10 @@ surface bridge, deterministic filtered scatter across two adjacent regions,
 exclusion and POI surface integration. The existing world streaming, scatter
 and POI suites remain registered.
 
-This integration does **not** automatically paint biomes into terrain
-materials, reserve POI exclusion volumes, create roads between settlements,
-or materialize authoritative structures. Those are game policy, possibly
-composed with current Placement, masks and World State.
+The example demonstrates base-color mapping and POI exclusions. It does not
+blend full PBR texture stacks, create roads or materialize authoritative gameplay
+structures. See [composition acceptance](../guides/composition_acceptance.md) for
+Save/Load, collection and the explicit ownership/compatibility limits.
 
 ## Try and verify
 

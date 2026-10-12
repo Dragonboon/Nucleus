@@ -24,7 +24,9 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Static repository checks
-        run: python3 scripts/ci/static_checks.py
+        run: |
+          python3 scripts/ci/static_checks.py
+          python3 -m unittest discover -s scripts/ci -p test_run_godot_checked.py
 
       - name: Documentation coverage audit
         run: python3 scripts/ci/documentation_audit.py
@@ -57,52 +59,60 @@ jobs:
 
       - name: Import project headlessly
         run: |
-          "${{ steps.godot.outputs.bin }}" \
+          python3 scripts/ci/run_godot_checked.py "${{ steps.godot.outputs.bin }}" \
             --headless \
             --path . \
             --import
 
       - name: Run native headless test scene
         run: |
-          "${{ steps.godot.outputs.bin }}" \
+          python3 scripts/ci/run_godot_checked.py "${{ steps.godot.outputs.bin }}" \
             --headless \
             --path . \
             res://tests/headless/test_runner.tscn
 
       - name: Run asynchronous biome composition smoke scene
         run: |
-          "${{ steps.godot.outputs.bin }}" \
+          python3 scripts/ci/run_godot_checked.py "${{ steps.godot.outputs.bin }}" \
             --headless \
             --path . \
             res://tests/smoke/world_composition_smoke.tscn
 
       - name: Run bootstrap smoke scene
         run: |
-          "${{ steps.godot.outputs.bin }}" \
+          python3 scripts/ci/run_godot_checked.py "${{ steps.godot.outputs.bin }}" \
             --headless \
             --path . \
             res://tests/smoke/smoke_main.tscn
 
       - name: Run 3D locomotion physics smoke scene
         run: |
-          "${{ steps.godot.outputs.bin }}" \
+          python3 scripts/ci/run_godot_checked.py "${{ steps.godot.outputs.bin }}" \
             --headless \
             --path . \
             res://tests/smoke/locomotion_3d_smoke.tscn
 
       - name: Run resource loading smoke scene
         run: |
-          "${{ steps.godot.outputs.bin }}" \
+          python3 scripts/ci/run_godot_checked.py "${{ steps.godot.outputs.bin }}" \
             --headless \
             --path . \
             res://tests/smoke/resource_loading_smoke.tscn
 
       - name: Run localhost ENet replication smoke scene
         run: |
-          "${{ steps.godot.outputs.bin }}" \
+          python3 scripts/ci/run_godot_checked.py "${{ steps.godot.outputs.bin }}" \
             --headless \
             --path . \
             res://tests/smoke/network_replication_smoke.tscn
+
+      - name: Verify composed world, boat and measured workload lifecycles
+        shell: bash
+        run: |
+          for scene in world_session boat_transfer adaptive_measured; do
+            python3 scripts/ci/run_godot_checked.py "${{ steps.godot.outputs.bin }}" \
+              --headless --path . "res://tests/smoke/${scene}_smoke.tscn"
+          done
 
       - name: Install official export templates
         shell: bash

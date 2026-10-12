@@ -34,6 +34,13 @@ small Nucleus service/component contracts
 game-owned rules, content, art and product policy
 ```
 
+## Integration readiness
+
+See the [maturity map](docs/architecture/maturity.md) for evidence and limits,
+[composed acceptance scenes](docs/guides/composition_acceptance.md) for runnable
+end-to-end checks, and [dependencies/upgrades](docs/guides/upgrading_and_dependencies.md)
+when adopting changes into an existing game.
+
 ## Current baseline
 
 | Contract | Current state |

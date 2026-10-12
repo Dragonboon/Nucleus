@@ -22,32 +22,42 @@ static func slice(
 		return _failure(&"invalid_plane")
 	if mesh.get_surface_count() < 1 or mesh.get_surface_count() > MAX_SURFACES:
 		return _failure(&"surface_limit")
-	if mesh.get_blend_shape_count() > 0:
+	if not mesh is ArrayMesh and not mesh is PrimitiveMesh:
+		return _failure(&"mesh_type_unsupported")
+	if mesh is ArrayMesh and mesh.get_blend_shape_count() > 0:
 		return _failure(&"blend_shapes_unsupported")
 	var normal: Vector3 = plane_normal.normalized()
 	var epsilon: float = maxf(EPSILON, mesh.get_aabb().size.length() * 0.000001)
 	var side_a: Array[Dictionary] = []
 	var side_b: Array[Dictionary] = []
 	var segments: Array[PackedVector3Array] = []
-	var surfaces: Array[Dictionary] = []
 	var triangles: int = 0
 
 	for surface_index in range(mesh.get_surface_count()):
-		if mesh.surface_get_primitive_type(surface_index) != Mesh.PRIMITIVE_TRIANGLES:
+		if (
+			mesh is ArrayMesh
+			and mesh.surface_get_primitive_type(surface_index) != Mesh.PRIMITIVE_TRIANGLES
+		):
 			return _failure(&"non_triangle_surface")
 		var arrays: Array = mesh.surface_get_arrays(surface_index)
 		for attribute in [
 			Mesh.ARRAY_BONES, Mesh.ARRAY_WEIGHTS,
-			Mesh.ARRAY_TANGENT, Mesh.ARRAY_COLOR, Mesh.ARRAY_TEX_UV2,
+			Mesh.ARRAY_COLOR, Mesh.ARRAY_TEX_UV2,
 			Mesh.ARRAY_CUSTOM0, Mesh.ARRAY_CUSTOM1,
 			Mesh.ARRAY_CUSTOM2, Mesh.ARRAY_CUSTOM3,
 		]:
 			if arrays[attribute] != null and not arrays[attribute].is_empty():
 				return _failure(&"vertex_format_unsupported")
 		var positions: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
-		var normals: PackedVector3Array = arrays[Mesh.ARRAY_NORMAL]
-		var uvs: PackedVector2Array = arrays[Mesh.ARRAY_TEX_UV]
-		var indices: PackedInt32Array = arrays[Mesh.ARRAY_INDEX]
+		var normals := PackedVector3Array()
+		if arrays[Mesh.ARRAY_NORMAL] != null:
+			normals = arrays[Mesh.ARRAY_NORMAL]
+		var uvs := PackedVector2Array()
+		if arrays[Mesh.ARRAY_TEX_UV] != null:
+			uvs = arrays[Mesh.ARRAY_TEX_UV]
+		var indices := PackedInt32Array()
+		if arrays[Mesh.ARRAY_INDEX] != null:
+			indices = arrays[Mesh.ARRAY_INDEX]
 		if not normals.is_empty() and normals.size() != positions.size():
 			return _failure(&"invalid_normals")
 		if not uvs.is_empty() and uvs.size() != positions.size():
@@ -69,7 +79,7 @@ static func slice(
 				ids.append(id)
 			var face_normal: Vector3 = (
 				positions[ids[1]] - positions[ids[0]]
-			).cross(positions[ids[2]] - positions[ids[0]]).normalized()
+			).cross(positions[ids[2]] - positions[ids[0]]).normalized() * -1.0
 			var triangle: Array[Dictionary] = []
 			var positive_count: int = 0
 			for id in ids:
@@ -134,9 +144,9 @@ static func slice(
 			var swap: Vector3 = p1
 			p1 = p2
 			p2 = swap
-		for p in [p0, p1, p2]:
-			cap_b.append(_cap_vertex(p, normal, plane_point, axis_u, axis_v))
 		for p in [p0, p2, p1]:
+			cap_b.append(_cap_vertex(p, normal, plane_point, axis_u, axis_v))
+		for p in [p0, p1, p2]:
 			cap_a.append(_cap_vertex(p, -normal, plane_point, axis_u, axis_v))
 	side_a.append({"vertices": cap_a, "material": cap_material})
 	side_b.append({"vertices": cap_b, "material": cap_material})
@@ -323,19 +333,15 @@ static func _build_mesh(surfaces: Array[Dictionary]) -> ArrayMesh:
 		var vertices: Array[Dictionary] = surface["vertices"]
 		if vertices.is_empty():
 			continue
-		var positions := PackedVector3Array()
-		var normals := PackedVector3Array()
-		var uvs := PackedVector2Array()
+		var builder := SurfaceTool.new()
+		builder.begin(Mesh.PRIMITIVE_TRIANGLES)
 		for vertex in vertices:
-			positions.append(vertex["position"])
-			normals.append(vertex["normal"])
-			uvs.append(vertex["uv"])
-		var arrays: Array = []
-		arrays.resize(Mesh.ARRAY_MAX)
-		arrays[Mesh.ARRAY_VERTEX] = positions
-		arrays[Mesh.ARRAY_NORMAL] = normals
-		arrays[Mesh.ARRAY_TEX_UV] = uvs
-		mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+			builder.set_normal(vertex["normal"])
+			builder.set_uv(vertex["uv"])
+			builder.add_vertex(vertex["position"])
+		# Clipped topology and cap UVs need new tangents, not copied source vectors.
+		builder.generate_tangents()
+		builder.commit(mesh)
 		var material: Material = surface["material"]
 		if material != null:
 			mesh.surface_set_material(mesh.get_surface_count() - 1, material)

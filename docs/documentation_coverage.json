@@ -249,7 +249,8 @@
     ],
     "modules/terrain": [
       "docs/modules/terrain_generation.md",
-      "docs/modules/terrain_heightfield_constraints.md"
+      "docs/modules/terrain_heightfield_constraints.md",
+      "docs/guides/composition_acceptance.md"
     ],
     "modules/world_state": [
       "docs/modules/persistent_world_state.md"

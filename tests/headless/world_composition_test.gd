@@ -27,6 +27,20 @@ func run() -> Dictionary:
 		"Existing surface sampler supplies POI height.")
 	expect_equal(query.sample_poi(Vector2.ZERO)["slope"], 0.0,
 		"Existing surface sampler supplies POI slope.")
+	var material := NucleusTerrainMaterialProfile.new()
+	material.base_color = Color.RED
+	wet.terrain_material = material
+	var mapped: Dictionary = NucleusBiomeMaterialMap3D.build(
+		query, Vector2.ZERO, Vector2(8, 8), 4
+	)
+	expect_equal(mapped["error"], OK, "Biome colors bake through the shared surface query.")
+	var texture: ImageTexture = mapped["texture"]
+	expect_equal(texture.get_image().get_pixel(0, 0), Color.RED,
+		"Map consumes the selected biome's existing material profile.")
+	expect_equal(material.base_color, Color.RED, "Map generation never mutates shared profiles.")
+	expect_equal(NucleusBiomeMaterialMap3D.build(
+		query, Vector2.ZERO, Vector2(8, 8), 1024
+	)["error"], ERR_INVALID_PARAMETER, "Unbounded material map is rejected.")
 	var profile := NucleusScatterProfile3D.new()
 	profile.grid_spacing = 2.0
 	profile.density = 1.0
@@ -112,6 +126,10 @@ func _test_actual_lab_scene() -> void:
 	var active: Node = lab.get_node_or_null("Region_0_0")
 	expect_true(active != null, "Initial region can reload after cancellation.")
 	var instances: int = _check_lab_scatter(lab, active)
+	lab.call("collect_pois")
+	var world := lab.get("world_state") as NucleusWorldStateService
+	var saved: Dictionary = world.capture_state()
+	expect_false(saved.is_empty(), "Procedural POI identities capture persistent state.")
 	expect_true(instances > 0, "Actual native MultiMesh batches contain biome decoration.")
 	var lifecycle := lab.get("lifecycle") as NucleusWorldStreamLifecycle
 	expect_true(lifecycle != null, "Lab owns the streaming lifecycle.")
@@ -133,6 +151,9 @@ func _test_actual_lab_scene() -> void:
 	_finish_lab_build(lab)
 	expect_equal(_check_lab_scatter(lab, lab.get_node_or_null("Region_0_0")), instances,
 		"Unload/reload restores deterministic decoration count.")
+	var persistent: Node = lab.get_node("Region_0_0/Persistent")
+	for marker: Node3D in persistent.get_children():
+		expect_false(marker.visible, "Collected POIs remain collected after streamed reload.")
 	free_test_node(lab)
 
 
@@ -166,7 +187,7 @@ func _check_lab_scatter(lab: Node3D, region: Node) -> int:
 		var job := NucleusScatterBuildJob3D.new()
 		var error: Error = job.configure(child.profile, child.surface,
 			Vector2(child.global_position.x, child.global_position.z), child.region_size,
-			child.region_id, [], child.density_filter)
+			child.region_id, child.density_volumes, child.density_filter)
 		expect_equal(error, OK, "Scene wiring configures the real Scatter job.")
 		while not job.is_terminal():
 			job.step()
@@ -179,6 +200,9 @@ func _check_lab_scatter(lab: Node3D, region: Node) -> int:
 				var xz := Vector2(world.x, world.z)
 				expect_equal(query.sample_biome(xz).get("biome_id"), biome_id,
 					"Every accepted instance belongs to its assigned biome.")
+				for volume: NucleusScatterDensityVolume3D in child.density_volumes:
+					expect_false(volume.contains_world_xz(Vector3(world.x, 0, world.z)),
+						"Scatter respects POI clearings, including neighboring region sites.")
 				var expected: float = query.sample_poi(xz)["height"] + child.profile.vertical_offset
 				expect_true(absf(world.y - expected) < 0.001,
 					"Decoration follows terrain height even in translated regions.")

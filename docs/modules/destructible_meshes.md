@@ -61,7 +61,7 @@ with convex collision generated through Godot unless collision proxies were
 provided separately. The source mesh must be a non-skinned triangle mesh
 with **one simple planar cut contour**. Normals and primary UVs are interpolated;
 surface materials are retained, while the optional cap material applies to
-the cut faces. Secondary UVs, tangents, vertex colors, custom vertex channels,
+the cut faces. Tangents are regenerated from the clipped geometry and UVs. Secondary UVs, vertex colors, custom vertex channels,
 blend shapes, holes, multiple disconnected cut loops, vertices directly on
 the cut plane and nonmanifold topology are **not supported**. Unsupported
 attributes or ambiguous contours are rejected rather than silently discarded.

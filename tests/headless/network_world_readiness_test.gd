@@ -14,6 +14,7 @@ func run() -> Dictionary:
 	expect_false(gate._accept_ready(2, 10), "Duplicate ACK rejected.")
 	expect_true(gate.is_ready(2), "Accepted peer is ready.")
 	expect_true(gate.begin_session(11), "New epoch resets readiness.")
+	expect_false(gate.begin_session(9), "Session epochs cannot move backward.")
 	expect_false(gate.is_ready(2), "Prior session cannot retain readiness.")
 	expect_false(gate._accept_ready(2, 10), "Prior epoch rejected after session change.")
 	expect_true(gate.expect_peer(2), "Rejoin must be registered again.")

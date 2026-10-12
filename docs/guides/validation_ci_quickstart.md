@@ -112,3 +112,11 @@ renderer/plugin/platform SDK.
 
 Call a change runtime-green only after the relevant Godot steps have actually
 executed successfully.
+
+## Script-error guard and composed scenarios
+
+Run Godot through `python3 scripts/ci/run_godot_checked.py <godot> <arguments>`
+when validating automation. The wrapper preserves nonzero exits and also fails
+on script/parse/compile errors that Godot can otherwise log and continue past.
+See [composed acceptance](composition_acceptance.md) for world persistence,
+boat transfer, multi-client readiness/reconnect and measured adaptive work.

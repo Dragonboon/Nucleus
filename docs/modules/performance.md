@@ -549,3 +549,11 @@ external edits and teardown.
 
 This final phase composes existing Nucleus mechanisms without introducing
 a global world manager, new settings writers or a task scheduler.
+
+## Real-work A/B measurement
+
+The synthetic policy labs remain deterministic policy demonstrations. For real
+frame windows and actual TerrainBuildJob load, use
+`examples/adaptive_performance/adaptive_measured_lab.tscn`.
+[Composition acceptance](../guides/composition_acceptance.md) documents the report,
+throughput/recovery interpretation and hardware-evidence limits.

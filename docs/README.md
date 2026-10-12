@@ -171,3 +171,9 @@ python3 scripts/ci/use_case_audit.py
 python3 scripts/ci/build_use_case_catalog.py --check
 python3 scripts/ci/productization_audit.py
 ```
+
+## Stabilization and adoption
+
+- [Maturity and evidence](architecture/maturity.md)
+- [Composed acceptance scenes](guides/composition_acceptance.md)
+- [Dependencies and selective upgrades](guides/upgrading_and_dependencies.md)

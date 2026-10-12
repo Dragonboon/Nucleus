@@ -76,7 +76,9 @@ func _test_buffered_and_reentrant() -> void:
 	attack.blocked = true
 	expect_equal(machine.request_state(&"Idle"), OK, "Buffer second transition.")
 	expect_equal(machine.request_state(&"Jump"), OK, "Buffer within capacity.")
-	expect_equal(machine.request_state(&"Attack"), ERR_BUSY, "Queue capacity enforced.")
+	expect_equal(machine.request_state(&"Attack"), OK, "Active-state request is a no-op.")
+	expect_equal(machine.get_pending_request_count(), 2, "No-op does not alter the queue.")
+	expect_equal(machine.request_state(&"Idle"), ERR_BUSY, "Queue capacity enforced.")
 	machine.set_active(false)
 	expect_equal(machine.get_pending_request_count(), 0, "Disable cancels requests.")
 	machine.set_active(true)

@@ -16,9 +16,9 @@ func _exit_tree() -> void:
 		multiplayer.peer_disconnected.disconnect(remove_peer)
 	clear()
 
-## Server resets the handshake each time the world/session changes.
+## Server resets the handshake for a strictly newer positive world/session epoch.
 func begin_session(epoch: int) -> bool:
-	if not multiplayer.is_server() or epoch <= 0 or epoch == _epoch:
+	if not multiplayer.is_server() or epoch <= 0 or epoch <= _epoch:
 		return false
 	clear()
 	_epoch = epoch

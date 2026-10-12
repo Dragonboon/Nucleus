@@ -19,6 +19,16 @@ func _run() -> void:
 	await _settle(lifecycle)
 	_check(lifecycle.get_resident_regions() == [&"0:0"], "Only the latest request is resident.")
 	var first: int = _inspect(lab, "Region_0_0")
+	var session := lab.get("save_session") as NucleusSaveSession
+	session.slot_id = "composition_smoke_" + str(Time.get_ticks_usec())
+	lab.call("collect_pois")
+	_check(session.save_manual().succeeded(), "World State saves through NucleusSaveSession.")
+	for marker: Node3D in lab.get_node("Region_0_0/Persistent").get_children():
+		marker.visible = true
+	_check(session.load_manual().succeeded(), "World State loads from disk.")
+	for marker: Node3D in lab.get_node("Region_0_0/Persistent").get_children():
+		_check(not marker.visible, "Disk restore applies collected POI state.")
+	NucleusSave.delete_slot(session.slot_id)
 	lab.call("_toggle_region")
 	await _settle(lifecycle)
 	_check(lab.get_node_or_null("Region_0_0") == null, "Unloaded content is freed.")
