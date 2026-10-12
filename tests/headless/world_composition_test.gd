@@ -49,6 +49,7 @@ func run() -> Dictionary:
 	)
 	expect_equal(descriptors["error"], OK, "POIs use existing analytical surface.")
 	free_test_node(root)
+	_test_invalid_recipe_fails_explicitly()
 	_test_actual_lab_scene()
 	return finish()
 
@@ -107,3 +108,24 @@ func _test_actual_lab_scene() -> void:
 		NucleusWorldStreamLifecycle.RegionState.UNLOADED,
 		"Previous region is acknowledged as unloaded.")
 	free_test_node(lab)
+
+func _test_invalid_recipe_fails_explicitly() -> void:
+	var biome := NucleusBiomeProfile3D.new()
+	biome.biome_id = &"sample"
+	var composer := NucleusBiomeComposer3D.new()
+	composer.biomes = [biome]
+	var kind := NucleusPOIType3D.new()
+	kind.poi_id = &"sample_poi"
+	var recipe := NucleusPOIDistributionProfile3D.new()
+	recipe.grid_spacing = 12.0
+	recipe.minimum_separation = 18.0
+	recipe.types = [kind]
+	expect_false(recipe.validate().is_empty(),
+		"Separation greater than grid spacing is rejected.")
+	var surface := func(_position: Vector2) -> Dictionary:
+		return {"height": 0.0, "slope": 0.0}
+	var result: Dictionary = NucleusPOIPlanner3D.plan(
+		Vector2.ZERO, Vector2(24, 24), recipe, composer, surface
+	)
+	expect_equal(result["error"], ERR_INVALID_PARAMETER,
+		"Invalid POI configuration cannot silently produce empty regions.")
