@@ -499,3 +499,53 @@ signals distinguish policy recommendations from applied effective values.
 No GPU-bottleneck identification, CPU/physics changes, TDP controls or FPS
 guarantees are implied. Screen-space / hardware benchmarking should be
 validated in an actual Godot graphical build.
+
+## Adaptive World Workload (opt-in background budgets)
+
+`NucleusAdaptiveWorldWorkloadBinding` is a scene-owned adapter, using
+`NucleusAdaptivePerformanceController.decision_observed` and its existing
+hysteresis, cooldown and recovery policy. It does **not** collect frame
+metrics or change procedural algorithms. Its optional
+`NucleusAdaptiveWorldWorkloadProfile` (Resource) defines minimum
+fractions of authored budgets for background work.
+
+Explicit references can include **optional only**:
+- `NucleusMaterializationQueue`: steps and CPU-time limit per frame.
+- `NucleusWorldStreamLifecycle`: new load admissions, **not unloads**.
+- `NucleusTerrainStreamer3D`: maximum new terrain chunks per update.
+- `NucleusScatterRegion3D`: partition transforms and visual batches per frame.
+
+All count budgets retain a minimum of one per cycle. This prevents the
+adapter from pausing streaming or scatter indefinitely. Unlimited queue
+time (`frame_budget_usec=0`) remains unlimited: no invented time cap.
+Individual task steps and terrain chunk builds must still be bounded by
+their original owners; changing the number of admissions does not make an
+expensive single operation interruptible.
+
+**Ownership and priority:** Never attach the binding to the queue or
+stream lifecycle responsible for critical gameplay, movement or immediately
+required regions. Give those tasks an independent queue/lifecycle owned by
+the game. Nucleus cannot infer urgency from an arbitrary enqueued job.
+This adapter reduces background workload only, and cannot guarantee target
+FPS, CPU/GPU classification, or timely critical streaming.
+
+`enable_binding()` is opt-in. It snapshots the original budgets, rejects
+concurrent writers with `ERR_BUSY`, and uses the *reduced render-scale
+recommendation as a proxy for sustained performance pressure*. That is
+not a diagnosis of a CPU bottleneck. Bounds are relative to the game's
+own authored budgets. When the existing policy recovers, they recover
+gradually. Disabling, scene exit or controller deactivation restores
+unchanged owned properties. External edits are detected and preserved;
+the binding releases control rather than overwriting game changes.
+Controller `reset_observation()` restores full background work capacity
+while leaving an explicitly enabled binding active.
+
+The demo `res://examples/adaptive_performance/adaptive_world_workload_lab.tscn`
+simulates 42/60 FPS snapshots and displays live workload budgets, including
+a critical queue which the binding never touches. No actual CPU load is
+generated. The regression `tests/headless/adaptive_world_workload_test.gd`
+covers opt-in, exclusivity, budget floors, recovery, unload protection,
+external edits and teardown.
+
+This final phase composes existing Nucleus mechanisms without introducing
+a global world manager, new settings writers or a task scheduler.

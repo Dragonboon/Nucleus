@@ -25,3 +25,15 @@ Press **R** to reset policy, disable adaptation and restore the authored
 setting. The demo's simulated sample timings do not represent actual GPU
 measurements. The demo changes the root viewport scale temporarily only
 after user approval. Closing the scene releases the override.
+
+## Adaptive World Workload Lab (final phase)
+
+Open `adaptive_world_workload_lab.tscn`. Enable the optional binding with
+**E** or the UI button. Press **1** to send 12 synthetic slow windows and
+watch optional background budgets reduce; press **2** to send 30 healthy
+windows and observe recovery. **R** releases all budgets and resets policy.
+Unload admissions and the independent critical queue are never throttled.
+The example illustrates budget composition; it does not spawn heavy jobs
+or claim a measured frame-rate gain.
+
+See `docs/modules/performance.md` for ownership, constraints and profiles.
