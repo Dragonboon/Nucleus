@@ -1,5 +1,11 @@
 extends "res://tests/headless/test_case.gd"
 
+class DensityOwner:
+	extends Node
+	func density(_xz: Vector2) -> float:
+		return 0.0
+
+
 func run() -> Dictionary:
 	var root := Node3D.new()
 	var surface := NucleusPlaneSurfaceSampler3D.new()
@@ -40,6 +46,12 @@ func run() -> Dictionary:
 	expect_equal(whole["accepted"], left["accepted"] + right["accepted"],
 		"Filtered scatter is stable across seams.")
 	expect_equal(right["accepted"], 0, "Filter excludes other region.")
+	var filter_owner := DensityOwner.new()
+	var expired_filter: Callable = filter_owner.density
+	filter_owner.free()
+	var expired := _build(profile, surface, Vector2.ZERO, Vector2(8, 8), expired_filter)
+	expect_equal(expired["accepted"], 0,
+		"An expired density callback stays closed instead of populating every biome.")
 	var poi := NucleusPOIType3D.new()
 	poi.poi_id = &"landmark"
 	var recipe := NucleusPOIDistributionProfile3D.new()
@@ -85,14 +97,22 @@ func _test_actual_lab_scene() -> void:
 	if not lab.is_inside_tree():
 		lab.free()
 		return
+	var terrain := lab.get("terrain") as NucleusTerrainGenerator3D
+	expect_true(terrain != null and terrain.has_node("GeneratedTerrain"),
+		"Lab uses the existing terrain generator, not placeholder tiles.")
+	var sampler := lab.get("surface") as NucleusTerrainSurfaceSampler3D
+	expect_true(sampler != null and sampler.terrain == terrain,
+		"Scatter and POIs query the rendered terrain owner.")
+	# Switching before queue completion must cancel obsolete work, then rebuild cleanly.
+	lab.call("_toggle_region")
+	expect_true(lab.get_node_or_null("Region_0_0") == null,
+		"Pending old region is detached immediately on cancellation.")
+	lab.call("_toggle_region")
+	_finish_lab_build(lab)
 	var active: Node = lab.get_node_or_null("Region_0_0")
-	expect_true(active != null, "First region is created on ready.")
-	if active != null:
-		var mesh_count: int = 0
-		for child: Node in active.get_children():
-			if child is MeshInstance3D:
-				mesh_count += 1
-		expect_true(mesh_count >= 64, "Initial region has at least 64 visual tiles.")
+	expect_true(active != null, "Initial region can reload after cancellation.")
+	var instances: int = _check_lab_scatter(lab, active)
+	expect_true(instances > 0, "Actual native MultiMesh batches contain biome decoration.")
 	var lifecycle := lab.get("lifecycle") as NucleusWorldStreamLifecycle
 	expect_true(lifecycle != null, "Lab owns the streaming lifecycle.")
 	if lifecycle == null:
@@ -102,12 +122,68 @@ func _test_actual_lab_scene() -> void:
 		NucleusWorldStreamLifecycle.RegionState.LOADED,
 		"Initial load admission is acknowledged.")
 	lab.call("_toggle_region")
+	_finish_lab_build(lab)
 	expect_true(lab.get_node_or_null("Region_1_0") != null,
 		"Next region materializes after switching.")
 	expect_equal(lifecycle.get_region_state(&"0:0"),
 		NucleusWorldStreamLifecycle.RegionState.UNLOADED,
 		"Previous region is acknowledged as unloaded.")
+	_check_lab_scatter(lab, lab.get_node_or_null("Region_1_0"))
+	lab.call("_toggle_region")
+	_finish_lab_build(lab)
+	expect_equal(_check_lab_scatter(lab, lab.get_node_or_null("Region_0_0")), instances,
+		"Unload/reload restores deterministic decoration count.")
 	free_test_node(lab)
+
+
+func _finish_lab_build(lab: Node3D) -> void:
+	var queue := lab.get("materialization") as NucleusMaterializationQueue
+	queue.set_automatic_processing(false)
+	var lifecycle := lab.get("lifecycle") as NucleusWorldStreamLifecycle
+	for frame in range(100):
+		queue.pump()
+		for region: Node in lab.get_children():
+			for child: Node in region.get_children():
+				if child is NucleusScatterRegion3D and child.is_processing():
+					child.call("_process", 0.016)
+		if lifecycle.is_settled():
+			break
+	expect_true(lifecycle.is_settled(), "Bounded queue and staging complete the load.")
+
+
+func _check_lab_scatter(lab: Node3D, region: Node) -> int:
+	if region == null:
+		return 0
+	var query := lab.get("query") as NucleusBiomeSurfaceQuery3D
+	var count: int = 0
+	for child: Node in region.get_children():
+		if not child is NucleusScatterRegion3D:
+			continue
+		count += child.get_instance_count()
+		var biome_id := StringName(str(child.name).trim_prefix("Scatter_"))
+		# Headless uses the dummy renderer, which cannot read back MultiMesh transforms.
+		# Verify the exact configured job output and compare its size to native batches.
+		var job := NucleusScatterBuildJob3D.new()
+		var error: Error = job.configure(child.profile, child.surface,
+			Vector2(child.global_position.x, child.global_position.z), child.region_size,
+			child.region_id, [], child.density_filter)
+		expect_equal(error, OK, "Scene wiring configures the real Scatter job.")
+		while not job.is_terminal():
+			job.step()
+		var result: Dictionary = job.get_result()
+		expect_equal(result["accepted_count"], child.get_instance_count(),
+			"Native batches contain every accepted transform.")
+		for group: Array in result["groups"].values():
+			for placement: Transform3D in group:
+				var world: Vector3 = placement.origin
+				var xz := Vector2(world.x, world.z)
+				expect_equal(query.sample_biome(xz).get("biome_id"), biome_id,
+					"Every accepted instance belongs to its assigned biome.")
+				var expected: float = query.sample_poi(xz)["height"] + child.profile.vertical_offset
+				expect_true(absf(world.y - expected) < 0.001,
+					"Decoration follows terrain height even in translated regions.")
+
+	return count
 
 func _test_invalid_recipe_fails_explicitly() -> void:
 	var biome := NucleusBiomeProfile3D.new()

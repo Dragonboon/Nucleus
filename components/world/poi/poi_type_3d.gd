@@ -18,8 +18,11 @@ func validate() -> PackedStringArray:
 		errors.append("POI type weight must be finite and positive.")
 	if not height_range.is_finite() or height_range.x > height_range.y:
 		errors.append("POI height interval must be finite and ordered.")
-	if not is_finite(maximum_slope_degrees):
-		errors.append("POI maximum slope must be finite.")
+	if (
+		not is_finite(maximum_slope_degrees)
+		or maximum_slope_degrees < 0.0 or maximum_slope_degrees > 90.0
+	):
+		errors.append("POI maximum slope must be finite and within [0, 90].")
 	for name: String in allowed_biomes:
 		if name.is_empty():
 			errors.append("Allowed biome IDs must not contain empty values.")
@@ -27,6 +30,8 @@ func validate() -> PackedStringArray:
 
 
 func accepts(biome_id: StringName, height: float, slope: float) -> bool:
+	if not is_finite(height) or not is_finite(slope) or slope < 0.0 or slope > 90.0:
+		return false
 	if height < height_range.x or height > height_range.y:
 		return false
 	if slope > maximum_slope_degrees:

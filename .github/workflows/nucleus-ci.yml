@@ -69,6 +69,13 @@ jobs:
             --path . \
             res://tests/headless/test_runner.tscn
 
+      - name: Run asynchronous biome composition smoke scene
+        run: |
+          "${{ steps.godot.outputs.bin }}" \
+            --headless \
+            --path . \
+            res://tests/smoke/world_composition_smoke.tscn
+
       - name: Run bootstrap smoke scene
         run: |
           "${{ steps.godot.outputs.bin }}" \

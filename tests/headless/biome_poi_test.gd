@@ -60,4 +60,55 @@ func run() -> Dictionary:
 	expect_equal(NucleusPOIPlanner3D.plan(
 		Vector2(-64, -32), Vector2(128, 64), recipe, composer, surface
 	)["error"], ERR_OUT_OF_MEMORY, "Region cell budget is enforced.")
+	_test_eligible_competition()
 	return finish()
+
+
+func _test_eligible_competition() -> void:
+	var biome := NucleusBiomeProfile3D.new()
+	biome.biome_id = &"land"
+	var composer := NucleusBiomeComposer3D.new()
+	composer.biomes = [biome]
+	var kind := NucleusPOIType3D.new()
+	kind.poi_id = &"camp"
+	kind.height_range = Vector2(0, 10)
+	var recipe := NucleusPOIDistributionProfile3D.new()
+	recipe.types = [kind]
+	recipe.grid_spacing = 8.0
+	recipe.minimum_separation = 0.0
+	recipe.density = 1.0
+	var flat := func(_xz: Vector2) -> Dictionary:
+		return {"height": 0.0, "slope": 0.0}
+	var all_points: Dictionary = NucleusPOIPlanner3D.plan(
+		Vector2.ZERO, Vector2(32, 32), recipe, composer, flat
+	)
+	recipe.minimum_separation = 8.0
+	for descriptor: Dictionary in all_points["points"]:
+		var point: Vector3 = descriptor["position"]
+		var only_site := func(xz: Vector2) -> Dictionary:
+			var suitable: bool = xz.is_equal_approx(Vector2(point.x, point.z))
+			return {"height": 0.0 if suitable else 100.0, "slope": 0.0}
+		var isolated: Dictionary = NucleusPOIPlanner3D.plan(
+			Vector2.ZERO, Vector2(32, 32), recipe, composer, only_site
+		)
+		expect_equal((isolated["points"] as Array).size(), 1,
+			"Unsuitable neighbors cannot suppress the only eligible landmark.")
+	var absent := func(_xz: Vector2) -> Dictionary: return {}
+	expect_equal(NucleusPOIPlanner3D.plan(
+		Vector2.ZERO, Vector2(32, 32), recipe, composer, absent
+	)["error"], OK, "Missing surface is an empty site, not a failed region.")
+	biome.maximum_slope_degrees = -1.0
+	expect_false(biome.validate().is_empty(), "Negative biome slope is invalid.")
+	kind.maximum_slope_degrees = 91.0
+	expect_false(kind.validate().is_empty(), "POI slope above 90 is invalid.")
+
+	var malformed := func(_xz: Vector2) -> Dictionary:
+		return {"height": "not a number", "slope": 0.0}
+	biome.maximum_slope_degrees = 90.0
+	kind.maximum_slope_degrees = 45.0
+	expect_equal(NucleusPOIPlanner3D.plan(
+		Vector2.ZERO, Vector2(32, 32), recipe, composer, malformed
+	)["error"], ERR_INVALID_DATA, "Malformed surface data fails without unsafe conversion.")
+	expect_equal(NucleusPOIPlanner3D.plan(
+		Vector2(1e20, 0), Vector2(32, 32), recipe, composer, flat
+	)["error"], ERR_INVALID_PARAMETER, "Cell coordinates cannot overflow Vector2i.")

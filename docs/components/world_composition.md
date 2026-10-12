@@ -36,7 +36,7 @@ scatter_region.start_build(existing_materialization_queue)
 ```
 
 The callback accepts world X/Z and returns a numeric multiplier in [0, 1].
-Invalid or nonfinite results are treated as zero density (fail closed).
+Invalid, nonfinite or expired callback results are treated as zero density (fail closed).
 **Importantly, the callback is evaluated both for candidate admission and
 for neighboring competition during minimum-separation testing**. Keep it
 deterministic and avoid scene mutation or RNG stream advancement inside it.
@@ -50,13 +50,24 @@ A surface query is a main-thread adapter; it is not a worker-thread API.
 
 ## Sample laboratory
 
-`res://examples/world_composition/world_composition_lab.tscn` uses one
-analytical plane, a FastNoiseLite climate field, POI planning and the existing
-`NucleusWorldStreamLifecycle` to display and replace bounded region
-visualizations. Press Tab to switch regions; unloaded region nodes are freed.
-It deliberately draws color tiles and POI markers rather than pretending to
-be the full terrain/scatter/materialization pipeline. Use the existing
-Scatter example for real MultiMesh batch testing.
+`res://examples/world_composition/world_composition_lab.tscn` composes the actual
+terrain, biome, Scatter and streaming owners. A small resident terrain patch has
+an analytical `NucleusTerrainSurfaceSampler3D`; POIs and decoration query that
+same surface. Wet biomes use primitive green trees, dry biomes ochre rocks, and
+orange markers visualize POI descriptors. Replace these meshes in each biome's
+`scatter_profile` with your own content.
+
+Each streamed region creates one `NucleusScatterRegion3D` per biome and binds
+`query.density_for_biome.bind(biome.biome_id)` before starting its build through
+the scene-owned `NucleusMaterializationQueue`. Completion is acknowledged only
+when **all** native MultiMesh batches are ready. Press **Tab** (or the button)
+to switch regions. Switching while loading cancels obsolete jobs; unloading
+removes batches; returning regenerates the same decoration from the same seed.
+The status label distinguishes loading from residency and shows instance count.
+
+The terrain stays resident in this bounded example; only decoration streams.
+Tree/rock meshes are visualization content without collision. Terrain material
+is uniform: biome material painting and POI clearings are not implemented here.
 
 ## Validation
 
@@ -70,16 +81,26 @@ materials, reserve POI exclusion volumes, create roads between settlements,
 or materialize authoritative structures. Those are game policy, possibly
 composed with current Placement, masks and World State.
 
-## Integration regression: blank World Composition Lab (2026-10)
+## Try and verify
 
-The original example set `grid_spacing = 12` but inherited
-`minimum_separation = 18`. `NucleusPOIDistributionProfile3D.validate()`
-correctly rejected this recipe; the example returned before creating region
-geometry and did not show why. The example now explicitly sets separation to
-8, reports errors visibly, uses valid Godot node names for region identifiers,
-and reframes the camera around the currently resident region.
+Run the lab with F6, switch twice with Tab, then switch rapidly during loading.
+The first region should return with the same decoration, and no old region
+should remain. The terrain relief and scatter heights share one height source.
 
-`tests/headless/world_composition_test.gd` now instantiates the **actual**
-PackedScene, checks initial region geometry, and switches regions. This covers
-the composition boundary that isolated unit tests missed. The native test and
-graphical editor must still be run before treating this as release-verified.
+```bash
+godot --headless --path . res://tests/smoke/world_composition_smoke.tscn
+```
+
+This smoke scene exercises real frame processing and cancellation. A graphical
+run additionally checks every native MultiMesh transform against the biome and
+terrain query. The headless suite checks the CPU transforms, ownership, valid
+POI recipe, instance counts, reload determinism and expired density callbacks.
+
+## Seed compatibility
+
+The Scatter cell hash now mixes each random channel independently. The previous
+linear salt offset correlated X/Z jitter, rotation and density into visible rows.
+Seeds remain repeatable across load order and region seams, but regenerated
+**decoration positions change** from older revisions. Pin the generator revision
+for saved worlds or preserve game-owned generated descriptors when upgrading.
+This change does not move existing persisted Nodes or modify authored Resources.

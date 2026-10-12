@@ -16,6 +16,7 @@ var _surface: NucleusSurfaceSampler3D
 var _modulators: Array[NucleusScatterDensityVolume3D] = []
 ## Optional deterministic main-thread density filter (world XZ -> [0, 1]).
 var _density_filter: Callable
+var _has_density_filter: bool = false
 var _region_min: Vector2 = Vector2.ZERO
 var _region_end: Vector2 = Vector2.ZERO
 var _start_cell: Vector2i = Vector2i.ZERO
@@ -78,13 +79,14 @@ func configure(
 	_groups.clear()
 	_modulators.assign(modulators)
 	_density_filter = density_filter
+	_has_density_filter = not density_filter.is_null()
 	region_id = stable_region_id
 	set_progress(0, width * height)
 	return OK
 
 
 func _step_job() -> Error:
-	if _profile == null or _surface == null:
+	if _profile == null or not is_instance_valid(_surface):
 		return ERR_UNCONFIGURED
 	var total: int = _grid_width * _grid_height
 	var last: int = mini(total, _cursor + maxi(cells_per_step, 1))
@@ -189,7 +191,9 @@ func _effective_density(world_xz: Vector2) -> float:
 	for volume: NucleusScatterDensityVolume3D in _modulators:
 		if volume != null and is_instance_valid(volume):
 			probability *= volume.get_density_multiplier(world_position)
-	if _density_filter.is_valid():
+	if _has_density_filter:
+		if not _density_filter.is_valid():
+			return 0.0
 		var value: Variant = _density_filter.call(world_xz)
 		if not value is int and not value is float:
 			return 0.0
@@ -217,7 +221,12 @@ func _hash_cell(cell: Vector2i, salt: int) -> int:
 	var code: int = posmod(_profile.seed, HASH_MODULUS - 1) + 1
 	code = posmod(code * 48271 + posmod(cell.x, HASH_MODULUS), HASH_MODULUS)
 	code = posmod(code * 48271 + posmod(cell.y, HASH_MODULUS), HASH_MODULUS)
-	return posmod(code * 48271 + salt * 1259, HASH_MODULUS)
+	code = posmod(code * 48271 + salt * 1259, HASH_MODULUS)
+	# Avalanche the cell and channel together; a linear salt offset correlates
+	# jitter axes, density, variant and yaw into visible stripes.
+	code = ((code ^ (code >> 13)) * 1274126177) & HASH_MODULUS
+	code = ((code ^ (code >> 16)) * 1274126177) & HASH_MODULUS
+	return (code ^ (code >> 16)) & HASH_MODULUS
 
 
 func _comes_first(left: Vector2i, right: Vector2i) -> bool:

@@ -88,12 +88,18 @@ func _test_bounded_deterministic_generation() -> void:
 	expect_equal(first, again, "Generation is stable across runs with the same seed.")
 	expect_equal(int(first.get("candidate_count", 0)), 16, "Grid has four by four cells.")
 	expect_equal(int(first.get("accepted_count", 0)), 16, "Full density fills each cell.")
+	var independent_jitter: bool = false
 	for point: Vector3 in _positions(first):
 		expect_true(
 			point.x >= 0.0 and point.x < 8.0
 			and point.z >= 0.0 and point.z < 8.0,
 			"Points remain inside half-open region bounds.",
 		)
+		var offset_x: float = fposmod(point.x, profile.grid_spacing)
+		var offset_z: float = fposmod(point.z, profile.grid_spacing)
+		independent_jitter = independent_jitter or absf(offset_x - offset_z) > 0.2
+	expect_true(independent_jitter,
+		"Independent salts decorrelate X/Z jitter instead of aligning every offset diagonally.")
 	free_test_node(surface)
 
 

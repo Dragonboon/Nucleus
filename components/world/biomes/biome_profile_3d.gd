@@ -24,8 +24,11 @@ func validate() -> PackedStringArray:
 		errors.append("Moisture range must be finite and inside [0, 1].")
 	if not _valid_interval(height_range, -1000000.0, 1000000.0):
 		errors.append("Height range must be finite and ordered.")
-	if not is_finite(maximum_slope_degrees):
-		errors.append("Slope must be finite.")
+	if (
+		not is_finite(maximum_slope_degrees)
+		or maximum_slope_degrees < 0.0 or maximum_slope_degrees > 90.0
+	):
+		errors.append("Slope must be finite and within [0, 90].")
 	return errors
 
 

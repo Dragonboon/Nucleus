@@ -27,15 +27,28 @@ global jittered cells, a density probability, separation and fixed budgets.
 `NucleusPOIPlanner3D.plan(minimum, size, recipe, biomes, surface)` returns
 `{"error": OK, "points": Array[Dictionary]}` with stable cell IDs, POI IDs,
 biome IDs and positions. The surface callback takes world X/Z and returns a
-Dictionary `{"height": float, "slope": float}`; use your existing analytical
+Dictionary `{"height": float, "slope": float}`, or `{}` where no surface exists;
+use your existing analytical
 terrain sampler or other game-owned surface adapter.
 
 Regions are half-open world X/Z rectangles. A fixed 1-cell halo and consistent
-hash ranking reject too-close neighbors identically on either side of a region
+hash ranking reject too-close **eligible** neighbors identically on either side of a region
 seam (assuming shared recipe, climate and surface). The minimum separation
 must not exceed grid_spacing. Up to 4096 cells and 1024 accepted descriptors
 per region are supported, subject to the authored lower limits. A budget
-overflow fails explicitly instead of silently truncating results.
+overflow fails explicitly instead of silently truncating results. Surface and type
+eligibility are resolved before competition, so unsuitable sites cannot block
+valid landmarks. Each candidate is sampled at most once per plan, including the
+halo; callbacks must be deterministic and cover that halo (or return `{}` for
+missing surface). Nonempty malformed samples fail with `ERR_INVALID_DATA`.
+
+Slope limits are validated within [0, 90] degrees. Cell coordinates outside the
+supported Vector2i range fail explicitly before conversion.
+
+**Upgrading:** suitable POIs formerly suppressed by unsuitable neighbors may now
+appear, even with the same seed. IDs of existing cells retain their format.
+Games persisting generated worlds should pin their generator revision and keep
+their saved descriptors; this planner does not migrate game-owned world saves.
 
 The planner does not instantiate assets, author collision, check accessibility,
 solve roads, persist entities, or replicate coordinates. The consuming game
