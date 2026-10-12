@@ -37,3 +37,30 @@ input owners remain responsible for those policies.
 Steam Deck LCD/OLED, Ally/Ally X, other families, weak evidence and the
 native facade. `examples/platform_handheld/handheld_detection_lab.tscn`
 shows a live result and clearly marked simulated samples.
+
+## Optional settings proposals
+
+`NucleusHandheldTuningProfile` is an authored Resource containing only
+`graphics/max_fps` and `graphics/render_scale`. The supplied optional
+profiles are **Autonomy** (30 FPS/0.80 scale), **Balanced** (60/0.90) and
+**Image quality** (60/1.00). These are illustrative starting points,
+not device-specific benchmarks, guaranteed framerates or battery savings.
+
+`NucleusHandheldSettingsAdvisor.suggested_profile_id(hardware)` returns
+`balanced` only for a confirmed known handheld. Unknown and probable
+identifications return an empty recommendation. No suggestions are applied
+automatically.
+
+The advisor has a read-only `preview(profile, settings)` and explicit
+`apply_profile(profile, settings, approved, expected)`; the latter validates
+both values against the active Settings catalog and rejects stale snapshots
+with `ERR_BUSY`. For a one-session undo, use `revert_if_unchanged(settings,
+previous_values, applied_values, approved)`. Undo is rejected if another
+writer changed any applied setting. The active `NucleusSettingsService`
+continues to own validation, live appliers and persistent configuration.
+No extra Autoload or concurrent writer is added.
+
+The optional `res://examples/platform_handheld/handheld_tuning_lab.tscn`
+displays the actual before/after changes and requires an explicit button
+press for applying or undoing. Its preview depends on the existing
+`/root/NucleusSettings` service. It is not a hardware power manager.
