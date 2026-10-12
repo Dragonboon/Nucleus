@@ -418,3 +418,40 @@ a promise that one budget fits every game
 - `docs/guides/tutorials/performance_profiling.md`
 - `docs/guides/project_configuration.md`
 - `docs/guides/validation_ci_quickstart.md`
+
+## Adaptive Performance Controller (optional, observation-only)
+
+`NucleusAdaptivePerformanceProfile` is an authored Resource describing
+60 FPS by default, an 80% lower render-scale recommendation, 100% ceiling,
+5% steps, progressive recovery, minimum evidence, consecutive-window
+hysteresis and a cooldown between changes.
+
+`NucleusAdaptivePerformancePolicy` is a pure `RefCounted` evaluator.
+It consumes **existing** `NucleusPerformanceSnapshot` metrics:
+`WINDOW_FPS`, `FRAME_INTERVAL_P95_MS`, `FRAME_INTERVAL_SAMPLES`.
+No new profiler is introduced. Each decision contains a suggested scale,
+whether it changed, the reason, evidence counters and a cooldown counter.
+Stale sequences, missing metrics, invalid values and undersampled
+windows cannot lower quality. Low FPS **and** slow p95 must persist before
+reducing a recommendation. Recovery requires a higher FPS threshold,
+acceptable pacing and more consecutive stable windows.
+
+`NucleusAdaptivePerformanceController` is an optional scene-owned subscriber.
+Assign its `sampler` to an existing `NucleusPerformanceSampler`; it listens
+to `snapshot_sampled` and emits `decision_observed` and
+`render_scale_recommended`. The controller does not write to
+`Viewport`, `RenderingServer`, `Engine.max_fps` or `NucleusSettings`.
+Disable it or call `reset_observation()` to reset counters and recommendations.
+This first iteration **only observes and recommends**: FPS improvements are
+not guaranteed or claimed. No competing settings writer or Autoload exists.
+
+Example: `res://examples/adaptive_performance/adaptive_performance_lab.tscn`
+sends reproducible synthetic good/slow/neutral windows, so the hysteresis
+and recovery can be verified without deliberately overloading a real GPU.
+The demonstration does **not** modify graphics settings.
+
+Run `tests/headless/adaptive_performance_test.gd` through the registered
+manifest. Test cases cover limits, degraded windows, recovery, stale and
+missing snapshots, insufficient evidence, disabled recovery and node
+lifetime. End-to-end real-frame reaction and user-approved temporary
+application belong to the subsequent quality-binding iteration.
