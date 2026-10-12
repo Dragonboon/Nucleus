@@ -5,6 +5,8 @@ extends Node
 
 signal decision_observed(decision: Dictionary)
 signal render_scale_recommended(render_scale: float, reason: StringName)
+signal adaptation_enabled_changed(enabled: bool)
+signal observation_reset
 
 @export var sampler: NucleusPerformanceSampler
 @export var profile: NucleusAdaptivePerformanceProfile
@@ -36,6 +38,7 @@ func set_adaptation_enabled(enabled: bool) -> void:
 		return
 	_enabled = enabled
 	reset_observation()
+	adaptation_enabled_changed.emit(_enabled)
 
 
 func is_adaptation_enabled() -> bool:
@@ -47,6 +50,7 @@ func reset_observation() -> void:
 		return
 	_policy.reset()
 	_latest_decision.clear()
+	observation_reset.emit()
 
 
 func get_suggested_scale() -> float:
