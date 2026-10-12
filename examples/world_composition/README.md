@@ -10,3 +10,11 @@ batches. The reusable integration uses `NucleusBiomeSurfaceQuery3D` and the
 optional `density_filter` in `NucleusScatterBuildJob3D` /
 `NucleusScatterRegion3D`. See
 [World Composition](../../docs/components/world_composition.md).
+
+## Failure diagnostics
+
+The lab requires `minimum_separation <= grid_spacing` in its POI recipe.
+An invalid recipe stops admission before geometry is generated; errors now
+appear in the compact HUD and the Godot debugger rather than failing silently.
+The regression test loads the actual scene and checks 64 visual tiles are
+created and that switching regions instantiates the next set.

@@ -69,3 +69,17 @@ This integration does **not** automatically paint biomes into terrain
 materials, reserve POI exclusion volumes, create roads between settlements,
 or materialize authoritative structures. Those are game policy, possibly
 composed with current Placement, masks and World State.
+
+## Integration regression: blank World Composition Lab (2026-10)
+
+The original example set `grid_spacing = 12` but inherited
+`minimum_separation = 18`. `NucleusPOIDistributionProfile3D.validate()`
+correctly rejected this recipe; the example returned before creating region
+geometry and did not show why. The example now explicitly sets separation to
+8, reports errors visibly, uses valid Godot node names for region identifiers,
+and reframes the camera around the currently resident region.
+
+`tests/headless/world_composition_test.gd` now instantiates the **actual**
+PackedScene, checks initial region geometry, and switches regions. This covers
+the composition boundary that isolated unit tests missed. The native test and
+graphical editor must still be run before treating this as release-verified.
