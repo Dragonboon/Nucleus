@@ -2,6 +2,8 @@ class_name NucleusDisplaySettingsApplier
 extends Node
 ## Applies built-in display and root-viewport settings to Godot runtime APIs.
 
+signal temporary_render_scale_revoked(reason: StringName)
+
 const LOG_CONTEXT: StringName = &"DisplaySettings"
 const EMBEDDED_WINDOW_WARNING: String = (
 	"Window changes are unavailable while Godot game embedding is enabled. "
@@ -9,6 +11,8 @@ const EMBEDDED_WINDOW_WARNING: String = (
 )
 
 var _settings: NucleusSettingsService
+var _temporary_owner: WeakRef
+var _temporary_render_scale: float = -1.0
 
 
 func _ready() -> void:
@@ -29,6 +33,11 @@ func _ready() -> void:
 
 
 func _apply_all() -> void:
+	# A Settings reload always returns authority to the authored values.
+	if _temporary_owner != null:
+		_temporary_owner = null
+		_temporary_render_scale = -1.0
+		temporary_render_scale_revoked.emit(&"settings_reloaded")
 	_apply_window_mode(
 		_settings.get_int(
 			NucleusSettingIds.DISPLAY_WINDOW_MODE,
@@ -93,7 +102,13 @@ func _on_setting_changed(
 		NucleusSettingIds.GRAPHICS_SCALING_3D_MODE:
 			_apply_scaling_3d_mode(value)
 		NucleusSettingIds.GRAPHICS_RENDER_SCALE:
-			_apply_render_scale(value)
+			if _temporary_owner != null:
+				_temporary_owner = null
+				_temporary_render_scale = -1.0
+				_apply_render_scale(value)
+				temporary_render_scale_revoked.emit(&"user_setting_changed")
+			else:
+				_apply_render_scale(value)
 		NucleusSettingIds.GRAPHICS_SCREEN_SPACE_AA:
 			_apply_screen_space_aa(value)
 		NucleusSettingIds.GRAPHICS_TAA_ENABLED:
@@ -138,8 +153,70 @@ func _apply_max_fps(value: int) -> void:
 	Engine.max_fps = maxi(0, value)
 
 
+## Only this existing Settings applier may write the root viewport scale.
+## A temporary requester is scene-owned and cannot persist a preference.
+func request_temporary_render_scale(requester: Node, value: float) -> Error:
+	if not is_instance_valid(requester) or not requester.is_inside_tree():
+		return ERR_INVALID_PARAMETER
+	if not is_finite(value) or value < 0.25 or value > 1.0:
+		return ERR_INVALID_PARAMETER
+	if _settings == null or not _settings.is_initialized():
+		return ERR_UNCONFIGURED
+	var current: Node = _current_temporary_owner()
+	if current != null and current != requester:
+		return ERR_BUSY
+	_temporary_owner = weakref(requester)
+	_temporary_render_scale = value
+	_apply_render_scale(_settings.get_float(NucleusSettingIds.GRAPHICS_RENDER_SCALE, 1.0))
+	return OK
+
+
+func release_temporary_render_scale(requester: Node) -> Error:
+	var current: Node = _current_temporary_owner()
+	if current == null:
+		return OK
+	if current != requester:
+		return ERR_BUSY
+	_temporary_owner = null
+	_temporary_render_scale = -1.0
+	if _settings != null and _settings.is_initialized():
+		_apply_render_scale(
+			_settings.get_float(NucleusSettingIds.GRAPHICS_RENDER_SCALE, 1.0)
+		)
+	return OK
+
+
+func get_effective_render_scale() -> float:
+	if _settings == null or not _settings.is_initialized():
+		return 1.0
+	var authored: float = _settings.get_float(
+		NucleusSettingIds.GRAPHICS_RENDER_SCALE, 1.0
+	)
+	return minf(authored, _temporary_render_scale) if (
+		_current_temporary_owner() != null
+	) else authored
+
+
+func get_temporary_render_scale() -> float:
+	return _temporary_render_scale if _current_temporary_owner() != null else -1.0
+
+
+func _current_temporary_owner() -> Node:
+	if _temporary_owner == null:
+		return null
+	var requester: Node = _temporary_owner.get_ref() as Node
+	if not is_instance_valid(requester) or not requester.is_inside_tree():
+		_temporary_owner = null
+		_temporary_render_scale = -1.0
+		return null
+	return requester
+
+
 func _apply_render_scale(value: float) -> void:
-	get_tree().root.scaling_3d_scale = clampf(value, 0.25, 2.0)
+	var scale: float = value
+	if _current_temporary_owner() != null:
+		scale = minf(value, _temporary_render_scale)
+	get_tree().root.scaling_3d_scale = clampf(scale, 0.25, 2.0)
 
 
 
