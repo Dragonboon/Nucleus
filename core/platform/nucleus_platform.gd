@@ -67,3 +67,13 @@ static func uses_managed_window_mode() -> bool:
 
 static func is_user_data_persistent() -> bool:
 	return OS.is_userfs_persistent()
+
+
+## Detects PC handheld hardware without conflating Steam, Windows or Linux.
+static func get_handheld_info() -> Dictionary:
+	return NucleusHandheldDetector.detect()
+
+
+## Includes confirmed and probable hardware. Inspect confidence before policy.
+static func is_pc_handheld() -> bool:
+	return bool(get_handheld_info()["is_handheld"])
