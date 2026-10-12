@@ -48,6 +48,11 @@ settings
 Project assets continue to use `res://`.
 
 Prefer capability checks over scattered operating-system name comparisons.
+
+PC gaming handhelds are classified on demand by `NucleusHandheldDetector`
+through `NucleusPlatform.get_handheld_info()`. The classifier preserves
+uncertainty; it never sets rendering quality or assumes Steam OS implies
+Valve hardware. See [handheld detection](handheld_detection.md).
 Web-specific restrictions should be handled at the boundary where a feature is
 requested.
 
