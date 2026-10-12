@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="NucleusHandheldTuningProfile" format=3]
+
+[ext_resource type="Script" path="res://modules/performance/handheld_tuning_profile.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+profile_id = &"quality"
+display_name = "Image quality"
+description = "Full 3D render resolution and a 60 FPS cap when sustainable."
+max_fps = 60
+render_scale = 1.0
