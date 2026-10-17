@@ -66,6 +66,9 @@ After a successful commit, a failed effect does **not** roll back earlier effect
 costs, or cooldown. Keep committed effects predictably successful, or introduce
 an explicit game-owned compensation policy.
 
+For RPG-neutral unlocks, ability slot assignment and XP tracks, see
+[`rpg_composition.md`](rpg_composition.md).
+
 ## Attributes
 
 Attributes represent runtime numeric values derived from a base plus modifiers.

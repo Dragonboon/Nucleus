@@ -59,6 +59,7 @@ discovery routes for machine-assisted tools. It does not execute code.
 | Continue/resume newest save | [`components/save_resume.md`](components/save_resume.md) |
 | Scene transitions and recovery | [`guides/scene_flow_quickstart.md`](guides/scene_flow_quickstart.md) |
 | Resource batches / loading presentation | [`guides/resource_loading_quickstart.md`](guides/resource_loading_quickstart.md) |
+| RPG-neutral encounter, abilities and progression | [`components/rpg_composition.md`](components/rpg_composition.md) |
 | Gameplay foundation | [`guides/gameplay_foundation_quickstart.md`](guides/gameplay_foundation_quickstart.md) |
 | Safe spawn / teleport / exit placement | [`components/safe_placement_queries.md`](components/safe_placement_queries.md) |
 | Reusable grounded or floating 2D movement | [2D foundation](components/2d_foundation.md) |
