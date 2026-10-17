@@ -35,7 +35,7 @@ input owners remain responsible for those policies.
 
 `tests/headless/handheld_detection_test.gd` tests injected Windows/Linux,
 Steam Deck LCD/OLED, Ally/Ally X, other families, weak evidence and the
-native facade. `examples/platform_handheld/handheld_detection_lab.tscn`
+native facade. `examples/platform_handheld/handheld_tuning_lab.tscn`
 shows a live result and clearly marked simulated samples.
 
 ## Optional settings proposals

@@ -9,6 +9,7 @@ var _status: Label
 var _history: Label
 var _button: Button
 var _sequence: int = 0
+var _selected_scenario: StringName = &"healthy"
 
 
 func _ready() -> void:
@@ -45,11 +46,13 @@ func _ready() -> void:
 	_button.text = "Enable adaptation (opt in)"
 	_button.pressed.connect(_toggle)
 	column.add_child(_button)
-	var row := HBoxContainer.new()
+	var row := HFlowContainer.new()
 	column.add_child(row)
 	_add_button(row, "1 Slow", func() -> void: _feed(42.0, 25.0))
 	_add_button(row, "2 Healthy", func() -> void: _feed(60.0, 17.0))
+	_add_button(row, "3 Neutral", func() -> void: _feed(55.0, 18.0))
 	_add_button(row, "R Reset", _reset)
+	_add_button(column, "Step 1 sample (no changes required)", _step_one)
 	_status = Label.new()
 	column.add_child(_status)
 	_history = Label.new()
@@ -76,6 +79,7 @@ func _toggle() -> void:
 
 
 func _feed(fps: float, p95: float) -> void:
+	_selected_scenario = &"custom"
 	for _i in range(12):
 		_sequence += 1
 		var sample := NucleusPerformanceSnapshot.new()
@@ -84,6 +88,17 @@ func _feed(fps: float, p95: float) -> void:
 		sample.set_metric(NucleusPerformanceMetricIds.FRAME_INTERVAL_P95_MS, p95)
 		sample.set_metric(NucleusPerformanceMetricIds.FRAME_INTERVAL_SAMPLES, 30.0)
 		controller.submit_snapshot(sample)
+	_refresh()
+
+
+func _step_one() -> void:
+	_sequence += 1
+	var snapshot := NucleusPerformanceSnapshot.new()
+	snapshot.sequence = _sequence
+	snapshot.set_metric(NucleusPerformanceMetricIds.WINDOW_FPS, 55.0)
+	snapshot.set_metric(NucleusPerformanceMetricIds.FRAME_INTERVAL_P95_MS, 18.0)
+	snapshot.set_metric(NucleusPerformanceMetricIds.FRAME_INTERVAL_SAMPLES, 30.0)
+	controller.submit_snapshot(snapshot)
 	_refresh()
 
 
@@ -138,5 +153,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				_feed(42.0, 25.0)
 			KEY_2:
 				_feed(60.0, 17.0)
+			KEY_3:
+				_feed(55.0, 18.0)
 			KEY_R:
 				_reset()

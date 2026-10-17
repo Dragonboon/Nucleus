@@ -114,7 +114,7 @@ safer composition with less duplicate code, not a new engine or global framework
 > Buttons, fields, panels and selection/focus states have a readable baseline
 > without installing third-party fonts or adding an Autoload.
 > See the **[UI Theme Quickstart](docs/guides/ui_theme_quickstart.md)** and
-> run `res://examples/ui/theme_lab.tscn` to inspect it. The project can replace
+> run `res://examples/ui/ui_polish_lab.tscn` to inspect it. The project can replace
 > the resource or override a specific UI subtree at any time.
 
 ## Core runtime

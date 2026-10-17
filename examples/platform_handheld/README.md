@@ -1,17 +1,13 @@
-# PC Handheld Detection Lab
+# Handheld Detection and Tuning Lab
 
-Run `handheld_detection_lab.tscn`.
+Open `handheld_tuning_lab.tscn` for the combined device detection and
+opt-in settings preview. Select **Live device** or clearly marked simulated
+Steam Deck OLED, ROG Ally X and desktop evidence to inspect classification,
+confidence and source. Simulated results **never** apply settings.
 
-The first selection reports actual Godot/Linux DMI evidence. Other selections
-are **simulated**, so developers can verify classifications on a desktop.
-Detection never alters quality, FPS, input mapping or platform SDKs.
+Select one of three optional performance profiles to compare its suggested
+values with current `NucleusSettings`. Apply requires an explicit press;
+Undo restores values only if another writer has not changed them.
+No TDP, refresh-rate, input mode or guaranteed FPS assumptions.
 
-See `docs/components/handheld_detection.md`.
-
-## Opt-in graphics proposals
-
-Open `handheld_tuning_lab.tscn` to compare three optional tuning Resources
-against current NucleusSettings values. Use **Apply** to choose a profile
-explicitly and **Undo** to restore that session's values, provided nothing
-else has changed them. This does not set TDP, display refresh rate, input
-mapping or guaranteed FPS.
+See [handheld detection](../../docs/components/handheld_detection.md).

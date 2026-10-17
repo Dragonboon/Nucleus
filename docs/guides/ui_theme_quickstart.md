@@ -9,7 +9,7 @@
 
 1. Open **Project Settings > GUI > Theme > Custom**.
 2. Confirm the default is `res://components/ui/theme/nucleus_base_theme.tres`.
-3. Open `res://examples/ui/theme_lab.tscn` and run the current scene (F6).
+3. Open `res://examples/ui/ui_polish_lab.tscn` and run the current scene (F6).
 4. Test a Button with Tab/Enter/Space and mouse hover/press.
 5. Toggle **High-contrast preview** in the lab and try focus navigation again.
 

@@ -3,6 +3,10 @@
 This tutorial builds a small menu/HUD using native Godot layout/Theme plus Nucleus
 presentation helpers.
 
+The single `examples/ui/ui_polish_lab.tscn` now includes a Theme & Controls
+page for native control states and high-contrast preview, in addition to its
+interaction, motion, input, accessibility and overlay pages.
+
 ## 1. Separate layout from animated transforms
 
 ```text

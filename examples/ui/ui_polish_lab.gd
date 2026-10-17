@@ -4,6 +4,10 @@ extends Control
 ## The lab intentionally composes existing components instead of inventing a
 ## parallel demo framework. Each page validates a small ownership boundary.
 
+const HIGH_CONTRAST_THEME: Theme = preload(
+	"res://components/ui/theme/nucleus_high_contrast_theme.tres"
+)
+
 const TOAST_HOST_SCENE: PackedScene = preload(
 	"res://components/ui/toast/ui_toast_host.tscn"
 )
@@ -42,6 +46,7 @@ var _input_focus_scope: NucleusUIFocusScope
 var _hold_status: Label
 
 var _panel_visible: bool = true
+var _theme_status: Label
 var _health: float = 100.0
 var _score: float = 250.0
 var _toast_index: int = 0
@@ -97,15 +102,19 @@ func _build_lab() -> void:
 
 	_build_header(root_box)
 
-	var tab_bar := HBoxContainer.new()
+	var tab_bar := HFlowContainer.new()
 	tab_bar.add_theme_constant_override(&"separation", 8)
 	root_box.add_child(tab_bar)
 
 	var page_host := Control.new()
-	page_host.custom_minimum_size = Vector2(720.0, 520.0)
+	page_host.custom_minimum_size = Vector2(0.0, 320.0)
 	page_host.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	page_host.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	root_box.add_child(page_host)
+
+	var theme_page := _create_page(page_host, tab_bar, "Theme & Controls")
+	var theme_focus := _build_theme_page(theme_page)
+	_attach_focus_scope(theme_page, theme_focus)
 
 	var motion_page := _create_page(page_host, tab_bar, "Motion & Feedback")
 	var motion_focus := _build_motion_feedback_page(motion_page)
@@ -150,7 +159,7 @@ func _build_header(parent: VBoxContainer) -> void:
 
 func _create_page(
 	page_host: Control,
-	tab_bar: HBoxContainer,
+	tab_bar: HFlowContainer,
 	title: String,
 ) -> Control:
 	var page := Control.new()
@@ -166,7 +175,7 @@ func _create_page(
 
 	var margin := MarginContainer.new()
 	margin.name = "Margin"
-	margin.custom_minimum_size.x = 700.0
+	margin.custom_minimum_size.x = 0.0
 	margin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	margin.add_theme_constant_override(&"margin_left", 4)
 	margin.add_theme_constant_override(&"margin_top", 4)
@@ -241,6 +250,61 @@ func _attach_focus_scope(
 	scope.restore_last_focus = true
 	page.add_child(scope)
 	return scope
+
+
+func _build_theme_page(page: Control) -> Control:
+	var body := _page_body(page)
+	var section := _add_section(
+		body,
+		"Native controls and accessible theme",
+		"Local contrast preview: no changes to project-wide Theme resources.",
+	)
+	var contrast := CheckButton.new()
+	contrast.text = "High-contrast preview"
+	contrast.toggled.connect(_on_theme_contrast_changed)
+	section.add_child(contrast)
+	var sample := Button.new()
+	sample.text = "Button: hover / focus / activate"
+	section.add_child(sample)
+	var unavailable := Button.new()
+	unavailable.text = "Disabled action"
+	unavailable.disabled = true
+	section.add_child(unavailable)
+	var edit := LineEdit.new()
+	edit.placeholder_text = "Enter text to verify caret and focus"
+	section.add_child(edit)
+	var selection := OptionButton.new()
+	selection.add_item("First option")
+	selection.add_item("Second option")
+	section.add_child(selection)
+	var checkbox := CheckBox.new()
+	checkbox.text = "Native checkbox"
+	section.add_child(checkbox)
+	var slider := HSlider.new()
+	slider.min_value = 0.0
+	slider.max_value = 100.0
+	slider.value = 50.0
+	section.add_child(slider)
+	var progress := ProgressBar.new()
+	progress.value = 65.0
+	section.add_child(progress)
+	_theme_status = Label.new()
+	_theme_status.text = "Test Tab, Shift+Tab, mouse, controller and resizing."
+	_theme_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	section.add_child(_theme_status)
+	sample.pressed.connect(
+		func() -> void: _theme_status.text = "Button activated."
+	)
+	return contrast
+
+
+func _on_theme_contrast_changed(is_enabled: bool) -> void:
+	theme = HIGH_CONTRAST_THEME if is_enabled else null
+	if _theme_status != null:
+		_theme_status.text = (
+			"High contrast enabled locally."
+			if is_enabled else "Project default theme restored."
+	)
 
 
 func _build_motion_feedback_page(page: Control) -> Control:

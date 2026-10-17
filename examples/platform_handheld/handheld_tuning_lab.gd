@@ -7,6 +7,8 @@ const PROFILES: Array[Resource] = [
 	preload("res://modules/performance/profiles/handheld_quality.tres"),
 ]
 
+var _detection_choice: OptionButton
+var _detection_report: Label
 var _settings: NucleusSettingsService
 var _profile_choice: OptionButton
 var _preview: Label
@@ -34,6 +36,18 @@ func _ready() -> void:
 		device["confidence"],
 	]
 	col.add_child(info)
+	_detection_choice = OptionButton.new()
+	for title: String in [
+		"Live device", "Simulated: Steam Deck OLED",
+		"Simulated: ASUS ROG Ally X", "Simulated: desktop",
+	]:
+		_detection_choice.add_item(title)
+	_detection_choice.item_selected.connect(_show_detection)
+	col.add_child(_detection_choice)
+	_detection_report = Label.new()
+	_detection_report.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	col.add_child(_detection_report)
+	_show_detection(0)
 	_profile_choice = OptionButton.new()
 	for profile: NucleusHandheldTuningProfile in PROFILES:
 		_profile_choice.add_item(profile.display_name)
@@ -97,3 +111,34 @@ func _undo_last() -> void:
 	if status == OK:
 		_undo.clear()
 	_refresh()
+
+
+func _show_detection(index: int) -> void:
+	var data: Dictionary
+	match index:
+		1:
+			data = NucleusHandheldDetector.classify({
+				"os_name": "Linux",
+				"sys_vendor": "Valve",
+				"product_name": "Galileo",
+			})
+		2:
+			data = NucleusHandheldDetector.classify({
+				"os_name": "Windows",
+				"sys_vendor": "ASUSTeK",
+				"product_name": "RC72LA",
+			})
+		3:
+			data = NucleusHandheldDetector.classify({
+				"os_name": "Windows", "model": "Desktop PC",
+			})
+		_:
+			data = NucleusPlatform.get_handheld_info()
+	var mode: String = "LIVE" if index == 0 else "SIMULATED"
+	_detection_report.text = (
+		"%s | %s\nFamily: %s\nModel: %s\nConfidence: %s\nSource: %s"
+		% [
+			mode, data["os_name"], data["family"], data["model"],
+			data["confidence"], data["source"],
+		]
+	)

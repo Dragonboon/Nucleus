@@ -445,7 +445,7 @@ Disable it or call `reset_observation()` to reset counters and recommendations.
 This first iteration **only observes and recommends**: FPS improvements are
 not guaranteed or claimed. No competing settings writer or Autoload exists.
 
-Example: `res://examples/adaptive_performance/adaptive_performance_lab.tscn`
+Example: `res://examples/adaptive_performance/adaptive_quality_lab.tscn`
 sends reproducible synthetic good/slow/neutral windows, so the hysteresis
 and recovery can be verified without deliberately overloading a real GPU.
 The demonstration does **not** modify graphics settings.
