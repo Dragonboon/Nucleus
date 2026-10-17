@@ -17,6 +17,7 @@ var _remaining: Dictionary[StringName, int] = {}
 var _instances: Dictionary[StringName, StringName] = {}
 var _busy: bool = false
 var _generation: int = 0
+var _advance_queued: bool = false
 
 
 func start_encounter() -> Error:
@@ -28,6 +29,7 @@ func start_encounter() -> Error:
 	wave_index = -1
 	_generation += 1
 	_instances.clear()
+	_advance_queued = false
 	_busy = true
 	encounter_started.emit(definition.encounter_id)
 	_busy = false
@@ -71,7 +73,10 @@ func mark_defeated(id: StringName, count: int = 1) -> Error:
 	if _remaining[id] == 0:
 		_remaining.erase(id)
 	if _remaining.is_empty():
-		_start_next_wave()
+		if _busy:
+			_advance_queued = true
+		else:
+			_start_next_wave()
 	return OK
 
 
@@ -152,6 +157,7 @@ func restore_state(data: Dictionary) -> Error:
 			return ERR_INVALID_DATA
 	_remaining = restored
 	_instances = tracked
+	_advance_queued = false
 	wave_index = index
 	running = requested
 	_generation += 1
@@ -192,8 +198,11 @@ func _start_next_wave() -> void:
 	var serial: int = _generation
 	wave_requested.emit(wave_index, get_remaining())
 	_busy = false
-	if serial != _generation:
+	if serial != _generation or not running:
 		return
+	if _advance_queued:
+		_advance_queued = false
+		_start_next_wave()
 
 
 func _finish(outcome: StringName) -> void:
@@ -203,6 +212,7 @@ func _finish(outcome: StringName) -> void:
 	_generation += 1
 	_remaining.clear()
 	_instances.clear()
+	_advance_queued = false
 	_busy = false
 	if outcome == &"victory":
 		encounter_completed.emit(definition.encounter_id)

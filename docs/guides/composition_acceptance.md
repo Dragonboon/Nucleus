@@ -13,6 +13,15 @@ Godot exits with code zero.
 | Three clients joining and reconnecting | ENet/MultiplayerAPI + NetworkWorldReadiness + NetworkIntentChannel | `tests/smoke/world_session_smoke.tscn` | Pre-ready interactions rejected; valid interactions accepted; stale readiness rejected after reconnect |
 | Real adaptive background workload | PerformanceSampler + AdaptiveController + WorkloadBinding + MaterializationQueue + TerrainBuildJob | `tests/smoke/adaptive_measured_smoke.tscn` | Actual jobs complete and measured windows are recorded; original budgets restored |
 
+## Inspect encounters and rewards
+
+The RPG smoke scene checks ability use, shields and wave completion. The
+headless `encounter_lifecycle_test.gd` suite checks duplicate defeat
+notifications, terminal outcomes, restarts, and victory-only experience.
+Connect `wave_requested` to the existing 2D/3D Spawner in each game;
+Nucleus does not own placement, team membership, inventory delivery,
+or authoritative network input.
+
 ## Inspect the world
 
 Run `examples/world_composition/world_composition_lab.tscn`. **Collect POIs**,

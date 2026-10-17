@@ -51,6 +51,41 @@ slots. It can require an unlock rank with the same ID, and rechecks on execution
 Saved slot IDs must be restored after the ActionSet registry and graph are ready.
 Changing learned ranks does not automatically delete a slot assignment.
 
+## Encounters and battle outcomes
+
+`NucleusEncounterDirector` owns the wave lifecycle without spawning scenes.
+`register_instance(instance_id, participant_id)` associates a concrete
+enemy with a wave slot. `mark_instance_defeated(instance_id)` consumes that
+slot once and rejects duplicated death notifications. Legacy
+`mark_defeated(participant_id, count)` remains available for authoritative
+aggregate reports. Use only one reporting method per instance.
+
+`NucleusEncounterCombatant` listens to a health ValuePool's `depleted`
+signal and emits stable instance/participant IDs. Connect this signal to
+the director; pooled actors must call `reset_defeat()` on reacquisition.
+For 2D and 3D actor spawning, consume `wave_requested` with the existing
+`NucleusSpawner` and call `register_instance` for each spawned actor.
+Keep a per-instance map to safely release pooled instances when defeated.
+
+`finish_encounter("victory" | "defeat" | "retreat")` and
+`cancel_encounter()` terminate an active encounter. A natural last-wave
+completion emits `encounter_completed` and
+`encounter_ended(id, "victory")`; defeat and retreat emit only
+`encounter_ended`. Ending clears pending wave instances. The game decides
+when a player party has been defeated or has escaped.
+
+`NucleusEncounterReward` grants experience from a ProgressionTrack and
+optionally rolls loot on victory, not on defeat/retreat/cancel. Save the
+reward claim and the director state together to prevent replaying loot
+after loading. The game owns item delivery, inventory capacity and
+authoritative reward grants; the LootRoller emits generated results.
+
+`capture_state` / `restore_state` save stable wave counts and instance
+IDs, not live nodes. Restoring an active wave requires recreating or
+reattaching its actors explicitly. Restoration is refused while a
+session is already running; invalid data is rejected without modifying
+the director.
+
 ## Encounters
 `NucleusEncounterDefinition` holds ordered `NucleusEncounterWave` resources,
 each with participant IDs and counts. `NucleusEncounterDirector` emits
