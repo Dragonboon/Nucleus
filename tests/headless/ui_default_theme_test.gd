@@ -13,6 +13,7 @@ func run() -> Dictionary:
 	_test_focus_visibility()
 	_test_native_control_coverage()
 	_test_game_can_override_without_mutation()
+	_test_surface_parity_and_scrollbars()
 	return finish()
 
 
@@ -83,6 +84,60 @@ func _test_native_control_coverage() -> void:
 	]:
 		expect_true(BASE.get_theme_item_list(Theme.DATA_TYPE_STYLEBOX, type_name).size() > 0,
 			"Base Theme contains styles for %s." % type_name)
+
+
+func _test_surface_parity_and_scrollbars() -> void:
+	for theme_resource: Theme in [BASE, HIGH]:
+		for type_name: StringName in [
+			&"HScrollBar", &"VScrollBar",
+		]:
+			for part: StringName in [
+				&"scroll", &"grabber", &"grabber_highlight",
+				&"grabber_pressed",
+			]:
+				expect_true(
+					theme_resource.has_stylebox(part, type_name),
+					"%s has a themed %s." % [type_name, part],
+				)
+		for type_name: StringName in [&"HSeparator", &"VSeparator"]:
+			expect_true(
+				theme_resource.has_stylebox(&"separator", type_name),
+				"%s uses the shared separator token." % type_name,
+			)
+		var progress_bg := (
+			theme_resource.get_stylebox(&"background", &"ProgressBar")
+			as StyleBoxFlat
+		)
+		var progress_fg := (
+			theme_resource.get_stylebox(&"fill", &"ProgressBar")
+			as StyleBoxFlat
+		)
+		expect_true(
+			progress_bg != null and progress_fg != null,
+			"ProgressBar has separate neutral track and visible progress.",
+		)
+		if progress_bg != null and progress_fg != null:
+			expect_true(
+				_contrast(progress_fg.bg_color, progress_bg.bg_color) >= 3.0,
+				"Progress amount contrasts with its track by at least 3:1.",
+			)
+		for type_name: StringName in [
+			&"Button", &"MenuButton", &"OptionButton",
+		]:
+			for state: StringName in [&"normal", &"hover", &"pressed"]:
+				var surface := (
+					theme_resource.get_stylebox(state, type_name)
+					as StyleBoxFlat
+				)
+				var text_color := theme_resource.get_color(
+					&"font_color", type_name
+				)
+				expect_true(
+					surface != null and (
+						_contrast(text_color, surface.bg_color) >= 4.5
+					),
+					"%s %s remains readable." % [type_name, state],
+				)
 
 
 func _test_game_can_override_without_mutation() -> void:

@@ -17,7 +17,7 @@ UI singleton. It uses built-in `StyleBoxFlat` and the engine fallback font.
 | --- | --- |
 | `components/ui/theme/nucleus_base_theme.tres` | Enabled as the project default. |
 | `components/ui/theme/nucleus_high_contrast_theme.tres` | Optional local or game-wide replacement. |
-| `examples/ui/theme_lab.tscn` | Interactive visual review of native controls and both variants. |
+| `examples/ui/ui_polish_lab.tscn` | Unified theme, accessibility and interaction acceptance. |
 | `tests/headless/ui_default_theme_test.gd` | Startup setting, state/contrast and Theme-contract regression. |
 
 ## Baseline UI decisions
@@ -30,7 +30,10 @@ UI singleton. It uses built-in `StyleBoxFlat` and the engine fallback font.
 - Clear hover, press, disabled and keyboard/gamepad **focus ring** states.
 - Text-on-control contrast targets WCAG AA normal text (at least **4.5:1**)
   on the explicitly styled baseline surfaces; see the headless color checks.
-- Neutral grayscale surfaces with one understated focus/selection highlight.
+- Neutral layered surfaces with a restrained focus/selection highlight.
+- Scrollbars and separators use native, shared dark/high-contrast tokens.
+- ProgressBar fill contrasts with its track at **3:1 or greater**, checked in
+  the headless theme suite alongside normal text contrast.
 - Remaining, unstyled Godot Theme items fall back to native defaults, including
   stock icons. This is intentional for forward compatibility.
 
@@ -61,7 +64,7 @@ UI singleton. It uses built-in `StyleBoxFlat` and the engine fallback font.
    a game-owned path and point the project setting to the replacement.
 4. Preserve clearly differentiated normal, hover, pressed, disabled and focus
    states. Do not encode essential information through color alone.
-5. Run `examples/ui/theme_lab.tscn`, inspect keyboard/gamepad focus and resize
+5. Run `examples/ui/ui_polish_lab.tscn`, inspect keyboard/gamepad focus and resize
    the viewport. Validate in both light/dark backdrops where the game uses them.
 
 The resource is not modified by `NucleusSettings`; engine project startup owns
@@ -120,7 +123,7 @@ visual quality of exported builds. Run the lab on target devices.
 
 Manual review sequence:
 
-1. Run `res://examples/ui/theme_lab.tscn` with F6.
+1. Run `res://examples/ui/ui_polish_lab.tscn` with F6.
 2. Tab/Shift+Tab through the controls; inspect focus at normal and high contrast.
 3. Test mouse hover, click, disabled state, popup and text selection.
 4. Toggle high contrast locally, then return to the project default.

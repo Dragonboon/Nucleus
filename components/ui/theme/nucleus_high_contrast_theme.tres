@@ -113,7 +113,7 @@ content_margin_left = 0.0
 content_margin_top = 0.0
 content_margin_right = 0.0
 content_margin_bottom = 0.0
-bg_color = Color(0.333333, 0.333333, 0.333333, 1)
+bg_color = Color(0.96, 0.96, 0.96, 1)
 corner_radius_top_left = 5
 corner_radius_top_right = 5
 corner_radius_bottom_right = 5
@@ -327,8 +327,52 @@ corner_radius_top_right = 6
 corner_radius_bottom_right = 6
 corner_radius_bottom_left = 6
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_scroll_track"]
+bg_color = Color(0.10, 0.10, 0.10, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_scroll_grabber"]
+bg_color = Color(0.68, 0.68, 0.68, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_scroll_hover"]
+bg_color = Color(0.88, 0.88, 0.88, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_scroll_pressed"]
+bg_color = Color(1, 1, 1, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxLine" id="StyleBoxLine_separator"]
+color = Color(0.94, 0.94, 0.94, 1)
+thickness = 1
+
 [resource]
 default_font_size = 18
+HScrollBar/styles/scroll = SubResource("StyleBoxFlat_scroll_track")
+HScrollBar/styles/scroll_focus = SubResource("StyleBoxFlat_focus")
+HScrollBar/styles/grabber = SubResource("StyleBoxFlat_scroll_grabber")
+HScrollBar/styles/grabber_highlight = SubResource("StyleBoxFlat_scroll_hover")
+HScrollBar/styles/grabber_pressed = SubResource("StyleBoxFlat_scroll_pressed")
+VScrollBar/styles/scroll = SubResource("StyleBoxFlat_scroll_track")
+VScrollBar/styles/scroll_focus = SubResource("StyleBoxFlat_focus")
+VScrollBar/styles/grabber = SubResource("StyleBoxFlat_scroll_grabber")
+VScrollBar/styles/grabber_highlight = SubResource("StyleBoxFlat_scroll_hover")
+VScrollBar/styles/grabber_pressed = SubResource("StyleBoxFlat_scroll_pressed")
+HSeparator/styles/separator = SubResource("StyleBoxLine_separator")
+VSeparator/styles/separator = SubResource("StyleBoxLine_separator")
 Button/colors/font_color = Color(1, 1, 1, 1)
 Button/colors/font_disabled_color = Color(0.819608, 0.819608, 0.819608, 1)
 Button/colors/font_focus_color = Color(1, 1, 1, 1)
