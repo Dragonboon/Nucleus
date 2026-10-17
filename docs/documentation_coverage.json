@@ -22,7 +22,8 @@
       "docs/components/camera_game_feel.md"
     ],
     "components/gameplay/combat": [
-      "docs/components/gameplay_foundation.md"
+      "docs/components/gameplay_foundation.md",
+      "docs/components/rpg_composition.md"
     ],
     "components/gameplay/control": [
       "docs/components/gameplay_movement_camera.md",
@@ -273,6 +274,12 @@
     ],
     "components/world/poi": [
       "docs/components/biome_poi.md"
+    ],
+    "components/gameplay/encounters": [
+      "docs/components/rpg_composition.md"
+    ],
+    "components/gameplay/progression": [
+      "docs/components/rpg_composition.md"
     ]
   }
 }

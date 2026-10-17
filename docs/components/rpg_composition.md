@@ -2,6 +2,22 @@
 
 This family is **mechanism only**, not a battle manager or a ruleset.
 
+## Action / combat / progression adapters
+
+`NucleusApplyDamageEffect` is a synchronous GameplayAction effect. It can use
+an explicitly assigned `NucleusDamageResolver` or resolve a single resolver
+under the node supplied as `context["target"]`. Ambiguous targets are refused.
+Immunity remains a valid paid attack result, surfaced through `hit_processed`;
+a malformed damage rule still fails the committed action (no rollback).
+
+`NucleusDamageInterruptBinding` listens for resolved health damage (optionally
+shield absorption) and interrupts an attached ActionChannel at a configured
+minimum amount/priority. It never bypasses that channel's priority rules.
+
+`NucleusUnlockRequirement` gates standalone actions on a learned rank and
+notifies availability listeners on a graph change. Slots in AbilityLoadout
+perform their own checks as an additional defense.
+
 ## Damage and reactions
 See [gameplay foundation](gameplay_foundation.md) and [actions](gameplay_actions_attributes_status.md).
 Damage and shields are handled by DamageResolver, while ActionChannel/ReactionCoordinator

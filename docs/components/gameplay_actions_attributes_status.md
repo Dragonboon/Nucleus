@@ -69,6 +69,10 @@ an explicit game-owned compensation policy.
 For RPG-neutral unlocks, ability slot assignment and XP tracks, see
 [`rpg_composition.md`](rpg_composition.md).
 
+Use `NucleusApplyDamageEffect` for target-scoped damage through the existing
+DamageResolver; it does not bypass mitigation/shield rules. See
+[RPG composition](rpg_composition.md).
+
 ## Attributes
 
 Attributes represent runtime numeric values derived from a base plus modifiers.

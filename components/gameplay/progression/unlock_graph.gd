@@ -41,7 +41,10 @@ func validate_graph() -> PackedStringArray:
 			var dependency := StringName(str(key))
 			if not _index.has(dependency) or dependency == id:
 				errors.append("Invalid prerequisite %s for %s" % [dependency, id])
-			elif int(definition.required_ranks[key]) < 1 or int(definition.required_ranks[key]) > _index[dependency].max_rank:
+			elif (
+				int(definition.required_ranks[key]) < 1
+				or int(definition.required_ranks[key]) > _index[dependency].max_rank
+			):
 				errors.append("Invalid prerequisite rank %s for %s" % [dependency, id])
 	# Detect any prerequisite cycle, not just self-edges.
 	for id: StringName in _index:
@@ -78,7 +81,11 @@ func can_unlock(id: StringName) -> Error:
 		return ERR_UNAVAILABLE
 	if definition.exclusive_group != &"":
 		for other_id: StringName in _index:
-			if other_id != id and _index[other_id].exclusive_group == definition.exclusive_group and get_rank(other_id) > 0:
+			if (
+				other_id != id
+				and _index[other_id].exclusive_group == definition.exclusive_group
+				and get_rank(other_id) > 0
+			):
 				return ERR_UNAVAILABLE
 	for key: Variant in definition.required_ranks:
 		if get_rank(StringName(str(key))) < int(definition.required_ranks[key]):

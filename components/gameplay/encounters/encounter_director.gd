@@ -21,7 +21,11 @@ func start_encounter() -> Error:
 	if definition == null or definition.encounter_id == &"" or definition.waves.is_empty():
 		return ERR_INVALID_PARAMETER
 	for wave: NucleusEncounterWave in definition.waves:
-		if wave == null or wave.participant_ids.is_empty() or wave.participant_ids.size() != wave.counts.size():
+		if (
+			wave == null
+			or wave.participant_ids.is_empty()
+			or wave.participant_ids.size() != wave.counts.size()
+		):
 			return ERR_INVALID_DATA
 		for index: int in range(wave.counts.size()):
 			if wave.participant_ids[index] == &"" or wave.counts[index] < 1:
