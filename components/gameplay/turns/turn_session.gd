@@ -168,9 +168,11 @@ func _finish_turn(seat: NucleusTurnParticipant, reason: StringName) -> Error:
 	if reason == &"skipped":
 		seat.turn_skipped.emit(reason)
 		turn_skipped.emit(seat, reason)
+	completed_turns += 1
 	seat.turn_ended.emit(reason)
 	turn_ended.emit(seat, reason)
-	completed_turns += 1
+	if not running:
+		return OK
 	if maximum_turns > 0 and completed_turns >= maximum_turns:
 		end_session(&"maximum_turns")
 	elif _active.is_empty():
@@ -242,15 +244,18 @@ func _activate(seat: NucleusTurnParticipant) -> void:
 
 
 func _emit_start(seat: NucleusTurnParticipant) -> void:
+	if not running or not _active.has(seat):
+		return
 	seat.turn_started.emit(round_number)
-	turn_started.emit(seat, round_number)
+	if running and _active.has(seat):
+		turn_started.emit(seat, round_number)
 
 
 func _skip_blocked(seat: NucleusTurnParticipant) -> void:
+	completed_turns += 1
 	seat.turn_skipped.emit(&"blocked")
 	turn_skipped.emit(seat, &"blocked")
-	completed_turns += 1
-	if maximum_turns > 0 and completed_turns >= maximum_turns:
+	if running and maximum_turns > 0 and completed_turns >= maximum_turns:
 		end_session(&"maximum_turns")
 
 

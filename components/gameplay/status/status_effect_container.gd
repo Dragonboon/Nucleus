@@ -62,6 +62,16 @@ func can_apply_effect(
 	):
 		return ERR_UNAVAILABLE
 
+	if definition.duration_unit == NucleusStatusEffectDefinition.DurationUnit.TURNS:
+		if definition.duration > 0.0 and not is_equal_approx(
+			definition.duration, floorf(definition.duration)
+		):
+			return ERR_INVALID_PARAMETER
+		if definition.tick_interval > 0.0 and not is_equal_approx(
+			definition.tick_interval, floorf(definition.tick_interval)
+		):
+			return ERR_INVALID_PARAMETER
+
 	return OK
 
 
@@ -317,6 +327,8 @@ func _process(delta: float) -> void:
 	)
 
 	for active: NucleusActiveStatusEffect in get_effects():
+		if active.definition.duration_unit != NucleusStatusEffectDefinition.DurationUnit.SECONDS:
+			continue
 		var effect_delta: float = (
 			real_delta
 			if active.definition.ignore_time_scale
@@ -330,6 +342,19 @@ func _process(delta: float) -> void:
 			active,
 			effect_delta,
 		)
+
+
+## Explicit discrete clock, independent of _process() and Godot's time scale.
+func advance_turns(steps: int = 1) -> Error:
+	if steps < 1 or steps > 1000000:
+		return ERR_INVALID_PARAMETER
+	for active: NucleusActiveStatusEffect in get_effects():
+		if active.definition.duration_unit != NucleusStatusEffectDefinition.DurationUnit.TURNS:
+			continue
+		if _active.get(active.get_effect_id()) != active:
+			continue
+		_update_effect(active, float(steps))
+	return OK
 
 
 func _update_effect(
@@ -546,7 +571,12 @@ func _register_definition(
 
 func _refresh_processing() -> void:
 	_last_real_usec = Time.get_ticks_usec()
-	set_process(not _active.is_empty())
+	var has_seconds: bool = false
+	for active: NucleusActiveStatusEffect in _active.values():
+		if active.definition.duration_unit == NucleusStatusEffectDefinition.DurationUnit.SECONDS:
+			has_seconds = true
+			break
+	set_process(has_seconds)
 
 
 func _find_attribute_set() -> NucleusAttributeSet:

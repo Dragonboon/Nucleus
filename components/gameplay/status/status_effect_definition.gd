@@ -2,6 +2,8 @@ class_name NucleusStatusEffectDefinition
 extends Resource
 ## Design-time definition for one reusable status effect.
 
+enum DurationUnit { SECONDS, TURNS }
+
 enum ReapplyPolicy {
 	REFRESH,
 	ADD_STACK_REFRESH,
@@ -15,6 +17,7 @@ enum ReapplyPolicy {
 @export_group("Lifetime")
 @export_range(0.0, 86400.0, 0.01, "or_greater")
 var duration: float = 5.0
+@export var duration_unit: DurationUnit = DurationUnit.SECONDS
 @export var ignore_time_scale: bool = false
 @export var persist: bool = true
 

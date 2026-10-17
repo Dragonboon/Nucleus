@@ -55,10 +55,31 @@ func restore_state(data: Dictionary) -> PackedStringArray:
 	var slots: Variant = data.get("slots", {})
 	if not (slots is Dictionary):
 		return PackedStringArray(["Invalid slots snapshot"])
-	_slots.clear()
+	# Validate first: an invalid snapshot must never erase valid assignments.
+	var candidate: Dictionary[StringName, StringName] = {}
 	for key: Variant in slots:
-		var id := StringName(str(key))
+		var slot_id := StringName(str(key))
 		var action_id := StringName(str(slots[key]))
-		if assign(id, action_id) != OK:
+		if slot_id == &"" or action_id == &"":
 			rejected.append(str(key))
+			continue
+		if action_set == null or not action_set.has_action(action_id):
+			rejected.append(str(key))
+			continue
+		if require_unlocked and (
+			unlock_graph == null or unlock_graph.get_rank(action_id) < 1
+		):
+			rejected.append(str(key))
+			continue
+		candidate[slot_id] = action_id
+	if not rejected.is_empty():
+		return rejected
+	var previous: Dictionary[StringName, StringName] = _slots.duplicate()
+	_slots = candidate
+	for slot_id: StringName in previous:
+		if not _slots.has(slot_id):
+			assignment_changed.emit(slot_id, &"")
+	for slot_id: StringName in _slots:
+		if previous.get(slot_id, &"") != _slots[slot_id]:
+			assignment_changed.emit(slot_id, _slots[slot_id])
 	return rejected
