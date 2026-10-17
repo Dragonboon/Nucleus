@@ -2,8 +2,11 @@ class_name NucleusTurnParticipant
 extends Node
 ## Scene-owned turn seat. Actor may be any Node; it need not be a combatant.
 
+@warning_ignore("unused_signal")
 signal turn_started(round_number: int)
+@warning_ignore("unused_signal")
 signal turn_ended(reason: StringName)
+@warning_ignore("unused_signal")
 signal turn_skipped(reason: StringName)
 signal blocked_opportunities_changed(remaining: int)
 
