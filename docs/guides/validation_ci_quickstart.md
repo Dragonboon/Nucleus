@@ -78,6 +78,17 @@ The first exercises a body over real Jolt frames; the second connects two ENet
 peers on localhost UDP port 48472. Neither validates a game's art, input device
 feel, WAN conditions or four-player gameplay. All four smoke scenes run in CI.
 
+RPG-neutral composed battle acceptance (does not need authored art):
+
+```bash
+python3 scripts/ci/run_godot_checked.py godot --headless --path . \
+  res://tests/smoke/rpg_battle_smoke.tscn
+```
+
+Run the same scene with F6. It exercises an unlocked ActionSet ability, mana,
+shield spillover, cast interruption, level advancement, and two encounter waves.
+No GitHub Actions run is required for local validation.
+
 ## 5. Manual validation scenes
 
 Use representative scenes under `examples/` for visual or interaction behavior

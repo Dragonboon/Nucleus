@@ -61,6 +61,15 @@ is no built-in turn scheduler, status duration measured in rounds, or
 cross-actor reaction stack. Those should be added only when needed as separate
 clock/arbiter contracts.
 
+## End-to-end acceptance
+
+Open `tests/smoke/rpg_battle_smoke.tscn` in the editor and press F6, or use
+`godot --headless --path . res://tests/smoke/rpg_battle_smoke.tscn`.
+It composes the real action, rank gate, mana cost, damage resolver, shields,
+interrupt channel, XP track and two encounter waves into one in-process
+fixture with explicit PASS/FAIL diagnostics. It does not simulate enemy AI,
+networked authority, status turn counters or an RPG UI.
+
 ## Checks
 `tests/headless/advanced_combat_contracts_test.gd` and
 `tests/headless/rpg_contracts_test.gd` exercise narrow behavior contracts.

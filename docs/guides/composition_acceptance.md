@@ -7,6 +7,7 @@ Godot exits with code zero.
 
 | Composition | Owners | Runnable acceptance | Expected result |
 | --- | --- | --- | --- |
+| Hero ability unlock, mana cost, shield spillover, interrupt, XP and two-wave encounter | RPG action / combat / progression / encounters | `tests/smoke/rpg_battle_smoke.tscn` | Deterministic in-process battle sequence ends with one completion and no assertion failures |
 | Procedural region, POI clearing, collect, unload/reload, disk save | Terrain + BiomeSurfaceQuery + ScatterDensityVolume + WorldRegion/Entity + SaveSession | `tests/smoke/world_composition_smoke.tscn` | Same generated IDs; collected POIs remain hidden; decoration never occupies reserved sites |
 | Walking onto/off a moving buoyant hull | CharacterMotor3D + native CharacterBody3D platform following + Buoyancy3D/RigidBody3D | `tests/smoke/boat_transfer_smoke.tscn` | Rider boards, follows the moving hull and reaches the second dock without reparenting |
 | Three clients joining and reconnecting | ENet/MultiplayerAPI + NetworkWorldReadiness + NetworkIntentChannel | `tests/smoke/world_session_smoke.tscn` | Pre-ready interactions rejected; valid interactions accepted; stale readiness rejected after reconnect |
