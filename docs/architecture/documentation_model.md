@@ -13,6 +13,12 @@ player/designer needs to canonical ownership documentation and clearly says
 what remains game-owned. The identical routes are maintained in
 `docs/use_case_registry.json`, validated by `scripts/ci/use_case_audit.py`.
 
+Copy-ready instructions belong in the
+[agent prompt playbook](../guides/agent_prompt_playbook.md) and
+[worked prompt examples](../guides/agent_prompt_examples.md), not in the
+machine-readable use-case registry. They inherit the repository's AGENTS.md
+contract and cannot substitute for executed verification.
+
 Read the [AI/human composition workflow](../guides/ai_composition_workflow.md)
 for the behavior-to-code method, then the
 [composition recipes](../guides/composition_recipes.md) for cross-system examples.

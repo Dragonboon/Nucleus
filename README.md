@@ -60,7 +60,9 @@ owns its entry point and opts into only the systems it needs.
 > [!TIP]
 > **Building a mechanic?** Start with the [Game Development Use Cases](docs/guides/use_case_catalog.md)
 > to find the existing owner before creating new classes.
-> **Using an AI agent?** Follow the [AI and human composition workflow](docs/guides/ai_composition_workflow.md).
+> **Using an AI agent?** Start with the [copy-ready agent prompt playbook](docs/guides/agent_prompt_playbook.md)
+> and [worked 2D, turn-based and 3D prompts](docs/guides/agent_prompt_examples.md).
+> Follow the [AI and human composition workflow](docs/guides/ai_composition_workflow.md).
 
 | Goal | Best entry point |
 | --- | --- |
@@ -84,7 +86,7 @@ Hands-on build-along guides are indexed at
 ## Build by game mechanic: humans and coding agents
 
 If you know **what a game should do**, but not which reusable system owns it,
-start with the **68-case [use-case catalog](docs/guides/use_case_catalog.md)**.
+start with the **live [use-case catalog](docs/guides/use_case_catalog.md)**.
 It routes player/designer problems to canonical components, modules and the
 specific work that still belongs in the game.
 

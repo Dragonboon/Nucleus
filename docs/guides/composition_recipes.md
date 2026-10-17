@@ -1,5 +1,9 @@
 # Composition recipes: from a game idea to working Nucleus owners
 
+To ask a coding agent to implement one recipe in small validated steps, use
+[agent prompt playbook](agent_prompt_playbook.md) and its
+[worked prompt sequences](agent_prompt_examples.md).
+
 This companion to the [use-case catalog](use_case_catalog.md) gives **mechanic-
 shaped starting points**. Recipes are intentionally small. They tell a human or
 AI where to begin, not which art, combat or progression decisions to hard-code.

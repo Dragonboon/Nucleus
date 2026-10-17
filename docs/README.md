@@ -18,7 +18,9 @@ rules.
 | --- | --- |
 | A gameplay feature or player behavior | **[Use-case catalog](guides/use_case_catalog.md)** |
 | A combination of several systems | **[Composition recipes](guides/composition_recipes.md)** |
-| Coding with an AI agent | **[AI/human workflow](guides/ai_composition_workflow.md)** |
+| Coding with an AI agent | **[Agent prompt playbook](guides/agent_prompt_playbook.md)** |
+| See step-by-step prompts for 2D, turn-based and 3D games | [Worked agent prompt sequences](guides/agent_prompt_examples.md) |
+| Understand agent ownership and proof rules | [AI/human workflow](guides/ai_composition_workflow.md) |
 | Choosing the correct code owner | [Architecture decision guide](architecture/component_selection.md) |
 
 ### Setup, learning, and diagnostics

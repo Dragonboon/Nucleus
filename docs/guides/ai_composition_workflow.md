@@ -9,6 +9,11 @@ it*, rather than encouraging the agent to invent new framework APIs.
 > **Required starting point:** Define the player-visible behavior, locate the
 > existing owner, and verify the real API before adding new scripts or Autoloads.
 
+**Want copy-ready prompts?** Start with the
+[agent prompt playbook](agent_prompt_playbook.md), then choose a
+[worked sequence](agent_prompt_examples.md). Each stage inherits the
+mandatory [AGENTS.md](../../AGENTS.md) contract and is independently testable.
+
 **Quick route:** [Find a capability](use_case_catalog.md) →
 [Choose an owner](../architecture/component_selection.md) →
 [See composed examples](composition_recipes.md) → **Implement and validate.**

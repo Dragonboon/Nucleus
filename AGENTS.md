@@ -5,6 +5,10 @@
 > An agent's job is to reuse, compose, and validate existing mechanisms—not to
 > maximize the amount of new code.
 
+Copy-ready prompts for agents using this contract are in the
+[agent prompt playbook](docs/guides/agent_prompt_playbook.md) and its
+[worked examples](docs/guides/agent_prompt_examples.md).
+
 ## 0. Mandatory start: CRISP + reuse gate
 
 **CRISP = Context · Role · Inspection · Standards · Proof.** The steps in this
