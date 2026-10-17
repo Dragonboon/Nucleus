@@ -21,6 +21,8 @@ rules.
 | Coding with an AI agent | **[Agent prompt playbook](guides/agent_prompt_playbook.md)** |
 | See step-by-step prompts for 2D, turn-based and 3D games | [Worked agent prompt sequences](guides/agent_prompt_examples.md) |
 | Understand agent ownership and proof rules | [AI/human workflow](guides/ai_composition_workflow.md) |
+| Debug or validate gameplay with an agent | [Debug/testing prompt library](guides/agent_debug_testing_prompts.md) |
+| Build scenes and reuse assets/addons | [Scene/asset/addon prompt library](guides/agent_scenes_assets_addons_prompts.md) |
 | Choosing the correct code owner | [Architecture decision guide](architecture/component_selection.md) |
 
 ### Setup, learning, and diagnostics

@@ -11,7 +11,9 @@ it*, rather than encouraging the agent to invent new framework APIs.
 
 **Want copy-ready prompts?** Start with the
 [agent prompt playbook](agent_prompt_playbook.md), then choose a
-[worked sequence](agent_prompt_examples.md). Each stage inherits the
+[worked sequence](agent_prompt_examples.md). For failure diagnosis, use the
+[debug/testing prompts](agent_debug_testing_prompts.md); for content reuse,
+use the [scene/asset/addon prompts](agent_scenes_assets_addons_prompts.md). Each stage inherits the
 mandatory [AGENTS.md](../../AGENTS.md) contract and is independently testable.
 
 **Quick route:** [Find a capability](use_case_catalog.md) →

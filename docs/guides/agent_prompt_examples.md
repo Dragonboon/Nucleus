@@ -183,6 +183,14 @@ For performance, use [measure and polish](agent_prompt_playbook.md#7-measure-and
 For truly reusable additions to Nucleus, use
 [shared extraction](agent_prompt_playbook.md#8-propose-shared-extraction).
 
+## For debugging, scene authoring and existing addons
+
+Use the dedicated [debugging/testing prompt library](agent_debug_testing_prompts.md)
+for parse failures, signal races, AI navigation, save/reload, acceptance and
+cross-system validation. Use the [scene, asset and addon prompts](agent_scenes_assets_addons_prompts.md)
+for safe reuse of imported content, level variants and existing plugins.
+These workflows apply after any worked example and require real asset paths.
+
 ## When to expand the use-case catalog
 
 The [generated catalog](use_case_catalog.md) derives from

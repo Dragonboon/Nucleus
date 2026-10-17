@@ -92,6 +92,10 @@ specific work that still belongs in the game.
 
 - [AI and human composition workflow](docs/guides/ai_composition_workflow.md):
   how to turn a behavior request into owned nodes, tests and observable results.
+- [Debugging/testing prompts](docs/guides/agent_debug_testing_prompts.md):
+  reproducible diagnosis, regression suites and composed game verification.
+- [Scene/asset/addon prompts](docs/guides/agent_scenes_assets_addons_prompts.md):
+  reusable levels, imported art and approved plugin integration.
 - [Composition recipes](docs/guides/composition_recipes.md): persistent doors,
   stamina/dodges, AI, inventory, terrain, boats, UI labels, multiplayer and tools.
 - [Ownership decision tree](docs/architecture/component_selection.md):

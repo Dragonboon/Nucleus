@@ -29,6 +29,8 @@ boundary explicit and asks for a small, observable result.
 | Optimize based on evidence | [7. Measure and polish](#7-measure-and-polish) |
 | Decide whether a feature belongs in Nucleus | [8. Propose shared extraction](#8-propose-shared-extraction) |
 | Continue after another session or contributor | [9. Resume from a checkpoint](#9-resume-from-a-checkpoint) |
+| Diagnose bugs, test and integrate mechanics | [Debugging/testing prompts](agent_debug_testing_prompts.md) |
+| Assemble levels and reuse installed resources | [Scenes, assets and addons](agent_scenes_assets_addons_prompts.md) |
 
 ## Task preamble
 
@@ -247,6 +249,8 @@ regressions and earlier measurable feedback**, while preserving quality gates.
 ## Continue reading
 
 - [Worked prompts for three game types](agent_prompt_examples.md)
+- [Debugging, testing and integration prompt library](agent_debug_testing_prompts.md)
+- [Scenes, existing assets and addon prompt library](agent_scenes_assets_addons_prompts.md)
 - [Agent/human composition workflow](ai_composition_workflow.md)
 - [Game Development Use Cases](use_case_catalog.md)
 - [Composition recipes](composition_recipes.md)
