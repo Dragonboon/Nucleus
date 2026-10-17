@@ -89,6 +89,9 @@ Run the same scene with F6. It exercises an unlocked ActionSet ability, mana,
 shield spillover, cast interruption, level advancement, and two encounter waves.
 No GitHub Actions run is required for local validation.
 
+For serial, initiative and simultaneous turn sessions, the registered
+`turn_session_test.gd` suite runs within the regular headless test scene.
+
 ## 5. Manual validation scenes
 
 Use representative scenes under `examples/` for visual or interaction behavior

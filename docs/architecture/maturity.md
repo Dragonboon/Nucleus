@@ -17,6 +17,7 @@ claimed evidence to apply to the checked-out revision.
 | Character locomotion | Validated within scope | `locomotion_3d_smoke.tscn`, [boat transfer](../guides/composition_acceptance.md) | Player feel, slopes and authored hulls in the actual game |
 | Animation/ragdolls | Integrated | [Animation](../components/animation_integration.md), headless animation/ragdoll suites | Imported skeletons, art and physics feel |
 | Gameplay actions/state/attributes/combat | Integrated | [Gameplay contracts](../components/gameplay_foundation.md), state/action suites | Game rules, balancing and concurrency in composed actors |
+| Turn scheduling (Turnity migration) | Experimental | [Turn contracts](../components/turn_sessions.md), turn session headless suite | Requires executed tests; no mid-turn snapshots, runtime roster mutation or network authority |
 | RPG progression, unlocks, encounters and reaction composition | Experimental | [RPG composition](../components/rpg_composition.md), headless contract suites | Scripted composed battle smoke authored; requires observed Godot pass, no turn arbiter or game-specific AI validation |
 | UI/accessibility | Integrated | [UI quickstart](../guides/ui_quickstart.md), UI example scenes | Real localization, screen readers/platform accessibility, device navigation |
 | Grids/modular building/splines/placement | Integrated | Respective `examples/` labs and headless suites | Imported assets, authored placement constraints and editor ergonomics |

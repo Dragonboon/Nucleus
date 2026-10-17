@@ -280,6 +280,9 @@
     ],
     "components/gameplay/progression": [
       "docs/components/rpg_composition.md"
+    ],
+    "components/gameplay/turns": [
+      "docs/components/turn_sessions.md"
     ]
   }
 }
