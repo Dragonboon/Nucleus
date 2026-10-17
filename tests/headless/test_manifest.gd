@@ -11,6 +11,7 @@ const SUITES: Array[Script] = [
 	preload("res://tests/headless/value_pool_test.gd"),
 	preload("res://tests/headless/advanced_combat_contracts_test.gd"),
 	preload("res://tests/headless/rpg_contracts_test.gd"),
+	preload("res://tests/headless/encounter_lifecycle_test.gd"),
 	preload("res://tests/headless/turn_session_test.gd"),
 	preload("res://tests/headless/turn_composition_test.gd"),
 	preload("res://tests/headless/network_utils_test.gd"),
