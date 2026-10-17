@@ -68,7 +68,10 @@ func get_hit_rejection_reason(payload: NucleusHitPayload) -> StringName:
 	return &""
 
 
-func receive_hit(payload: NucleusHitPayload) -> float:
+func receive_hit(
+	payload: NucleusHitPayload,
+	already_scaled: bool = false,
+) -> float:
 	var reason: StringName = get_hit_rejection_reason(payload)
 	if reason != &"":
 		if payload != null:
@@ -76,7 +79,8 @@ func receive_hit(payload: NucleusHitPayload) -> float:
 		return 0.0
 
 	var requested_damage: float = (
-		payload.amount * maxf(0.0, damage_multiplier)
+		payload.amount if already_scaled
+		else payload.amount * maxf(0.0, damage_multiplier)
 	)
 	var delta: float = target_pool.decrease(requested_damage)
 	var applied_damage: float = maxf(0.0, -delta)

@@ -33,6 +33,14 @@ func resolve_hit(payload: NucleusHitPayload) -> Dictionary:
 		if is_nan(amount) or is_inf(amount) or amount < 0.0:
 			return _failure(ERR_INVALID_DATA, &"invalid_rule_result")
 
+	# Apply the receiver's multiplier before shield absorption, exactly once.
+	var multiplier: float = receiver.damage_multiplier
+	if is_nan(multiplier) or is_inf(multiplier) or multiplier < 0.0:
+		return _failure(ERR_INVALID_DATA, &"invalid_damage_multiplier")
+	amount *= multiplier
+	if is_nan(amount) or is_inf(amount):
+		return _failure(ERR_INVALID_DATA, &"invalid_damage_amount")
+
 	var remaining: float = amount
 	var absorbed: float = 0.0
 	var visited: Dictionary = {}
@@ -54,7 +62,7 @@ func resolve_hit(payload: NucleusHitPayload) -> Dictionary:
 		var forwarded := NucleusHitPayload.new(
 			remaining, payload.source, payload.hitbox, payload.tags, payload.metadata
 		)
-		health_damage = receiver.receive_hit(forwarded)
+		health_damage = receiver.receive_hit(forwarded, true)
 
 	var outcome: Dictionary = {
 		"error": OK,

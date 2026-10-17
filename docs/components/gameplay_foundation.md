@@ -44,7 +44,9 @@ in configured order, forwarding any remainder through `NucleusDamageReceiver`.
 Use `resolve_hit(payload)` instead of calling the receiver directly for the
 same impact. It returns requested/modified/absorbed/health_damage/overkill and
 rejects hits before draining shields if the receiver is immune or invulnerable.
-Rules must return finite, non-negative amounts; damage mathematics (armor,
+Rules must return finite, non-negative amounts. The receiver's damage multiplier
+is applied once, before shields; direct receiver calls keep their legacy
+multiplier semantics. Damage mathematics (armor,
 criticals, resistances) remains game-owned. Multiple shield layers are allowed;
 this pipeline does not roll chance-based block/parry.
 

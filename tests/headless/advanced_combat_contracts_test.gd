@@ -16,6 +16,7 @@ class CountEffect:
 func run() -> Dictionary:
 	_test_damage_and_shields()
 	_test_interrupt_and_reactions()
+	_test_multiplier_before_shields()
 	return finish()
 
 
@@ -96,4 +97,29 @@ func _test_interrupt_and_reactions() -> void:
 	expect_equal(cast_effect.calls, 1, "Completed windup commits once.")
 	reactions.advance(2.0)
 	expect_false(reactions.has_window(&"parry_window"), "Window expires.")
+	free_test_node(root)
+
+
+func _test_multiplier_before_shields() -> void:
+	var root := Node.new()
+	var health := NucleusValuePool.new()
+	health.initial_value = 20.0
+	var shield := NucleusValuePool.new()
+	shield.initial_value = 10.0
+	var receiver := NucleusDamageReceiver.new()
+	receiver.target_pool = health
+	receiver.damage_multiplier = 2.0
+	var resolver := NucleusDamageResolver.new()
+	resolver.receiver = receiver
+	resolver.shield_pools.append(shield)
+	root.add_child(health)
+	root.add_child(shield)
+	root.add_child(receiver)
+	root.add_child(resolver)
+	expect_true(attach_test_node(root), "Scaled damage fixture attaches.")
+	var result: Dictionary = resolver.resolve_hit(NucleusHitPayload.new(8.0))
+	expect_float(result["modified"], 16.0, "Multiplier applied before shields.")
+	expect_float(result["absorbed"], 10.0, "Shield consumes scaled damage.")
+	expect_float(result["health_damage"], 6.0, "Remaining damage not rescaled.")
+	expect_float(health.value, 14.0, "Health reflects one multiplier.")
 	free_test_node(root)
