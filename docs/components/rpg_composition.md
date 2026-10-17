@@ -75,9 +75,10 @@ completion emits `encounter_completed` and
 when a player party has been defeated or has escaped.
 
 `NucleusEncounterReward` grants experience from a ProgressionTrack and
-optionally rolls loot on victory, not on defeat/retreat/cancel. Save the
-reward claim and the director state together to prevent replaying loot
-after loading. The game owns item delivery, inventory capacity and
+optionally rolls loot on victory, not on defeat/retreat/cancel. The reward claim is keyed to an encounter ID: replaying the same ID
+cannot award again unless the game explicitly uses a new reward instance.
+Save the reward claim and director state together to prevent duplicated loot
+following a load. The game owns item delivery, inventory capacity and
 authoritative reward grants; the LootRoller emits generated results.
 
 `capture_state` / `restore_state` save stable wave counts and instance
