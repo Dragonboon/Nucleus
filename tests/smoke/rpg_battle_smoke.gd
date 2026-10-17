@@ -2,8 +2,6 @@ extends Node
 ## Scripted end-to-end acceptance. All actors and rules are intentionally local.
 ## Use F6 or run headlessly. No global RPG service, renderer or gameplay loop.
 
-const TIMEOUT_SECONDS: float = 8.0
-
 var _failed: PackedStringArray = []
 var _finished: bool = false
 
@@ -76,11 +74,21 @@ func _run() -> void:
 	resolver.receiver = receiver
 	resolver.shield_pools.append(barrier)
 	enemy.add_child(resolver)
+	var statuses := NucleusStatusEffectContainer.new()
+	enemy.add_child(statuses)
+	var poison := NucleusStatusEffectDefinition.new()
+	poison.effect_id = &"poison"
+	poison.duration = 5.0
 
 	var damage := NucleusApplyDamageEffect.new()
 	damage.resolve_from_context = true
 	damage.amount = 12.0
 	strike.add_child(damage)
+	var apply_status := NucleusApplyStatusEffect.new()
+	apply_status.definition = poison
+	apply_status.target_container = statuses
+	strike.add_child(apply_status)
+	strike.refresh_parts()
 	var channel := NucleusActionChannel.new()
 	channel.action = strike
 	channel.windup_seconds = 1.0
@@ -104,6 +112,7 @@ func _run() -> void:
 	_check(is_equal_approx(barrier.value, 0.0), "Shield drained first.")
 	_check(is_equal_approx(hp.value, 14.0), "Remaining damage reached health.")
 	_check(is_equal_approx(mana.value, 25.0), "Mana cost paid exactly once.")
+	_check(statuses.has_effect(&"poison"), "Status applied by the same ability.")
 
 	_check(channel.start_action({"target": enemy}) == OK, "Cast starts.")
 	_check(channel.interrupt_action(1) == ERR_UNAVAILABLE,
