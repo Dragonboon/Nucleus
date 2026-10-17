@@ -96,6 +96,10 @@ and discrete status ticks/expiry.
 
 ## 5. Manual validation scenes
 
+Use the [consolidated lab guide](lab_guide.md) to select a focused
+interactive scene, rather than running overlapping demonstrations.
+
+
 Use representative scenes under `examples/` for visual or interaction behavior
 that cannot be proven headlessly. Examples include gameplay, UI polish, terrain,
 decals and other scene-owned integrations.

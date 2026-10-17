@@ -126,6 +126,7 @@ Manual review sequence:
 1. Run `res://examples/ui/ui_polish_lab.tscn` with F6.
 2. Tab/Shift+Tab through the controls; inspect focus at normal and high contrast.
 3. Test mouse hover, click, disabled state, popup and text selection.
-4. Toggle high contrast locally, then return to the project default.
+4. In the **Theme & Controls** page, toggle high contrast locally, then return
+   to the project default.
 5. Resize to narrow and wide layouts; confirm nothing important is clipped.
 6. Test at the game's supported language and text-size configurations.

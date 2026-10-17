@@ -31,6 +31,7 @@ rules.
 | --- | --- |
 | Create a game from Nucleus | [`guides/installation.md`](guides/installation.md) |
 | Understand the baseline architecture | [`guides/foundation_quickstart.md`](guides/foundation_quickstart.md) |
+| Choose a consolidated interactive lab | [`guides/lab_guide.md`](guides/lab_guide.md) |
 | Learn by building | [`guides/tutorials/README.md`](guides/tutorials/README.md) |
 | Match a game problem to a subsystem | [`guides/real_game_patterns.md`](guides/real_game_patterns.md) |
 | Configure project/rendering defaults | [`guides/project_configuration.md`](guides/project_configuration.md) |

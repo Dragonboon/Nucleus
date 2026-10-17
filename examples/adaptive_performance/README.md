@@ -7,10 +7,12 @@ cooldowns, the 80% lower bound and progressive quality recovery.
 
 Choose 1 (42 FPS), 2 (60 FPS), or 3 (55 FPS) to inject twelve
 synthetic windows; use **Step 1 sample** to inspect an individual
-observation. R resets the policy. A render-scale override is opt-in.
+neutral observation. R resets the policy. A render-scale override is opt-in.
 
-This example **never changes** project rendering scale, FPS cap,
-`NucleusSettings`, or user preferences. For live observation instead,
+In **observation-only** mode this lab never changes rendering scale,
+FPS cap, `NucleusSettings` or user preferences. The separate binding is
+**opt-in** and may temporarily change effective viewport scale, but it
+never overwrites the persistent preference. For live observation instead,
 assign a scene-owned `NucleusPerformanceSampler` to the controller's
 `sampler` property. It will subscribe to its existing
 `snapshot_sampled` signal; do not implement a second frame monitor.

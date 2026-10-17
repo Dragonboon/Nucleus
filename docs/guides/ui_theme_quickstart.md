@@ -11,7 +11,8 @@
 2. Confirm the default is `res://components/ui/theme/nucleus_base_theme.tres`.
 3. Open `res://examples/ui/ui_polish_lab.tscn` and run the current scene (F6).
 4. Test a Button with Tab/Enter/Space and mouse hover/press.
-5. Toggle **High-contrast preview** in the lab and try focus navigation again.
+5. Open the **Theme & Controls** page and toggle **High-contrast preview**.
+6. Check buttons, text input, scrollbars, progress, focus and narrow resizing.
 
 The default theme uses the engine font, larger baseline text, comfortable
 control padding and explicit focus/hover/disabled styles. It does not install a
