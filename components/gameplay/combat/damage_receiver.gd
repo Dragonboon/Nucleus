@@ -56,28 +56,23 @@ func _ready() -> void:
 	)
 
 
-func receive_hit(payload: NucleusHitPayload) -> float:
+func get_hit_rejection_reason(payload: NucleusHitPayload) -> StringName:
 	if payload == null or payload.amount <= 0.0:
-		if payload:
-			hit_rejected.emit(payload, REASON_EMPTY_HIT)
-		return 0.0
-
+		return REASON_EMPTY_HIT
 	if target_pool == null:
-		hit_rejected.emit(payload, REASON_NO_POOL)
-		return 0.0
-
+		return REASON_NO_POOL
 	if invulnerable:
-		hit_rejected.emit(payload, REASON_INVULNERABLE)
-		return 0.0
+		return REASON_INVULNERABLE
+	if not immune_tags.is_empty() and NucleusArrayUtils.intersects(immune_tags, payload.tags):
+		return REASON_IMMUNE_TAG
+	return &""
 
-	if (
-		not immune_tags.is_empty()
-		and NucleusArrayUtils.intersects(
-			immune_tags,
-			payload.tags,
-		)
-	):
-		hit_rejected.emit(payload, REASON_IMMUNE_TAG)
+
+func receive_hit(payload: NucleusHitPayload) -> float:
+	var reason: StringName = get_hit_rejection_reason(payload)
+	if reason != &"":
+		if payload != null:
+			hit_rejected.emit(payload, reason)
 		return 0.0
 
 	var requested_damage: float = (

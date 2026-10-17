@@ -44,6 +44,28 @@ NucleusActionContextProvider
 Prefer a new small requirement/cost/effect Resource or Node over subclassing the
 entire action execution pipeline.
 
+## Optional channel and reaction contracts
+
+`NucleusActionChannel` adds a windup and recovery around one synchronous
+`NucleusGameplayAction`. Windup interruption prevents the action from paying
+costs or committing effects. Recovery interruption cannot undo a committed
+action; it only ends the remaining recovery period. `interrupt_action(priority,
+reason)` enforces the channel's minimum interruption priority, and `advance()`
+allows deterministic manual clocking alongside normal `_process`.
+
+`NucleusReactionCoordinator` maps explicit event IDs and optional timed/manual
+windows to registered actions via `NucleusReactionDefinition`. Higher-priority
+reactions are tried first, retaining authored order for ties. A reaction validates
+the candidate action before requesting an interruption and executing the
+reaction; callers own the event timing, permissions, and networking authority.
+A lower-priority reaction cannot interrupt an active channel. These contracts
+do not add a global battle manager or a rollback engine.
+
+The existing `GameplayAction` cost refund applies to a failed cost payment.
+After a successful commit, a failed effect does **not** roll back earlier effects,
+costs, or cooldown. Keep committed effects predictably successful, or introduce
+an explicit game-owned compensation policy.
+
 ## Attributes
 
 Attributes represent runtime numeric values derived from a base plus modifiers.

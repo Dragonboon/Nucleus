@@ -38,6 +38,16 @@ This is composition rather than a specialized Health class.
 payload damage into a ValuePool decrease and owns invulnerability/immunity
 policy.
 
+An optional `NucleusDamageResolver` applies ordered, side-effect-free
+`NucleusDamageRule` transformations, then consumes distinct shield ValuePools
+in configured order, forwarding any remainder through `NucleusDamageReceiver`.
+Use `resolve_hit(payload)` instead of calling the receiver directly for the
+same impact. It returns requested/modified/absorbed/health_damage/overkill and
+rejects hits before draining shields if the receiver is immune or invulnerable.
+Rules must return finite, non-negative amounts; damage mathematics (armor,
+criticals, resistances) remains game-owned. Multiple shield layers are allowed;
+this pipeline does not roll chance-based block/parry.
+
 2D/3D hitboxes and hurtboxes use Godot collision/area facilities. Keep hit
 detection separate from damage storage.
 
