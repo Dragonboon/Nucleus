@@ -60,6 +60,7 @@ discovery routes for machine-assisted tools. It does not execute code.
 | Scene transitions and recovery | [`guides/scene_flow_quickstart.md`](guides/scene_flow_quickstart.md) |
 | Resource batches / loading presentation | [`guides/resource_loading_quickstart.md`](guides/resource_loading_quickstart.md) |
 | Build a turn-based game: first steps | [`guides/turns_composition_quickstart.md`](guides/turns_composition_quickstart.md) |
+| Build 2D AI enemies | [`guides/tutorials/ai_character_2d.md`](guides/tutorials/ai_character_2d.md) |
 | Generic turn sessions (Turnity migration) | [`components/turn_sessions.md`](components/turn_sessions.md) |
 | RPG-neutral encounter, abilities and progression | [`components/rpg_composition.md`](components/rpg_composition.md) |
 | Gameplay foundation | [`guides/gameplay_foundation_quickstart.md`](guides/gameplay_foundation_quickstart.md) |

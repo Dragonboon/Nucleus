@@ -28,7 +28,7 @@ claimed evidence to apply to the checked-out revision.
 
 | Module directory | State | Evidence / contract | Limit |
 | --- | --- | --- | --- |
-| `ai` | Integrated | [AI navigation](../modules/ai_navigation.md), AI suite | Game-specific behavior and navigation content |
+| `ai` | Integrated | [AI navigation](../modules/ai_navigation.md), AI suite | Game-specific behavior, native 2D/3D navigation maps and actor integration |
 | `content_packs` | Integrated | Content-pack compatibility/security suites | Community content and signing/deployment policy |
 | `destruction` | Experimental | [Destruction](../modules/destructible_meshes.md), mesh-slice suite | Single simple cut loop; no general fracture solver |
 | `development_tools` | Integrated | Development/preflight suites | Production authorization remains game-owned |

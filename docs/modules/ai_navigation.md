@@ -32,6 +32,23 @@ animation / facing presentation
 The module does not provide an Enemy base class, global AI manager, duplicate
 physics motor, Behavior Tree/GOAP framework, or replacement NavigationServer.
 
+## 2D and 3D AI character parity
+
+Use `NucleusAICharacterSetup2D` for a CharacterBody2D and
+`NucleusAICharacterSetup3D` for CharacterBody3D. Both reuse the
+dimension-neutral UtilityBrain, AIStateMachineBridge, TargetingAgent
+and GameplayAction rather than creating an enemy-specific controller.
+
+The 2D helper resolves or creates CharacterMotor2D, NavigationFollower2D
+and NavigationMotionSource2D, can wire the state bridge, and checks
+physics-process priority and effective movement speed. Optional
+`NucleusMovementFacing2D` rotates only the visual pivot.
+See the [complete 2D walkthrough](../guides/tutorials/ai_character_2d.md).
+
+Top-down movement generally uses FLOATING; platformers use GROUNDED
+and need game-authored jump/link semantics. Both rely on native
+NavigationServer2D and collision geometry.
+
 ## Shared locomotion
 
 `NucleusNavigationMotionSource3D` is the standard adapter for ground AI using
@@ -60,12 +77,13 @@ NavigationFollower3D.movement_speed
 NavigationAgent3D.max_speed
 ```
 
-The setup assistant also places `NavigationFollower3D` one physics priority
+The 3D setup assistant also places `NavigationFollower3D` one physics priority
 before `CharacterMotor3D` by default, preventing a tree-order-dependent frame of
 intent latency. Disable that policy only when the project owns process order
 explicitly.
 
-to `CharacterMotor3D.get_max_planar_speed()`.
+Both 2D and 3D motion adapters synchronize intent to their motor's
+current effective maximum speed.
 
 Disable that synchronization only when the project intentionally needs navigation
 intent capped differently from physical locomotion.

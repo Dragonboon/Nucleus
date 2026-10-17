@@ -1,5 +1,16 @@
 # AI / Navigation Quickstart
 
+## Choose 2D or 3D
+
+- **2D enemies:** [AI Character 2D tutorial](tutorials/ai_character_2d.md)
+  connects NavigationAgent2D, NavigationFollower2D, NavigationMotionSource2D,
+  CharacterMotor2D, UtilityBrain, FSM and optional 2D facing.
+- **3D enemies:** use the existing guide below.
+
+Both dimensions reuse targeting, Utility AI and GameplayActions.
+For encounter instance IDs and damage/reward bridges, see
+[encounter composition](../components/rpg_composition.md).
+
 ## Recommended 3D composition
 
 A reusable ground AI character can start as:
