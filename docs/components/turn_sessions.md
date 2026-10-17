@@ -50,13 +50,35 @@ automatic `_process` clock. Timeouts finish the active turn. New turns
 opened by a timeout do not retroactively consume the preceding delta.
 `set_paused(true)` suspends timers, not explicit game ownership of turns.
 
+## Connect actions and status effects (optional)
+
+- Add `NucleusTurnRequirement` to a `NucleusGameplayAction`; connect its
+  `session` and `participant`. The action then requires that participant's
+  active turn. It also notifies availability when turns change.
+- Add `NucleusFinishTurnEffect` **last** among effects when a committed
+  action should end or skip the owner's opportunity. All prior effects should
+  finish before another actor starts. Never add it to reactions that must
+  work out of turn.
+- Choose `NucleusStatusEffectDefinition.duration_unit = TURNS` to opt a
+  status into discrete lifetimes. The legacy default remains `SECONDS`.
+  `NucleusTurnStatusBinding` advances effects at owner turn end,
+  every completed opportunity, or completed round. A manually skipped active
+  turn emits both `turn_skipped` and `turn_ended`; the binding counts once.
+  A blocked opportunity emits only `turn_skipped`.
+- `NucleusStatusEffectContainer.advance_turns(steps)` is public for other
+  discrete clocks. Round/turn duration and tick intervals must be whole
+  numbers; indefinite duration remains zero. `tick_on_apply` still applies.
+
+Use one binding per container/clock. Multiple bindings for the same container
+cause multiple advances; connect only the clock your game's rules require.
+Out-of-turn reactions may remain valid when their requirements allow it.
+
 ## Integration and limits
 
 An RPG may connect `turn_started` to its action selection and connect
 `turn_ended` or `round_ended` to `NucleusTurnCounter.advance()`.
-The status-effect container still uses real seconds: never reinterpret its
-duration as rounds. Use separate counters and deliberate listeners for
-turn-based status policies.
+Statuses can explicitly select seconds or discrete turns. Configure the
+binding for the owner's opportunity or a whole round, not both.
 
 Sessions do not validate legal chess moves, assign initiative from attributes,
 automatically choose AI actions, replicate turns, or arbitrate simultaneous

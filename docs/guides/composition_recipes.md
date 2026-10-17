@@ -198,3 +198,19 @@ Write the game-owned behavior, then search native Godot and the
 [capability catalog](use_case_catalog.md). Ask whether the difference is a
 reusable **mechanism** or product-specific **policy**. Build it locally first;
 add a new Nucleus contract only when the maintenance and reuse case is clear.
+
+
+### Compose a board, tactical or RPG turn with actions
+
+**Components:** [Turn session](../components/turn_sessions.md),
+[Gameplay Actions](../components/gameplay_actions_attributes_status.md),
+[status clocks](../components/turn_sessions.md).
+**Game owns:** legal moves, targeting, scoring, winning, authority and UI.
+
+1. Create a `NucleusTurnSession` and participant per player, enemy or seat.
+2. Add a `NucleusTurnRequirement` to any action restricted to that seat.
+3. Put `NucleusFinishTurnEffect` last if completing the action advances the turn.
+4. Choose `DurationUnit.TURNS` and a single `NucleusTurnStatusBinding` if
+   statuses should expire by owner turns or completed rounds.
+5. Run `turn_composition_test.gd` and the full project headless suite.
+6. See the [turns quickstart](turns_composition_quickstart.md) for practical code.

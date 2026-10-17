@@ -12,6 +12,7 @@ class CountEffect:
 func run() -> Dictionary:
 	_test_turn_gated_actions()
 	_test_turn_status_clock()
+	_test_loadout_restore_atomicity()
 	return finish()
 
 
@@ -97,4 +98,26 @@ func _test_turn_status_clock() -> void:
 		"Two-turn status expires after second opportunity.")
 	expect_equal(ticks.size(), 2, "Ticks occur at each owner opportunity.")
 	session.end_session()
+	free_test_node(root)
+
+
+func _test_loadout_restore_atomicity() -> void:
+	var root := Node.new()
+	var actions := NucleusActionSet.new()
+	var attack := NucleusGameplayAction.new()
+	attack.action_id = &"attack"
+	actions.add_child(attack)
+	var loadout := NucleusAbilityLoadout.new()
+	loadout.action_set = actions
+	loadout.require_unlocked = false
+	root.add_child(actions)
+	root.add_child(loadout)
+	expect_true(attach_test_node(root), "Loadout fixture attaches.")
+	expect_equal(loadout.assign(&"primary", &"attack"), OK,
+		"Valid ability assigned.")
+	var bad := {"slots": {"primary": "unknown"}}
+	expect_equal(loadout.restore_state(bad).size(), 1,
+		"Invalid action ID rejected.")
+	expect_equal(loadout.get_assigned(&"primary"), &"attack",
+		"Failed restore leaves existing assignment intact.")
 	free_test_node(root)

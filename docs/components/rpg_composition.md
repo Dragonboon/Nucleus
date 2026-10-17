@@ -18,6 +18,15 @@ minimum amount/priority. It never bypasses that channel's priority rules.
 notifies availability listeners on a graph change. Slots in AbilityLoadout
 perform their own checks as an additional defense.
 
+## Turn-based composition
+
+Turn ownership stays in the general-purpose [turn scheduler](turn_sessions.md).
+Attach `NucleusTurnRequirement` to actions that need an active seat; attach
+`NucleusFinishTurnEffect` after their other effects when executing that action
+ends the seat's opportunity. `NucleusTurnStatusBinding` advances statuses with
+`duration_unit = TURNS` on the chosen discrete clock. These bridges are
+optional: real-time combat still works with no turn session.
+
 ## Damage and reactions
 See [gameplay foundation](gameplay_foundation.md) and [actions](gameplay_actions_attributes_status.md).
 Damage and shields are handled by DamageResolver, while ActionChannel/ReactionCoordinator

@@ -91,6 +91,8 @@ No GitHub Actions run is required for local validation.
 
 For serial, initiative and simultaneous turn sessions, the registered
 `turn_session_test.gd` suite runs within the regular headless test scene.
+`turn_composition_test.gd` verifies action ownership, effect-driven turn changes
+and discrete status ticks/expiry.
 
 ## 5. Manual validation scenes
 

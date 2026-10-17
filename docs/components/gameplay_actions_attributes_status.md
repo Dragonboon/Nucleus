@@ -73,6 +73,17 @@ Use `NucleusApplyDamageEffect` for target-scoped damage through the existing
 DamageResolver; it does not bypass mitigation/shield rules. See
 [RPG composition](rpg_composition.md).
 
+## Discrete turns and status lifetimes
+
+Turn requirements and end-of-turn action effects live in
+[generic turn sessions](turn_sessions.md). A status definition can now opt into
+`DurationUnit.TURNS` while the default remains seconds. Its container advances
+turn-based effects only via `advance_turns()` or an explicit
+`NucleusTurnStatusBinding`; real-time `_process` skips those effects.
+Turn-based tick intervals must be whole numbers. For action ordering, place a
+turn-finishing effect after damage and status effects; effects already committed
+are not rolled back on failure.
+
 ## Attributes
 
 Attributes represent runtime numeric values derived from a base plus modifiers.
