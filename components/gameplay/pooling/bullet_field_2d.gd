@@ -97,6 +97,10 @@ func active_count() -> int:
 	return _ids.size()
 
 
+func available_spawns() -> int:
+	return maxi(0, mini(capacity - _ids.size(), max_spawns_per_frame - _admitted_this_frame))
+
+
 func clear_bullets() -> void:
 	_ids.clear()
 	_position.clear()
