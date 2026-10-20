@@ -193,3 +193,27 @@ For the earlier screenshot: after updating the plugin, disable and re-enable
 it in Project Settings > Plugins if the previous bottom-panel instance
 is still open. Find Sprite Studio in the right-side docks, or move it to
 a floating window using Godot's dock controls.
+
+## Fix for the plugin parse error and Windows path warnings
+
+- Godot reported `plugin.gd:36: Expected closing ")"` because two adjacent
+  GDScript strings lacked a `+` concatenation operator. The toolbar tooltip
+  is now valid syntax.
+- The character discovery source is canonicalized to the case of the actual
+  folders on disk. For example, `res://assets/SPRITES` is normalized to
+  `res://assets/sprites` if that is the installed directory's spelling.
+- To correct existing SunnyLand character profiles, select the proper generated
+  folder, click **Detect characters**, then **Repair profile paths**. The
+  action checks every path before changing the selected profile and writes it
+  to its existing explicit path. It does not delete scenes or assets.
+- Godot's missing UID warning `uid://cktnsh7pma6tc` was not found among the
+  provided generated ZIP files, so its origin remains unverified. Inspect the
+  full editor logs and scene references if it persists after editor reimport.
+- The generic `Can't save resource to empty path` message likewise lacks a
+  concrete caller in the log. The Sprite Studio save helpers already require
+  a non-empty `res://` path; reproduce with the corresponding Godot stack
+  trace before attributing it to the plugin.
+
+Run the registered `sprite_path_case_test.gd` and Godot 4.7.2 editor plugin
+load test after updating the branch. None of these tests has been run in
+Godot by the authoring environment.

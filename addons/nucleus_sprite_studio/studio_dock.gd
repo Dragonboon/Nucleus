@@ -291,15 +291,19 @@ func _build_sequence_workflow() -> void:
 	add_child(controls)
 	_add_button(controls, "Detect characters", _scan_sequences)
 	_add_button(controls, "Generate scenes", _generate_sequences)
+	_add_button(controls, "Repair profile paths", _repair_sequence_paths)
 	_sequence_preview = ItemList.new()
 	_sequence_preview.custom_minimum_size = Vector2(400, 110)
 	add_child(_sequence_preview)
 
 
 func _scan_sequences() -> void:
-	_sequence_discovery = NucleusSpriteSequenceImporter2D.scan_directory(
-		_sequence_source.text,
-	)
+	var canonical := NucleusSpritePathCase2D.canonical_path(_sequence_source.text)
+	if canonical.is_empty():
+		_info.text = "Source folder not found; check capitalization."
+		return
+	_sequence_source.text = canonical
+	_sequence_discovery = NucleusSpriteSequenceImporter2D.scan_directory(canonical)
 	_sequence_preview.clear()
 	for entry: Dictionary in _sequence_discovery:
 		var names := PackedStringArray()
@@ -504,3 +508,37 @@ func _create_tab(tabs: TabContainer, title_text: String, widgets: Array) -> void
 	for widget: Control in widgets:
 		widget.reparent(contents)
 		widget.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+
+func _repair_sequence_paths() -> void:
+	## Explicit action: update only profiles already generated for discovered characters.
+	var root := _sequence_output.text
+	if not root.begins_with("res://") or ".." in root:
+		_info.text = "Select a valid generated characters folder."
+		return
+	if _sequence_discovery.is_empty():
+		_scan_sequences()
+	var repaired := 0
+	var blocked := 0
+	for descriptor: Dictionary in _sequence_discovery:
+		var key := str(descriptor["id"])
+		var path := root.path_join(key) + ".profile.tres"
+		if not FileAccess.file_exists(path):
+			continue
+		var profile := ResourceLoader.load(path) as NucleusSpriteSequenceProfile2D
+		if profile == null:
+			blocked += 1
+			continue
+		var result := NucleusSpritePathCase2D.normalize_sequence_profile(profile)
+		if result.get("error", ERR_INVALID_DATA) != OK:
+			blocked += 1
+			continue
+		if int(result.get("changes", 0)) <= 0:
+			continue
+		if ResourceSaver.save(profile, path) == OK:
+			repaired += 1
+		else:
+			blocked += 1
+	_info.text = "Path repair: %d profiles saved, %d blocked." % [repaired, blocked]
+	if repaired > 0:
+		EditorInterface.get_resource_filesystem().scan()

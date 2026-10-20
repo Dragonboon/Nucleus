@@ -34,7 +34,7 @@ func _enter_tree() -> void:
 	_toolbar_toggle.text = "Sprite Studio  ● ON"
 	_toolbar_toggle.tooltip_text = (
 		"Sprite Studio plugin is enabled. Click to show or hide its dock. "
-		"This does not disable the plugin."
+		+ "This does not disable the plugin."
 	)
 	_toolbar_toggle.toggle_mode = true
 	_toolbar_toggle.button_pressed = true
