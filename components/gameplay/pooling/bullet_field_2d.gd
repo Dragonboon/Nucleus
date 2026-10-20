@@ -131,6 +131,18 @@ func remove_at(index: int) -> bool:
 	return true
 
 
+func bullet_id_at(index: int) -> int:
+	return _ids[index] if index >= 0 and index < _ids.size() else -1
+
+
+func bullet_position_at(index: int) -> Vector2:
+	return _position[index] if index >= 0 and index < _position.size() else Vector2.ZERO
+
+
+func bullet_previous_at(index: int) -> Vector2:
+	return _previous[index] if index >= 0 and index < _previous.size() else Vector2.ZERO
+
+
 func get_bullet(index: int) -> Dictionary:
 	if index < 0 or index >= _ids.size():
 		return {}
