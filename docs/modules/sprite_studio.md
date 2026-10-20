@@ -50,3 +50,34 @@ native AnimationPlayer tracks. Real Godot 4.7.2 editor interaction,
 imported image settings, scene preview and exporters still require a
 live editor verification. No performance or compatibility claim is inferred
 from static code inspection.
+
+## Batch importing and protected reimport (PR #3)
+
+The optional bottom panel now accepts a source directory, an output directory
+and default X/Y cell sizes. **Preview batch** reports discovered image files,
+**Import batch** creates one persistent `.profile.tres`, `.frames.tres` and
+`.animations.tres` per image, with relative folders preserved. The profile
+keeps editable clip metadata, so developers can adjust each file later.
+**Reimport batch** reloads saved profiles and updates only generated clips that
+have not changed since the previous import.
+
+The `.profile.tres.sprite-studio.json` sidecar stores signatures of generated
+clips. Manually added clips and animations survive. If a generated clip was
+edited in Godot, it is reported as a conflict and retained. Clips removed from
+the profile are removed only when their prior generated content is unchanged.
+The importer **never rewrites existing scenes**. Scenes can reference the
+external `SpriteFrames` and `AnimationLibrary` resources; references and
+scene-owned parameters are preserved across successful resource reimports.
+
+The batch source and output must be inside `res://`; duplicate filenames in
+separate subfolders remain separate. The importer scans at most 2048 images
+and uses explicit, user-selected grid sizes. Irregular atlas detection and
+human-semantic clip naming remain manual. This is a first editor workflow,
+not an unattended semantic AI classifier or an atomic bulk transaction.
+
+For first use, export a scene manually and reference the generated external
+resource files where desired. Existing scenes are never silently patched.
+There is no automatic replacement of embedded resources in old scenes.
+
+Headless contract tests cover manual clip preservation, conflict detection and
+batch output paths. Live Godot 4.7.2 editor verification is still required.
