@@ -11,6 +11,10 @@ var _batch_output: LineEdit
 var _cell_x: SpinBox
 var _cell_y: SpinBox
 var _export_scene: bool = false
+var _sequence_source: LineEdit
+var _sequence_output: LineEdit
+var _sequence_preview: ItemList
+var _sequence_discovery: Array[Dictionary] = []
 
 
 func _ready() -> void:
@@ -49,6 +53,7 @@ func _ready() -> void:
 	_save_dialog.file_mode = EditorFileDialog.FILE_MODE_SAVE_FILE
 	_save_dialog.file_selected.connect(_on_save_selected)
 	add_child(_save_dialog)
+	_build_sequence_workflow()
 	_on_profile_changed(null)
 
 
@@ -249,3 +254,141 @@ func _save_generated(resource: Resource, path: String) -> Error:
 	if FileAccess.file_exists(path):
 		return ResourceSaver.save(resource, path, ResourceSaver.FLAG_CHANGE_PATH)
 	return NucleusSpriteReimport2D.write_new_resource(resource, path)
+
+
+func _build_sequence_workflow() -> void:
+	var heading := Label.new()
+	heading.text = "Automatic characters: numbered PNG frames (e.g. SunnyLand)"
+	add_child(heading)
+	_sequence_source = _line("res://assets/SPRITES", "Choose the folder containing frames")
+	_sequence_output = _line("res://generated/characters", "Generated scenes and resources")
+	var controls := HBoxContainer.new()
+	add_child(controls)
+	_add_button(controls, "Detect characters", _scan_sequences)
+	_add_button(controls, "Generate scenes", _generate_sequences)
+	_sequence_preview = ItemList.new()
+	_sequence_preview.custom_minimum_size = Vector2(400, 110)
+	add_child(_sequence_preview)
+
+
+func _scan_sequences() -> void:
+	_sequence_discovery = NucleusSpriteSequenceImporter2D.scan_directory(
+		_sequence_source.text,
+	)
+	_sequence_preview.clear()
+	for entry: Dictionary in _sequence_discovery:
+		var names := PackedStringArray()
+		for clip: Dictionary in entry["clips"]:
+			names.append("%s (%d)" % [clip["name"], (clip["paths"] as PackedStringArray).size()])
+		_sequence_preview.add_item("%s: %s" % [entry["id"], ", ".join(names)])
+	_info.text = "%d characters detected. Review before Generate scenes." % [
+		_sequence_discovery.size(),
+	]
+
+
+func _generate_sequences() -> void:
+	if not _sequence_output.text.begins_with("res://") or ".." in _sequence_output.text:
+		_info.text = "Output must be a safe res:// folder."
+		return
+	if _sequence_discovery.is_empty():
+		_scan_sequences()
+	var created := 0
+	var updated := 0
+	var protected := 0
+	var conflicts := 0
+	for descriptor: Dictionary in _sequence_discovery:
+		var key := str(descriptor["id"])
+		if key.is_empty() or ".." in key:
+			protected += 1
+			continue
+		var stem := _sequence_output.text.path_join(key)
+		var profile_path := stem + ".profile.tres"
+		var frames_path := stem + ".frames.tres"
+		var library_path := stem + ".animations.tres"
+		var scene_path := stem + ".tscn"
+		var manifest_path := stem + ".sprite-studio.json"
+		var profile: NucleusSpriteSequenceProfile2D
+		if FileAccess.file_exists(profile_path):
+			profile = ResourceLoader.load(profile_path) as NucleusSpriteSequenceProfile2D
+		else:
+			profile = NucleusSpriteSequenceImporter2D.create_profile(
+				_sequence_source.text, descriptor,
+			)
+			var create_error := NucleusSpriteReimport2D.write_new_resource(
+				profile, profile_path,
+			)
+			if create_error != OK:
+				protected += 1
+				continue
+		if profile == null or not profile.validate().is_empty():
+			protected += 1
+			continue
+		var old_manifest := NucleusSpriteReimport2D.read_manifest(manifest_path)
+		if (FileAccess.file_exists(frames_path) or FileAccess.file_exists(library_path)):
+			if old_manifest.is_empty():
+				protected += 1
+				continue
+		var expected_frames := NucleusSpriteSequenceImporter2D.build_frames(profile)
+		var expected_library := NucleusSpriteSequencePipeline2D.build_library(profile)
+		if expected_frames == null or expected_library == null:
+			protected += 1
+			continue
+		var frames: SpriteFrames
+		var library: AnimationLibrary
+		if FileAccess.file_exists(frames_path):
+			frames = ResourceLoader.load(frames_path) as SpriteFrames
+		if FileAccess.file_exists(library_path):
+			library = ResourceLoader.load(library_path) as AnimationLibrary
+		var frame_merge := NucleusSpriteSequencePipeline2D.merge_frames(
+			expected_frames, frames, old_manifest.get("frames", {}),
+		)
+		var library_merge := NucleusSpriteSequencePipeline2D.merge_library(
+			expected_library, library, old_manifest.get("library", {}),
+		)
+		if frame_merge.get("error") != OK or library_merge.get("error") != OK:
+			protected += 1
+			continue
+		conflicts += (frame_merge["conflicts"] as Array).size()
+		conflicts += (library_merge["conflicts"] as Array).size()
+		if _save_generated(frame_merge["resource"], frames_path) != OK:
+			protected += 1
+			continue
+		if _save_generated(library_merge["resource"], library_path) != OK:
+			protected += 1
+			continue
+		var manifest: Dictionary = {
+			"version": 1,
+			"frames": frame_merge["managed"],
+			"library": library_merge["managed"],
+		}
+		if NucleusSpriteReimport2D.write_manifest(manifest_path, manifest) != OK:
+			protected += 1
+			continue
+		if not FileAccess.file_exists(scene_path):
+			var stored_frames := ResourceLoader.load(
+				frames_path, "SpriteFrames", ResourceLoader.CACHE_MODE_IGNORE,
+			) as SpriteFrames
+			var stored_library := ResourceLoader.load(
+				library_path, "AnimationLibrary", ResourceLoader.CACHE_MODE_IGNORE,
+			) as AnimationLibrary
+			var root := NucleusSpriteSequencePipeline2D.create_scene(
+				stored_frames, stored_library,
+			)
+			if root == null:
+				protected += 1
+				continue
+			var packed := PackedScene.new()
+			var pack_error := packed.pack(root)
+			root.free()
+			if pack_error != OK or (
+				NucleusSpriteReimport2D.write_new_resource(packed, scene_path) != OK
+			):
+				protected += 1
+				continue
+			created += 1
+		else:
+			updated += 1
+	_info.text = "%d new scenes, %d updated resources, %d protected, %d conflicts" % [
+		created, updated, protected, conflicts,
+	]
+	EditorInterface.get_resource_filesystem().scan()

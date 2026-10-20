@@ -81,3 +81,55 @@ There is no automatic replacement of embedded resources in old scenes.
 
 Headless contract tests cover manual clip preservation, conflict detection and
 batch output paths. Live Godot 4.7.2 editor verification is still required.
+
+## Automatic character workflow: SunnyLand-style frame folders
+
+You **do not need to create Nodes yourself**. Enable the optional Sprite Studio
+plugin, expand its bottom panel and use the **Automatic characters** section:
+
+1. Copy the pack's `Assets/SPRITES` directory into your Godot project under
+   `res://assets/SPRITES`. Ignore the macOS metadata, GIF previews, PSD files,
+   Demo/JavaScript and unrelated tileset files.
+2. Set **Source folder** to `res://assets/SPRITES` and **Output folder** to
+   `res://generated/characters`.
+3. Select **Detect characters**. The panel lists inferred characters, clips and
+   frame counts. Detection requires numbered PNGs such as `player-idle-1.png`;
+   simple static PNGs are not interpreted as animations.
+4. Select **Generate scenes**. For each recognized group, it writes:
+   `<character>.profile.tres`, `<character>.frames.tres`,
+   `<character>.animations.tres`, `<character>.sprite-studio.json`, and
+   a ready-made `<character>.tscn` with AnimatedSprite2D and AnimationPlayer.
+   Nested directories are retained to distinguish characters.
+5. Drag an exported `.tscn` from the filesystem into your game scene. This
+   remains the native Godot workflow; no manually assembled sprite nodes are
+   necessary.
+6. Later, change a persistent profile in Godot's Inspector and run **Generate
+   scenes** again. Generated external resources are updated when unmodified.
+   Modified clips are retained and reported as conflicts. Scenes are **never
+   overwritten**, protecting authored nodes and scene-specific settings.
+
+For SunnyLand, `SPRITES/player/idle/player-idle-1.png` through `-8.png`
+become one `player` scene with an `idle` clip. The same player grouping
+includes `run`, `jump`, `hurt`, and `crouch`. Enemy frame sequences can
+be discovered separately. These are **filename/folder suggestions**, not
+AI-derived semantic truth; review detected groups and refine the profile.
+
+### Supported inputs and known gaps
+
+The original sheet importer continues to accept uniform spritesheets. The
+new **Automatic characters** path supports numbered, individually sliced PNG,
+WEBP or JPEG frame sequences. SunnyLand's Demo atlas uses a **trimmed
+TexturePacker JSON**, which is not yet imported: it requires reconstruction of
+sprite source padding and pivot metadata, not naïve grid slicing. PSDs,
+previews, environment tilemaps and standalone props are excluded.
+
+Automatic scene generation creates **external** SpriteFrames and
+AnimationLibrary resources; the generated scene references them so subsequent
+reimports do not require deleting/recreating nodes. This first version scans
+synchronously and has explicit file-count/depth limits. Large imported packs,
+complex renaming, UndoRedo, resource write failures and sprite pivot alignment
+require further Godot editor acceptance tests. Treat it as a non-atomic editor
+operation and keep your project under version control.
+
+SunnyLand package inspected: 12 numbered frame sequences (49 individual PNG
+frames); the provided license PDF says CC0. No assets were committed to Nucleus.
