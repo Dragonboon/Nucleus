@@ -15,6 +15,9 @@ var _sequence_source: LineEdit
 var _sequence_output: LineEdit
 var _sequence_preview: ItemList
 var _sequence_discovery: Array[Dictionary] = []
+var _progress: ProgressBar
+var _results: RichTextLabel
+var _status: Label
 
 
 func _ready() -> void:
@@ -35,7 +38,7 @@ func _ready() -> void:
 	_preview.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	add_child(_preview)
 	var section := Label.new()
-	section.text = "Batch: folder of spritesheets -> editable profiles and native resources"
+	section.text = "SHEET MODE  |  Uniform grids (not numbered PNG sequences)"
 	add_child(section)
 	_batch_source = _line("res://assets/sprites", "Source folder, including nested folders")
 	_batch_output = _line("res://generated/sprites", "Output folder")
@@ -48,6 +51,20 @@ func _ready() -> void:
 	_add_button(size_controls, "Reimport batch", _reimport_batch)
 	_info = Label.new()
 	add_child(_info)
+	_status = Label.new()
+	_status.text = "READY  |  Select a source and preview the import"
+	_status.add_theme_color_override("font_color", Color(0.4, 0.8, 0.95))
+	add_child(_status)
+	_progress = ProgressBar.new()
+	_progress.custom_minimum_size.y = 18.0
+	_progress.show_percentage = true
+	_progress.value = 0
+	add_child(_progress)
+	_results = RichTextLabel.new()
+	_results.bbcode_enabled = true
+	_results.fit_content = false
+	_results.custom_minimum_size = Vector2(440, 130)
+	add_child(_results)
 	_save_dialog = EditorFileDialog.new()
 	_save_dialog.access = EditorFileDialog.ACCESS_RESOURCES
 	_save_dialog.file_mode = EditorFileDialog.FILE_MODE_SAVE_FILE
@@ -186,7 +203,10 @@ func _run_batch(reimport: bool) -> void:
 	var updated := 0
 	var protected := 0
 	var conflicts := 0
+	var plan_total := _plan().size()
+	_begin_progress(plan_total, "Importing spritesheets")
 	for entry: Dictionary in _plan():
+		_step_progress(str(entry["source"]))
 		var source: String = entry["source"]
 		var texture := ResourceLoader.load(source, "Texture2D") as Texture2D
 		if texture == null:
@@ -248,6 +268,7 @@ func _run_batch(reimport: bool) -> void:
 		created, updated, protected, conflicts,
 	]
 	EditorInterface.get_resource_filesystem().scan()
+	_complete_progress(created, updated, protected, conflicts)
 
 
 func _save_generated(resource: Resource, path: String) -> Error:
@@ -258,7 +279,7 @@ func _save_generated(resource: Resource, path: String) -> Error:
 
 func _build_sequence_workflow() -> void:
 	var heading := Label.new()
-	heading.text = "Automatic characters: numbered PNG frames (e.g. SunnyLand)"
+	heading.text = "CHARACTER MODE  |  Numbered frames -> complete scenes"
 	add_child(heading)
 	_sequence_source = _line("res://assets/SPRITES", "Choose the folder containing frames")
 	_sequence_output = _line("res://generated/characters", "Generated scenes and resources")
@@ -296,7 +317,9 @@ func _generate_sequences() -> void:
 	var updated := 0
 	var protected := 0
 	var conflicts := 0
+	_begin_progress(_sequence_discovery.size(), "Generating character scenes")
 	for descriptor: Dictionary in _sequence_discovery:
+		_step_progress(str(descriptor["id"]))
 		var key := str(descriptor["id"])
 		if key.is_empty() or ".." in key:
 			protected += 1
@@ -392,3 +415,33 @@ func _generate_sequences() -> void:
 		created, updated, protected, conflicts,
 	]
 	EditorInterface.get_resource_filesystem().scan()
+
+
+func _begin_progress(total: int, title_text: String) -> void:
+	_progress.max_value = maxi(total, 1)
+	_progress.value = 0
+	_status.text = "WORKING  |  " + title_text
+	_status.add_theme_color_override("font_color", Color(0.95, 0.77, 0.29))
+	_results.clear()
+
+
+func _step_progress(label_text: String) -> void:
+	_progress.value += 1
+	_results.append_text("[color=#86b8e5]Processing[/color]  " + label_text + "\n")
+
+
+func _complete_progress(created: int, updated: int, blocked: int, conflicts: int) -> void:
+	var succeeded := created + updated
+	_status.text = "COMPLETE  |  %d succeeded, %d skipped, %d conflicts" % [
+		succeeded, blocked, conflicts,
+	]
+	_status.add_theme_color_override(
+		"font_color", Color(0.42, 0.85, 0.53) if blocked == 0 else Color(0.96, 0.7, 0.3),
+	)
+	_results.append_text(
+		"\n[color=#6fd999]Created: %d | Updated: %d[/color]\n" % [created, updated]
+	)
+	if blocked > 0 or conflicts > 0:
+		_results.append_text(
+			"[color=#f3ba58]Skipped: %d | Conflicts: %d[/color]\n" % [blocked, conflicts]
+	)

@@ -16,30 +16,48 @@ static func scan_directory(source: String) -> Array[Dictionary]:
 	files.sort()
 	var pattern := RegEx.new()
 	pattern.compile("^(.*?)[-_]([0-9]+)$")
-	var grouped: Dictionary = {}
+	var records: Array[Dictionary] = []
+	var sibling_prefixes: Dictionary = {}
 	for path: String in files:
 		var basename := path.get_file().get_basename()
-		var match_result := pattern.search(basename)
-		if match_result == null:
+		var matched := pattern.search(basename)
+		if matched == null:
 			continue
-		var stem := match_result.get_string(1)
-		var order := int(match_result.get_string(2))
+		var stem := matched.get_string(1)
 		var relative := path.trim_prefix(source.rstrip("/") + "/")
 		var folder := relative.get_base_dir()
 		var leaf := folder.get_file()
 		var parent := folder.get_base_dir()
+		records.append({
+			"path": path, "stem": stem, "leaf": leaf, "parent": parent,
+			"order": int(matched.get_string(2)),
+		})
+		# Sibling folder pattern: grasshopper-idle, grasshopper-jump, ...
+		if stem == leaf and leaf.contains("-"):
+			var split := leaf.rfind("-")
+			var prefix := parent.path_join(leaf.substr(0, split))
+			var suffix := leaf.substr(split + 1)
+			if not suffix.is_empty():
+				var existing: Dictionary = sibling_prefixes.get(prefix, {})
+				existing[leaf] = true
+				sibling_prefixes[prefix] = existing
+	var grouped: Dictionary = {}
+	for record: Dictionary in records:
+		var stem: String = record["stem"]
+		var leaf: String = record["leaf"]
+		var parent: String = record["parent"]
 		var character := stem
 		var clip_name := "default"
-		var separator := stem.rfind("-")
-		if separator > 0:
-			character = stem.substr(0, separator)
-			clip_name = stem.substr(separator + 1)
 		if not leaf.is_empty() and stem.ends_with("-" + leaf):
 			character = stem.trim_suffix("-" + leaf)
 			clip_name = leaf
 		elif stem == leaf:
-			character = leaf
-			clip_name = "default"
+			var split := leaf.rfind("-")
+			if split > 0:
+				var prefix := parent.path_join(leaf.substr(0, split))
+				if (sibling_prefixes.get(prefix, {}) as Dictionary).size() >= 2:
+					character = leaf.substr(0, split)
+					clip_name = leaf.substr(split + 1)
 		var character_path := parent.path_join(character)
 		if parent == ".":
 			character_path = character
@@ -47,14 +65,13 @@ static func scan_directory(source: String) -> Array[Dictionary]:
 			character_path = parent
 		if character_path.is_empty() or character_path == ".":
 			continue
-		var group_key := character_path
-		if not grouped.has(group_key):
-			grouped[group_key] = {}
-		var animations: Dictionary = grouped[group_key]
+		if not grouped.has(character_path):
+			grouped[character_path] = {}
+		var animations: Dictionary = grouped[character_path]
 		if not animations.has(clip_name):
 			animations[clip_name] = []
 		var sequence: Array = animations[clip_name]
-		sequence.append({"path": path, "order": order})
+		sequence.append({"path": record["path"], "order": record["order"]})
 	var keys := grouped.keys()
 	keys.sort()
 	for key: Variant in keys:
@@ -77,7 +94,6 @@ static func scan_directory(source: String) -> Array[Dictionary]:
 			clips.append({"name": str(clip_name), "paths": paths})
 		result.append({"id": str(key), "clips": clips, "frames": total})
 	return result
-
 
 static func create_profile(
 	source_directory: String,

@@ -133,3 +133,35 @@ operation and keep your project under version control.
 
 SunnyLand package inspected: 12 numbered frame sequences (49 individual PNG
 frames); the provided license PDF says CC0. No assets were committed to Nucleus.
+
+## SunnyLand validation: avoid the two import modes at once
+
+The delivered SunnyLand user output contains **six** character scenes in
+`res://generated/characters/` but also **34 individual grid profiles** under
+`res://generated/sprites/`. This happens when the same numbered PNG frame
+folder is processed as separate grids. **Do not run Sheet Mode on folders of
+numbered PNG animation frames.** Use **Character Mode** instead.
+
+1. Put `Assets/SPRITES` at `res://assets/SPRITES`.
+2. Open **Sprite Studio > CHARACTER MODE** and set source to that path.
+3. Set destination to `res://generated/characters`; press **Detect characters**.
+4. Review groups: `player` has idle/run/jump/hurt/crouch; the sibling
+   `grasshopper-idle`, `grasshopper-jump`, `grasshopper-fall` folders should
+   now be grouped into the single `enemies/grasshopper` scene.
+5. Press **Generate scenes**; inspect the colored operation status, progress bar,
+   success/skip summary and resulting output directory.
+6. Drag an existing generated `.tscn` into the scene tree. Do not create
+   AnimatedSprite2D/AnimationPlayer manually. Both nodes are generated.
+7. Edit a character's `.profile.tres` to change FPS or clips and regenerate.
+   Scene files are kept intact; only external generated resources are updated.
+
+**Sheet Mode** is for actual single-image spritesheets with regular cells,
+not pre-sliced PNGs. It still exports resources, rather than scenes. The
+progress display reports how many items have been attempted; it is not a
+promise that every resource was imported successfully. Keep backups under
+version control before bulk operations.
+
+Known limitations: the current panel is a functional workflow with
+status colors and progress but not a full timeline editor or an atlas
+selection overlay. It still needs visual/live Godot editor validation and
+additional UI feedback on individual save failures.
