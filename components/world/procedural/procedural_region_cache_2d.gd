@@ -22,7 +22,7 @@ func get_region(region: Vector2i) -> PackedByteArray:
 	_entries[region] = generated.duplicate()
 	_touch(region)
 	while _recent.size() > maximum_regions:
-		var evicted := _recent.pop_front()
+		var evicted: Vector2i = _recent.pop_front()
 		_entries.erase(evicted)
 	return generated
 
