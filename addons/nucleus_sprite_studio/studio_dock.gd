@@ -25,7 +25,7 @@ func _ready() -> void:
 	_picker.base_type = "NucleusSpriteSheetProfile2D"
 	_picker.resource_changed.connect(_on_profile_changed)
 	add_child(_picker)
-	var actions := HBoxContainer.new()
+	var actions := HFlowContainer.new()
 	add_child(actions)
 	_add_button(actions, "Suggest grid", _suggest_grid)
 	_add_button(actions, "Generate row clips", _generate_rows)
@@ -42,7 +42,7 @@ func _ready() -> void:
 	add_child(section)
 	_batch_source = _line("res://assets/sprites", "Source folder, including nested folders")
 	_batch_output = _line("res://generated/sprites", "Output folder")
-	var size_controls := HBoxContainer.new()
+	var size_controls := HFlowContainer.new()
 	add_child(size_controls)
 	_cell_x = _spin(size_controls, 32)
 	_cell_y = _spin(size_controls, 32)
@@ -71,6 +71,7 @@ func _ready() -> void:
 	_save_dialog.file_selected.connect(_on_save_selected)
 	add_child(_save_dialog)
 	_build_sequence_workflow()
+	_organize_layout()
 	_on_profile_changed(null)
 
 
@@ -91,7 +92,7 @@ func _spin(parent: Control, value: int) -> SpinBox:
 	return control
 
 
-func _add_button(row: HBoxContainer, label_text: String, callback: Callable) -> void:
+func _add_button(row: Control, label_text: String, callback: Callable) -> void:
 	var action := Button.new()
 	action.text = label_text
 	action.pressed.connect(callback)
@@ -106,9 +107,11 @@ func _on_profile_changed(_resource: Resource) -> void:
 	var profile := _profile()
 	if profile == null:
 		_preview.texture = null
+		_preview.visible = false
 		_info.text = "Create or assign a SpriteSheetProfile2D resource."
 		return
 	_preview.texture = profile.texture
+	_preview.visible = profile.texture != null
 	_info.text = "Grid: %s | Clips: %d | Issues: %s" % [
 		str(profile.grid_size()), profile.clips.size(),
 		", ".join(profile.validate()),
@@ -207,6 +210,7 @@ func _run_batch(reimport: bool) -> void:
 	_begin_progress(plan_total, "Importing spritesheets")
 	for entry: Dictionary in _plan():
 		_step_progress(str(entry["source"]))
+		await get_tree().process_frame
 		var source: String = entry["source"]
 		var texture := ResourceLoader.load(source, "Texture2D") as Texture2D
 		if texture == null:
@@ -283,7 +287,7 @@ func _build_sequence_workflow() -> void:
 	add_child(heading)
 	_sequence_source = _line("res://assets/SPRITES", "Choose the folder containing frames")
 	_sequence_output = _line("res://generated/characters", "Generated scenes and resources")
-	var controls := HBoxContainer.new()
+	var controls := HFlowContainer.new()
 	add_child(controls)
 	_add_button(controls, "Detect characters", _scan_sequences)
 	_add_button(controls, "Generate scenes", _generate_sequences)
@@ -320,6 +324,7 @@ func _generate_sequences() -> void:
 	_begin_progress(_sequence_discovery.size(), "Generating character scenes")
 	for descriptor: Dictionary in _sequence_discovery:
 		_step_progress(str(descriptor["id"]))
+		await get_tree().process_frame
 		var key := str(descriptor["id"])
 		if key.is_empty() or ".." in key:
 			protected += 1
@@ -415,6 +420,7 @@ func _generate_sequences() -> void:
 		created, updated, protected, conflicts,
 	]
 	EditorInterface.get_resource_filesystem().scan()
+	_complete_progress(created, updated, protected, conflicts)
 
 
 func _begin_progress(total: int, title_text: String) -> void:
@@ -445,3 +451,56 @@ func _complete_progress(created: int, updated: int, blocked: int, conflicts: int
 		_results.append_text(
 			"[color=#f3ba58]Skipped: %d | Conflicts: %d[/color]\n" % [blocked, conflicts]
 	)
+
+
+func _organize_layout() -> void:
+	## Build the views from the existing widgets to keep all import behavior.
+	## EditorDock controls positioning; TabContainer controls short-window usability.
+	var widgets := get_children()
+	# Widgets in original creation order (save dialog must remain at root).
+	# 0 picker; 1 actions; 2 preview; 3 heading; 4-6 sheet controls;
+	# 7-10 footer; 11 file dialog; 12-16 character controls.
+	var tabs := TabContainer.new()
+	tabs.name = "ImportWorkflows"
+	tabs.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	tabs.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	tabs.tab_alignment = TabBar.ALIGNMENT_LEFT
+	add_child(tabs)
+	move_child(tabs, 0)
+	_create_tab(tabs, "Characters", [
+		widgets[12], widgets[13], widgets[14], widgets[15], widgets[16],
+	])
+	_create_tab(tabs, "Spritesheets", [
+		widgets[3], widgets[4], widgets[5], widgets[6],
+	])
+	_create_tab(tabs, "Single profile", [
+		widgets[0], widgets[1], widgets[2],
+	])
+	tabs.current_tab = 0
+	# The results stay visible while changing tabs and cannot push out actions.
+	_info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_results.custom_minimum_size = Vector2(0, 84)
+	_results.size_flags_vertical = Control.SIZE_SHRINK_END
+	_progress.custom_minimum_size.y = 14
+	_preview.custom_minimum_size = Vector2(0, 100)
+	_sequence_preview.custom_minimum_size = Vector2(0, 100)
+	custom_minimum_size = Vector2(340, 280)
+	size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	size_flags_vertical = Control.SIZE_EXPAND_FILL
+
+
+func _create_tab(tabs: TabContainer, title_text: String, widgets: Array) -> void:
+	var scrolling := ScrollContainer.new()
+	scrolling.name = title_text
+	scrolling.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scrolling.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scrolling.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	tabs.add_child(scrolling)
+	var contents := VBoxContainer.new()
+	contents.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	contents.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scrolling.add_child(contents)
+	for widget: Control in widgets:
+		widget.reparent(contents)
+		widget.size_flags_horizontal = Control.SIZE_EXPAND_FILL

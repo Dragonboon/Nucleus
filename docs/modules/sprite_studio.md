@@ -165,3 +165,31 @@ Known limitations: the current panel is a functional workflow with
 status colors and progress but not a full timeline editor or an atlas
 selection overlay. It still needs visual/live Godot editor validation and
 additional UI feedback on individual save failures.
+
+## Editor layout and usability (Godot 4.7.2)
+
+The editor panel uses native `EditorDock` and appears by default in the
+**right lower dock** rather than reserving a tall area at the bottom.
+Use Godot's native dock menu to move it to either side, the bottom, or a
+floating window. The placement can be remembered by the editor.
+
+The main workflow is divided into three compact tabs:
+
+- **Characters** (default): Detect characters, review them, generate scenes.
+- **Spritesheets**: import grid-based sheets in batches or reimport resources.
+- **Single profile**: edit and export an individually authored profile.
+
+Each tab scrolls independently to avoid clipping controls in a short panel.
+The big empty single-profile texture preview is hidden until a profile has a
+texture, and action buttons wrap in narrow layouts. A shared compact footer
+keeps the operation status, progress and result counts visible.
+
+Batch processing yields to the editor once for each file/group so progress
+can be painted rather than staying frozen until completion. A completed
+attempt may still be skipped or conflict; inspect the final status. This does
+not make resource saving asynchronous or guarantee hitch-free imports.
+
+For the earlier screenshot: after updating the plugin, disable and re-enable
+it in Project Settings > Plugins if the previous bottom-panel instance
+is still open. Find Sprite Studio in the right-side docks, or move it to
+a floating window using Godot's dock controls.
