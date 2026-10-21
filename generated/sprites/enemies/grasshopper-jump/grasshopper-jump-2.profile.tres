@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="NucleusSpriteSheetProfile2D" format=3 uid="uid://cb45f43y5jw7k"]
+
+[ext_resource type="Script" uid="uid://bhoelgo7erk4s" path="res://modules/sprite_studio/sprite_clip_2d.gd" id="1_oo1i5"]
+[ext_resource type="Script" uid="uid://cfarq6plalk2f" path="res://modules/sprite_studio/sprite_sheet_profile_2d.gd" id="2_1poxy"]
+[ext_resource type="Texture2D" uid="uid://dikp10nip7xjo" path="res://assets/sprites/enemies/grasshopper-jump/grasshopper-jump-2.png" id="3_jfggh"]
+
+[sub_resource type="Resource" id="Resource_a3klc"]
+script = ExtResource("1_oo1i5")
+animation_name = &"row_00"
+
+[resource]
+script = ExtResource("2_1poxy")
+texture = ExtResource("3_jfggh")
+clips = Array[ExtResource("1_oo1i5")]([SubResource("Resource_a3klc")])

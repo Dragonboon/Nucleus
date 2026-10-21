@@ -1,0 +1,25 @@
+[gd_resource type="SpriteFrames" format=3 uid="uid://m7kv3dntrqlp"]
+
+[ext_resource type="Texture2D" uid="uid://mechm64xuj1n" path="res://assets/sprites/player/hurt/player-hurt-1.png" id="1_qwbda"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_xiq7k"]
+atlas = ExtResource("1_qwbda")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hwn62"]
+atlas = ExtResource("1_qwbda")
+region = Rect2(32, 0, 32, 32)
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_xiq7k")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hwn62")
+}],
+"loop": 1,
+"name": &"row_00",
+"speed": 8.0
+}]

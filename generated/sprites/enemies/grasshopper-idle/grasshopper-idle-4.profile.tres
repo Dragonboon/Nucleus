@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="NucleusSpriteSheetProfile2D" format=3 uid="uid://bhlqgiluxwto7"]
+
+[ext_resource type="Script" uid="uid://bhoelgo7erk4s" path="res://modules/sprite_studio/sprite_clip_2d.gd" id="1_0xcmn"]
+[ext_resource type="Script" uid="uid://cfarq6plalk2f" path="res://modules/sprite_studio/sprite_sheet_profile_2d.gd" id="2_78ce6"]
+[ext_resource type="Texture2D" uid="uid://b1d1s3hruuf23" path="res://assets/sprites/enemies/grasshopper-idle/grasshopper-idle-4.png" id="3_ixiy2"]
+
+[sub_resource type="Resource" id="Resource_dokid"]
+script = ExtResource("1_0xcmn")
+animation_name = &"row_00"
+
+[resource]
+script = ExtResource("2_78ce6")
+texture = ExtResource("3_ixiy2")
+clips = Array[ExtResource("1_0xcmn")]([SubResource("Resource_dokid")])

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="NucleusSpriteSheetProfile2D" format=3 uid="uid://b82qog72vip57"]
+
+[ext_resource type="Script" uid="uid://bhoelgo7erk4s" path="res://modules/sprite_studio/sprite_clip_2d.gd" id="1_j7s7l"]
+[ext_resource type="Script" uid="uid://cfarq6plalk2f" path="res://modules/sprite_studio/sprite_sheet_profile_2d.gd" id="2_bkmqe"]
+[ext_resource type="Texture2D" uid="uid://bmulya32xa718" path="res://assets/sprites/player/idle/player-idle-2.png" id="3_h58da"]
+
+[sub_resource type="Resource" id="Resource_h474q"]
+script = ExtResource("1_j7s7l")
+animation_name = &"row_00"
+cells = Array[Vector2i]([Vector2i(0, 0), Vector2i(1, 0)])
+
+[resource]
+script = ExtResource("2_bkmqe")
+texture = ExtResource("3_h58da")
+clips = Array[ExtResource("1_j7s7l")]([SubResource("Resource_h474q")])

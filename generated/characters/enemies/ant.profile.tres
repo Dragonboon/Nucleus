@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="NucleusSpriteSequenceProfile2D" format=3 uid="uid://4fy0v3rbi5c5"]
+
+[ext_resource type="Script" uid="uid://tkcg81vtfl8j" path="res://modules/sprite_studio/sprite_sequence_clip_2d.gd" id="1_dsvnu"]
+[ext_resource type="Script" uid="uid://dpog1hbhsgbb5" path="res://modules/sprite_studio/sprite_sequence_profile_2d.gd" id="2_i55pp"]
+
+[sub_resource type="Resource" id="Resource_ophsy"]
+script = ExtResource("1_dsvnu")
+animation_name = &"default"
+frame_paths = PackedStringArray("res://assets/SPRITES/enemies/ant/ant-1.png", "res://assets/SPRITES/enemies/ant/ant-2.png", "res://assets/SPRITES/enemies/ant/ant-3.png", "res://assets/SPRITES/enemies/ant/ant-4.png", "res://assets/SPRITES/enemies/ant/ant-5.png", "res://assets/SPRITES/enemies/ant/ant-6.png", "res://assets/SPRITES/enemies/ant/ant-7.png", "res://assets/SPRITES/enemies/ant/ant-8.png")
+
+[resource]
+script = ExtResource("2_i55pp")
+source_directory = "res://assets/SPRITES"
+character_id = "enemies/ant"
+clips = Array[ExtResource("1_dsvnu")]([SubResource("Resource_ophsy")])

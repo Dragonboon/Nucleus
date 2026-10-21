@@ -1,0 +1,25 @@
+[gd_resource type="SpriteFrames" format=3 uid="uid://5i7usdi571ct"]
+
+[ext_resource type="Texture2D" uid="uid://cjiyk1jetdbj8" path="res://assets/sprites/player/crouch/player-crouch-1.png" id="1_vtwar"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_i1x3k"]
+atlas = ExtResource("1_vtwar")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hct43"]
+atlas = ExtResource("1_vtwar")
+region = Rect2(32, 0, 32, 32)
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_i1x3k")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hct43")
+}],
+"loop": 1,
+"name": &"row_00",
+"speed": 8.0
+}]

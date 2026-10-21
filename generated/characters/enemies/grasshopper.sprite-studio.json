@@ -1,0 +1,13 @@
+{
+	"frames": {
+		"fall": "48e0985e1aed7bb8def685c5adbc87d2ab387f97a9f9e6c2fd9ca4794482d9fc",
+		"idle": "4f10344cb88d324aa8e4e2b524a360f4f75297f5972c09a925c0012fc22da56f",
+		"jump": "48e0985e1aed7bb8def685c5adbc87d2ab387f97a9f9e6c2fd9ca4794482d9fc"
+	},
+	"library": {
+		"fall": "4aa6f09df53803b77aa094f0f36ce64f947e09fec619cf2b84d179b05f524ff6",
+		"idle": "2703a38429fc49bb62c64d45fc34333ea2d74423ac60f6db19fd875bde761d31",
+		"jump": "8800372051d1d6a7c309c62bc90607e84583c027b128e1475c71ee09b4440f15"
+	},
+	"version": 1
+}

@@ -1,0 +1,26 @@
+[gd_resource type="SpriteFrames" format=3 uid="uid://bqnddg7mikdqc"]
+
+[ext_resource type="Texture2D" uid="uid://whcytqnqf44k" path="res://assets/SPRITES/enemies/grasshopper-idle/grasshopper-idle-1.png" id="1_2ed85"]
+[ext_resource type="Texture2D" uid="uid://b26ykyja1vskj" path="res://assets/SPRITES/enemies/grasshopper-idle/grasshopper-idle-2.png" id="2_i0lpy"]
+[ext_resource type="Texture2D" uid="uid://d2epsxjqgkkb" path="res://assets/SPRITES/enemies/grasshopper-idle/grasshopper-idle-3.png" id="3_1x1te"]
+[ext_resource type="Texture2D" uid="uid://b1d1s3hruuf23" path="res://assets/SPRITES/enemies/grasshopper-idle/grasshopper-idle-4.png" id="4_v56b4"]
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_2ed85")
+}, {
+"duration": 1.0,
+"texture": ExtResource("2_i0lpy")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3_1x1te")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4_v56b4")
+}],
+"loop": 1,
+"name": &"default",
+"speed": 8.0
+}]

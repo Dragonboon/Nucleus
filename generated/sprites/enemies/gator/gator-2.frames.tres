@@ -1,0 +1,18 @@
+[gd_resource type="SpriteFrames" format=3 uid="uid://bko70kkw1rkc7"]
+
+[ext_resource type="Texture2D" uid="uid://bjgk27aavtlxb" path="res://assets/sprites/enemies/gator/gator-2.png" id="1_ytdxh"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ujbxi"]
+atlas = ExtResource("1_ytdxh")
+region = Rect2(0, 0, 32, 32)
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ujbxi")
+}],
+"loop": 1,
+"name": &"row_00",
+"speed": 8.0
+}]

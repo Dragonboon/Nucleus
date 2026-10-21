@@ -1,0 +1,42 @@
+[gd_resource type="SpriteFrames" format=3 uid="uid://c604aujd01ae6"]
+
+[ext_resource type="Texture2D" uid="uid://d4ie364go62hm" path="res://assets/sprites/enemies/ant/ant-1.png" id="1_2iuy1"]
+[ext_resource type="Texture2D" uid="uid://gufwyhtwpran" path="res://assets/sprites/enemies/ant/ant-2.png" id="2_rv3rx"]
+[ext_resource type="Texture2D" uid="uid://ds1t2oar012yy" path="res://assets/sprites/enemies/ant/ant-3.png" id="3_e0df0"]
+[ext_resource type="Texture2D" uid="uid://ds45uol6qauol" path="res://assets/sprites/enemies/ant/ant-4.png" id="4_6t31l"]
+[ext_resource type="Texture2D" uid="uid://ds6kcgxymfqus" path="res://assets/sprites/enemies/ant/ant-5.png" id="5_dv1dt"]
+[ext_resource type="Texture2D" uid="uid://clrvk2gl7ssgl" path="res://assets/sprites/enemies/ant/ant-6.png" id="6_l2x2i"]
+[ext_resource type="Texture2D" uid="uid://odaailfcg1ms" path="res://assets/sprites/enemies/ant/ant-7.png" id="7_qwaay"]
+[ext_resource type="Texture2D" uid="uid://cjyy1blbse60f" path="res://assets/sprites/enemies/ant/ant-8.png" id="8_mm2vt"]
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_2iuy1")
+}, {
+"duration": 1.0,
+"texture": ExtResource("2_rv3rx")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3_e0df0")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4_6t31l")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_dv1dt")
+}, {
+"duration": 1.0,
+"texture": ExtResource("6_l2x2i")
+}, {
+"duration": 1.0,
+"texture": ExtResource("7_qwaay")
+}, {
+"duration": 1.0,
+"texture": ExtResource("8_mm2vt")
+}],
+"loop": 1,
+"name": &"default",
+"speed": 8.0
+}]

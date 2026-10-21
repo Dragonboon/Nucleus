@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="NucleusSpriteSequenceProfile2D" format=3 uid="uid://0jdfltn6kiei"]
+
+[ext_resource type="Script" uid="uid://tkcg81vtfl8j" path="res://modules/sprite_studio/sprite_sequence_clip_2d.gd" id="1_xgg1e"]
+[ext_resource type="Script" uid="uid://dpog1hbhsgbb5" path="res://modules/sprite_studio/sprite_sequence_profile_2d.gd" id="2_u7vsy"]
+
+[sub_resource type="Resource" id="Resource_16onw"]
+script = ExtResource("1_xgg1e")
+animation_name = &"fall"
+frame_paths = PackedStringArray("res://assets/SPRITES/enemies/grasshopper-fall/grasshopper-fall-1.png", "res://assets/SPRITES/enemies/grasshopper-fall/grasshopper-fall-2.png")
+
+[sub_resource type="Resource" id="Resource_ap3iy"]
+script = ExtResource("1_xgg1e")
+frame_paths = PackedStringArray("res://assets/SPRITES/enemies/grasshopper-idle/grasshopper-idle-1.png", "res://assets/SPRITES/enemies/grasshopper-idle/grasshopper-idle-2.png", "res://assets/SPRITES/enemies/grasshopper-idle/grasshopper-idle-3.png", "res://assets/SPRITES/enemies/grasshopper-idle/grasshopper-idle-4.png")
+
+[sub_resource type="Resource" id="Resource_n7ho3"]
+script = ExtResource("1_xgg1e")
+animation_name = &"jump"
+frame_paths = PackedStringArray("res://assets/SPRITES/enemies/grasshopper-jump/grasshopper-jump-1.png", "res://assets/SPRITES/enemies/grasshopper-jump/grasshopper-jump-2.png")
+
+[resource]
+script = ExtResource("2_u7vsy")
+source_directory = "res://assets/SPRITES"
+character_id = "enemies/grasshopper"
+clips = Array[ExtResource("1_xgg1e")]([SubResource("Resource_16onw"), SubResource("Resource_ap3iy"), SubResource("Resource_n7ho3")])

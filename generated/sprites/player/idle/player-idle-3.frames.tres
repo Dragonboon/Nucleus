@@ -1,0 +1,25 @@
+[gd_resource type="SpriteFrames" format=3 uid="uid://ca7h63nx8kp6b"]
+
+[ext_resource type="Texture2D" uid="uid://me0jc4anh7cp" path="res://assets/sprites/player/idle/player-idle-3.png" id="1_tle76"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_l5fth"]
+atlas = ExtResource("1_tle76")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_d1uo0"]
+atlas = ExtResource("1_tle76")
+region = Rect2(32, 0, 32, 32)
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_l5fth")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_d1uo0")
+}],
+"loop": 1,
+"name": &"row_00",
+"speed": 8.0
+}]

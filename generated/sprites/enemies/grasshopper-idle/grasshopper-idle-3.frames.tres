@@ -1,0 +1,18 @@
+[gd_resource type="SpriteFrames" format=3 uid="uid://dg83ay2trqrmh"]
+
+[ext_resource type="Texture2D" uid="uid://d2epsxjqgkkb" path="res://assets/sprites/enemies/grasshopper-idle/grasshopper-idle-3.png" id="1_1umow"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_vt726"]
+atlas = ExtResource("1_1umow")
+region = Rect2(0, 0, 32, 32)
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_vt726")
+}],
+"loop": 1,
+"name": &"row_00",
+"speed": 8.0
+}]

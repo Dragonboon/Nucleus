@@ -1,0 +1,12 @@
+[gd_scene format=3 uid="uid://bhmdqslf5800b"]
+
+[ext_resource type="SpriteFrames" uid="uid://bqnddg7mikdqc" path="res://generated/characters/enemies/grasshopper-idle.frames.tres" id="1_6p44r"]
+[ext_resource type="AnimationLibrary" uid="uid://b6n0lfbwgjnol" path="res://generated/characters/enemies/grasshopper-idle.animations.tres" id="2_3oy53"]
+
+[node name="SpriteVisual" type="Node2D" unique_id=2069652715]
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1128504829]
+sprite_frames = ExtResource("1_6p44r")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=1417141334]
+libraries/ = ExtResource("2_3oy53")

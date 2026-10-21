@@ -1,0 +1,13 @@
+[gd_scene format=3 uid="uid://btk88wjypsnle"]
+
+[ext_resource type="SpriteFrames" uid="uid://bsxdfj24j82ir" path="res://generated/characters/enemies/grasshopper.frames.tres" id="1_7qwlu"]
+[ext_resource type="AnimationLibrary" uid="uid://dlj40jqqjv7ks" path="res://generated/characters/enemies/grasshopper.animations.tres" id="2_xmfxl"]
+
+[node name="SpriteVisual" type="Node2D" unique_id=697305546]
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1262537409]
+sprite_frames = ExtResource("1_7qwlu")
+animation = &"fall"
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=1765504067]
+libraries/ = ExtResource("2_xmfxl")

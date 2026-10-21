@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="NucleusSpriteSheetProfile2D" format=3 uid="uid://bax330uiy0tst"]
+
+[ext_resource type="Script" uid="uid://bhoelgo7erk4s" path="res://modules/sprite_studio/sprite_clip_2d.gd" id="1_wse32"]
+[ext_resource type="Script" uid="uid://cfarq6plalk2f" path="res://modules/sprite_studio/sprite_sheet_profile_2d.gd" id="2_jldmt"]
+[ext_resource type="Texture2D" uid="uid://bty4b15qrry8f" path="res://assets/sprites/player/hurt/player-hurt-2.png" id="3_2brwr"]
+
+[sub_resource type="Resource" id="Resource_6koi1"]
+script = ExtResource("1_wse32")
+animation_name = &"row_00"
+cells = Array[Vector2i]([Vector2i(0, 0), Vector2i(1, 0)])
+
+[resource]
+script = ExtResource("2_jldmt")
+texture = ExtResource("3_2brwr")
+clips = Array[ExtResource("1_wse32")]([SubResource("Resource_6koi1")])

@@ -1,0 +1,18 @@
+[gd_resource type="SpriteFrames" format=3 uid="uid://erqbfd4pcs3c"]
+
+[ext_resource type="Texture2D" uid="uid://dfbp8nnn6nhkw" path="res://assets/SPRITES/enemies/grasshopper-jump/grasshopper-jump-1.png" id="1_ijeeg"]
+[ext_resource type="Texture2D" uid="uid://dikp10nip7xjo" path="res://assets/SPRITES/enemies/grasshopper-jump/grasshopper-jump-2.png" id="2_6u7u3"]
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_ijeeg")
+}, {
+"duration": 1.0,
+"texture": ExtResource("2_6u7u3")
+}],
+"loop": 1,
+"name": &"default",
+"speed": 8.0
+}]

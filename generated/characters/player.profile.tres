@@ -1,0 +1,34 @@
+[gd_resource type="Resource" script_class="NucleusSpriteSequenceProfile2D" format=3 uid="uid://xr0c28m2kjo2"]
+
+[ext_resource type="Script" uid="uid://tkcg81vtfl8j" path="res://modules/sprite_studio/sprite_sequence_clip_2d.gd" id="1_0aya3"]
+[ext_resource type="Script" uid="uid://dpog1hbhsgbb5" path="res://modules/sprite_studio/sprite_sequence_profile_2d.gd" id="2_eu4rr"]
+
+[sub_resource type="Resource" id="Resource_6joes"]
+script = ExtResource("1_0aya3")
+animation_name = &"crouch"
+frame_paths = PackedStringArray("res://assets/SPRITES/player/crouch/player-crouch-1.png", "res://assets/SPRITES/player/crouch/player-crouch-2.png")
+
+[sub_resource type="Resource" id="Resource_q8sm6"]
+script = ExtResource("1_0aya3")
+animation_name = &"hurt"
+frame_paths = PackedStringArray("res://assets/SPRITES/player/hurt/player-hurt-1.png", "res://assets/SPRITES/player/hurt/player-hurt-2.png")
+
+[sub_resource type="Resource" id="Resource_bfgym"]
+script = ExtResource("1_0aya3")
+frame_paths = PackedStringArray("res://assets/SPRITES/player/idle/player-idle-1.png", "res://assets/SPRITES/player/idle/player-idle-2.png", "res://assets/SPRITES/player/idle/player-idle-3.png", "res://assets/SPRITES/player/idle/player-idle-4.png", "res://assets/SPRITES/player/idle/player-idle-5.png", "res://assets/SPRITES/player/idle/player-idle-6.png", "res://assets/SPRITES/player/idle/player-idle-7.png", "res://assets/SPRITES/player/idle/player-idle-8.png")
+
+[sub_resource type="Resource" id="Resource_abcol"]
+script = ExtResource("1_0aya3")
+animation_name = &"jump"
+frame_paths = PackedStringArray("res://assets/SPRITES/player/jump/player-jump-1.png", "res://assets/SPRITES/player/jump/player-jump-2.png", "res://assets/SPRITES/player/jump/player-jump-3.png", "res://assets/SPRITES/player/jump/player-jump-4.png")
+
+[sub_resource type="Resource" id="Resource_xff6n"]
+script = ExtResource("1_0aya3")
+animation_name = &"run"
+frame_paths = PackedStringArray("res://assets/SPRITES/player/run/player-run-1.png", "res://assets/SPRITES/player/run/player-run-2.png", "res://assets/SPRITES/player/run/player-run-3.png", "res://assets/SPRITES/player/run/player-run-4.png", "res://assets/SPRITES/player/run/player-run-5.png", "res://assets/SPRITES/player/run/player-run-6.png")
+
+[resource]
+script = ExtResource("2_eu4rr")
+source_directory = "res://assets/SPRITES"
+character_id = "player"
+clips = Array[ExtResource("1_0aya3")]([SubResource("Resource_6joes"), SubResource("Resource_q8sm6"), SubResource("Resource_bfgym"), SubResource("Resource_abcol"), SubResource("Resource_xff6n")])

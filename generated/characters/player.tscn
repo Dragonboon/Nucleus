@@ -1,0 +1,13 @@
+[gd_scene format=3 uid="uid://pmwm1iknu87o"]
+
+[ext_resource type="SpriteFrames" uid="uid://bylygjmpvwbrw" path="res://generated/characters/player.frames.tres" id="1_pldc4"]
+[ext_resource type="AnimationLibrary" uid="uid://bdjb7tyrougk0" path="res://generated/characters/player.animations.tres" id="2_0ew42"]
+
+[node name="SpriteVisual" type="Node2D" unique_id=630262934]
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1728022724]
+sprite_frames = ExtResource("1_pldc4")
+animation = &"crouch"
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=252960068]
+libraries/ = ExtResource("2_0ew42")

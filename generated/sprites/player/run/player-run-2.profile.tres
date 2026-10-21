@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="NucleusSpriteSheetProfile2D" format=3 uid="uid://lltkj1617xg"]
+
+[ext_resource type="Script" uid="uid://bhoelgo7erk4s" path="res://modules/sprite_studio/sprite_clip_2d.gd" id="1_fibvd"]
+[ext_resource type="Script" uid="uid://cfarq6plalk2f" path="res://modules/sprite_studio/sprite_sheet_profile_2d.gd" id="2_yw47h"]
+[ext_resource type="Texture2D" uid="uid://cd6wqg6qs0egw" path="res://assets/sprites/player/run/player-run-2.png" id="3_7gjbo"]
+
+[sub_resource type="Resource" id="Resource_8d0iq"]
+script = ExtResource("1_fibvd")
+animation_name = &"row_00"
+cells = Array[Vector2i]([Vector2i(0, 0), Vector2i(1, 0)])
+
+[resource]
+script = ExtResource("2_yw47h")
+texture = ExtResource("3_7gjbo")
+clips = Array[ExtResource("1_fibvd")]([SubResource("Resource_8d0iq")])

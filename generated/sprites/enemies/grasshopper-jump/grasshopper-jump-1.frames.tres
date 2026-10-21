@@ -1,0 +1,18 @@
+[gd_resource type="SpriteFrames" format=3 uid="uid://cvytt1agoaj3l"]
+
+[ext_resource type="Texture2D" uid="uid://dfbp8nnn6nhkw" path="res://assets/sprites/enemies/grasshopper-jump/grasshopper-jump-1.png" id="1_gyagk"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_tc0fs"]
+atlas = ExtResource("1_gyagk")
+region = Rect2(0, 0, 32, 32)
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_tc0fs")
+}],
+"loop": 1,
+"name": &"row_00",
+"speed": 8.0
+}]

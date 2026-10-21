@@ -1,0 +1,12 @@
+[gd_scene format=3 uid="uid://b5w1jynukt4er"]
+
+[ext_resource type="SpriteFrames" uid="uid://c604aujd01ae6" path="res://generated/characters/enemies/ant.frames.tres" id="1_ingjo"]
+[ext_resource type="AnimationLibrary" uid="uid://clm71t4q4o1up" path="res://generated/characters/enemies/ant.animations.tres" id="2_27k1a"]
+
+[node name="SpriteVisual" type="Node2D" unique_id=914078369]
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1934704618]
+sprite_frames = ExtResource("1_ingjo")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=1101105720]
+libraries/ = ExtResource("2_27k1a")

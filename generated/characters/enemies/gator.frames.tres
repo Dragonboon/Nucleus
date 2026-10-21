@@ -1,0 +1,26 @@
+[gd_resource type="SpriteFrames" format=3 uid="uid://je2yvf58hnop"]
+
+[ext_resource type="Texture2D" uid="uid://cskehuhqjf58w" path="res://assets/sprites/enemies/gator/gator-1.png" id="1_ddc6w"]
+[ext_resource type="Texture2D" uid="uid://bjgk27aavtlxb" path="res://assets/sprites/enemies/gator/gator-2.png" id="2_kw5va"]
+[ext_resource type="Texture2D" uid="uid://cjtgydmwobnuk" path="res://assets/sprites/enemies/gator/gator-3.png" id="3_v5lfv"]
+[ext_resource type="Texture2D" uid="uid://c44ns0jgvd25b" path="res://assets/sprites/enemies/gator/gator-4.png" id="4_wd60v"]
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_ddc6w")
+}, {
+"duration": 1.0,
+"texture": ExtResource("2_kw5va")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3_v5lfv")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4_wd60v")
+}],
+"loop": 1,
+"name": &"default",
+"speed": 8.0
+}]

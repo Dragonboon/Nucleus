@@ -1,0 +1,18 @@
+[gd_resource type="SpriteFrames" format=3 uid="uid://bvd3jrp65rotq"]
+
+[ext_resource type="Texture2D" uid="uid://c0gc8abgasira" path="res://assets/SPRITES/enemies/grasshopper-fall/grasshopper-fall-1.png" id="1_egref"]
+[ext_resource type="Texture2D" uid="uid://bxsves6tsf2hy" path="res://assets/SPRITES/enemies/grasshopper-fall/grasshopper-fall-2.png" id="2_lqvcv"]
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_egref")
+}, {
+"duration": 1.0,
+"texture": ExtResource("2_lqvcv")
+}],
+"loop": 1,
+"name": &"default",
+"speed": 8.0
+}]

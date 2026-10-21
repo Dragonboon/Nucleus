@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="NucleusSpriteSheetProfile2D" format=3 uid="uid://dw5yq22iw0n4i"]
+
+[ext_resource type="Script" uid="uid://bhoelgo7erk4s" path="res://modules/sprite_studio/sprite_clip_2d.gd" id="1_dau5l"]
+[ext_resource type="Script" uid="uid://cfarq6plalk2f" path="res://modules/sprite_studio/sprite_sheet_profile_2d.gd" id="2_25bo1"]
+[ext_resource type="Texture2D" uid="uid://c44ns0jgvd25b" path="res://assets/sprites/enemies/gator/gator-4.png" id="3_4necb"]
+
+[sub_resource type="Resource" id="Resource_6u2xn"]
+script = ExtResource("1_dau5l")
+animation_name = &"row_00"
+
+[resource]
+script = ExtResource("2_25bo1")
+texture = ExtResource("3_4necb")
+clips = Array[ExtResource("1_dau5l")]([SubResource("Resource_6u2xn")])

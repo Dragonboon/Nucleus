@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="NucleusSpriteSheetProfile2D" format=3 uid="uid://ctmtb3epeh68t"]
+
+[ext_resource type="Script" uid="uid://bhoelgo7erk4s" path="res://modules/sprite_studio/sprite_clip_2d.gd" id="1_ryb2k"]
+[ext_resource type="Script" uid="uid://cfarq6plalk2f" path="res://modules/sprite_studio/sprite_sheet_profile_2d.gd" id="2_kot3w"]
+[ext_resource type="Texture2D" uid="uid://bxsves6tsf2hy" path="res://assets/sprites/enemies/grasshopper-fall/grasshopper-fall-2.png" id="3_pku1w"]
+
+[sub_resource type="Resource" id="Resource_41o5x"]
+script = ExtResource("1_ryb2k")
+animation_name = &"row_00"
+
+[resource]
+script = ExtResource("2_kot3w")
+texture = ExtResource("3_pku1w")
+clips = Array[ExtResource("1_ryb2k")]([SubResource("Resource_41o5x")])

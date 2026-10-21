@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="NucleusSpriteSequenceProfile2D" format=3 uid="uid://cdh1ifbofi55u"]
+
+[ext_resource type="Script" uid="uid://tkcg81vtfl8j" path="res://modules/sprite_studio/sprite_sequence_clip_2d.gd" id="1_w7712"]
+[ext_resource type="Script" uid="uid://dpog1hbhsgbb5" path="res://modules/sprite_studio/sprite_sequence_profile_2d.gd" id="2_5k16q"]
+
+[sub_resource type="Resource" id="Resource_mwti8"]
+script = ExtResource("1_w7712")
+animation_name = &"default"
+frame_paths = PackedStringArray("res://assets/SPRITES/enemies/grasshopper-idle/grasshopper-idle-1.png", "res://assets/SPRITES/enemies/grasshopper-idle/grasshopper-idle-2.png", "res://assets/SPRITES/enemies/grasshopper-idle/grasshopper-idle-3.png", "res://assets/SPRITES/enemies/grasshopper-idle/grasshopper-idle-4.png")
+
+[resource]
+script = ExtResource("2_5k16q")
+source_directory = "res://assets/SPRITES"
+character_id = "enemies/grasshopper-idle"
+clips = Array[ExtResource("1_w7712")]([SubResource("Resource_mwti8")])
