@@ -79,3 +79,17 @@ static func write_manifest(path: String, manifest: Dictionary) -> Error:
 	file.store_string(JSON.stringify(manifest, "\t"))
 	file.flush()
 	return file.get_error()
+
+
+static func save_generated_resource(resource: Resource, path: String) -> Error:
+	if resource == null or not path.begins_with("res://") or ".." in path:
+		return ERR_INVALID_PARAMETER
+	if not FileAccess.file_exists(path):
+		return write_new_resource(resource, path)
+	# The merge returns a detached copy. Do not assign it an occupied cache path
+	# with FLAG_CHANGE_PATH: that collides with resources referenced by open scenes.
+	var error := ResourceSaver.save(resource, path)
+	if error != OK:
+		return error
+	var refreshed := ResourceLoader.load(path, "", ResourceLoader.CACHE_MODE_REPLACE)
+	return OK if refreshed != null else ERR_CANT_OPEN

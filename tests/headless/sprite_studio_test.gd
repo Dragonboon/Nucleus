@@ -5,6 +5,7 @@ func run() -> Dictionary:
 	_test_grid_and_frames()
 	_test_bad_input()
 	_test_scene()
+	_test_variable_frame_timing()
 	return finish()
 
 
@@ -56,3 +57,23 @@ func _test_scene() -> void:
 		if player != null:
 			expect_true(player.has_animation(&"row_00"), "Native animation track generated.")
 		root.free()
+
+
+func _test_variable_frame_timing() -> void:
+	var profile := _profile()
+	var clip := NucleusSpriteClip2D.new()
+	clip.cells = [Vector2i(0, 0), Vector2i(1, 0), Vector2i(2, 0)]
+	clip.frame_durations_ms = PackedFloat32Array([100.0, 300.0, 200.0])
+	profile.clips.append(clip)
+	var frames := NucleusSpriteSheetBuilder2D.build_frames(profile)
+	var animation := NucleusSpriteSheetBuilder2D.build_library(profile).get_animation(&"idle")
+	expect_float(animation.length, 0.6, "Animation length includes each frame's duration.")
+	expect_float(animation.track_get_key_time(1, 2), 0.4, "Keys use accumulated timing.")
+	expect_float(frames.get_frame_duration(&"idle", 1) / frames.get_animation_speed(&"idle"),
+		0.3, "SpriteFrames has the same second-frame hold as AnimationPlayer.")
+	clip.frame_durations_ms = PackedFloat32Array([100.0])
+	expect_true(not profile.validate().is_empty(), "Mismatched duration counts are rejected.")
+	clip.frame_durations_ms = PackedFloat32Array([100.0, NAN, 200.0])
+	expect_true(not profile.validate().is_empty(), "Non-finite durations are rejected.")
+	clip.frame_durations_ms = PackedFloat32Array()
+	expect_true(profile.validate().is_empty(), "Old profiles preserve FPS-only behavior.")

@@ -323,11 +323,7 @@ func _run_batch(reimport: bool) -> void:
 
 
 func _save_generated(resource: Resource, path: String) -> Error:
-	if resource == null or not path.begins_with("res://") or ".." in path:
-		return ERR_INVALID_PARAMETER
-	if FileAccess.file_exists(path):
-		return ResourceSaver.save(resource, path, ResourceSaver.FLAG_CHANGE_PATH)
-	return NucleusSpriteReimport2D.write_new_resource(resource, path)
+	return NucleusSpriteReimport2D.save_generated_resource(resource, path)
 
 
 func _build_sequence_workflow() -> void:
@@ -488,10 +484,10 @@ func _generate_sequences() -> void:
 			continue
 		if not FileAccess.file_exists(scene_path):
 			var stored_frames := ResourceLoader.load(
-				frames_path, "SpriteFrames", ResourceLoader.CACHE_MODE_IGNORE,
+				frames_path, "SpriteFrames", ResourceLoader.CACHE_MODE_REUSE,
 			) as SpriteFrames
 			var stored_library := ResourceLoader.load(
-				library_path, "AnimationLibrary", ResourceLoader.CACHE_MODE_IGNORE,
+				library_path, "AnimationLibrary", ResourceLoader.CACHE_MODE_REUSE,
 			) as AnimationLibrary
 			var root := NucleusSpriteSequencePipeline2D.create_scene(
 				stored_frames, stored_library,

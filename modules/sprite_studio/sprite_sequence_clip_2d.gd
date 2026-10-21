@@ -7,6 +7,8 @@ extends Resource
 @export var frame_paths: PackedStringArray = PackedStringArray()
 @export_range(0.1, 120.0, 0.1) var fps: float = 8.0
 @export var loop: bool = true
+## Optional milliseconds per frame. Empty preserves the existing FPS-only behavior.
+@export var frame_durations_ms: PackedFloat32Array = PackedFloat32Array()
 
 
 func validate() -> PackedStringArray:
@@ -22,4 +24,15 @@ func validate() -> PackedStringArray:
 			"png", "webp", "jpg", "jpeg",
 		]:
 			issues.append("Invalid image path: %s" % path)
+	if not frame_durations_ms.is_empty():
+		if frame_durations_ms.size() != frame_paths.size():
+			issues.append("Provide one duration per frame, or leave durations empty.")
+		for duration: float in frame_durations_ms:
+			if not is_finite(duration) or duration <= 0.0:
+				issues.append("Frame durations must be finite positive milliseconds.")
+				break
 	return issues
+
+
+func frame_seconds(index: int) -> float:
+	return frame_durations_ms[index] / 1000.0 if not frame_durations_ms.is_empty() else 1.0 / fps

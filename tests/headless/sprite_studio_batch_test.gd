@@ -7,6 +7,7 @@ func run() -> Dictionary:
 	_test_batch_plan()
 	_test_signature_detects_native_edits()
 	_test_sequence_removal_and_conflict()
+	_test_cached_resource_refresh()
 	return finish()
 
 
@@ -122,3 +123,21 @@ func _test_sequence_removal_and_conflict() -> void:
 	)
 	expect_false((result["resource"] as AnimationLibrary).has_animation(&"obsolete"),
 		"Removed profile clips also leave the AnimationLibrary.")
+
+
+func _test_cached_resource_refresh() -> void:
+	var path := "res://tests/fixtures/cache_refresh_%d.tres" % Time.get_ticks_usec()
+	var frames := SpriteFrames.new()
+	expect_equal(NucleusSpriteReimport2D.write_new_resource(frames, path), OK,
+		"Initial generated resource saves with an explicit path.")
+	var held := ResourceLoader.load(path) as SpriteFrames
+	var edited := held.duplicate(true) as SpriteFrames
+	edited.set_animation_speed(&"default", 19.0)
+	expect_equal(NucleusSpriteReimport2D.save_generated_resource(edited, path), OK,
+		"Detached merge saves without claiming an already occupied resource path.")
+	expect_float(held.get_animation_speed(&"default"), 19.0,
+		"Native cache refresh updates resources held by existing scenes.")
+	expect_equal(ResourceLoader.load(path), held, "The cached resource keeps its identity.")
+	expect_equal(NucleusSpriteReimport2D.save_generated_resource(edited, ""),
+		ERR_INVALID_PARAMETER, "Empty save path is rejected before ResourceSaver.")
+	DirAccess.remove_absolute(path)

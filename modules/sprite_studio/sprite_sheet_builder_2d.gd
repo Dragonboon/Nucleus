@@ -212,11 +212,12 @@ static func _clip_frames(
 	frames.add_animation(clip.animation_name)
 	frames.set_animation_speed(clip.animation_name, clip.fps)
 	frames.set_animation_loop(clip.animation_name, clip.loop)
-	for cell: Vector2i in clip.cells:
+	for index in range(clip.cells.size()):
+		var cell := clip.cells[index]
 		var atlas := AtlasTexture.new()
 		atlas.atlas = profile.texture
 		atlas.region = Rect2(profile.frame_rect(cell))
-		frames.add_frame(clip.animation_name, atlas)
+		frames.add_frame(clip.animation_name, atlas, clip.frame_seconds(index) * clip.fps)
 	return frames
 
 
@@ -241,7 +242,10 @@ static func _write_clip(
 static func _clip_animation(clip: NucleusSpriteClip2D) -> Animation:
 	var animation := Animation.new()
 	animation.resource_name = String(clip.animation_name)
-	animation.length = float(clip.cells.size()) / clip.fps
+	var duration := 0.0
+	for index in range(clip.cells.size()):
+		duration += clip.frame_seconds(index)
+	animation.length = duration
 	animation.loop_mode = Animation.LOOP_LINEAR if clip.loop else Animation.LOOP_NONE
 	var clip_track := animation.add_track(Animation.TYPE_VALUE)
 	animation.track_set_path(clip_track, NodePath("AnimatedSprite2D:animation"))
@@ -250,8 +254,10 @@ static func _clip_animation(clip: NucleusSpriteClip2D) -> Animation:
 	var frame_track := animation.add_track(Animation.TYPE_VALUE)
 	animation.track_set_path(frame_track, NodePath("AnimatedSprite2D:frame"))
 	animation.value_track_set_update_mode(frame_track, Animation.UPDATE_DISCRETE)
+	var elapsed := 0.0
 	for index in range(clip.cells.size()):
-		animation.track_insert_key(frame_track, float(index) / clip.fps, index)
+		animation.track_insert_key(frame_track, elapsed, index)
+		elapsed += clip.frame_seconds(index)
 	return animation
 
 

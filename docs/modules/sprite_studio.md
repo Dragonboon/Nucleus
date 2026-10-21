@@ -27,7 +27,7 @@ source image; **it does not claim to infer action names, direction, loop
 semantics, frame duration or spritesheet padding**. The author reviews and
 edits clips in the standard Godot Resource Inspector. Non-square cells,
 irregular frame sequences, repeated cells and clip reordering are supported
-by explicit profiles. Variable per-frame durations, packed freeform atlases,
+by explicit profiles. Per-frame durations can be entered in the clip Inspector. Packed freeform atlases,
 Aseprite metadata and transparent-padding inference are not yet supported.
 
 Source textures remain unmodified. Export refuses to overwrite any existing
@@ -206,9 +206,9 @@ a floating window using Godot's dock controls.
   folder, click **Detect characters**, then **Repair profile paths**. The
   action checks every path before changing the selected profile and writes it
   to its existing explicit path. It does not delete scenes or assets.
-- Godot's missing UID warning `uid://cktnsh7pma6tc` was not found among the
-  provided generated ZIP files, so its origin remains unverified. Inspect the
-  full editor logs and scene references if it persists after editor reimport.
+- UID `uid://cktnsh7pma6tc` belongs to the tracked `default_bus_layout.tres`,
+  not a generated sprite. The project now explicitly selects that resource by
+  path. Its UID is preserved; see the diagnostics section below.
 - The generic `Can't save resource to empty path` message likewise lacks a
   concrete caller in the log. The Sprite Studio save helpers already require
   a non-empty `res://` path; reproduce with the corresponding Godot stack
@@ -286,3 +286,62 @@ editor-only harness checks dock re-entry, cancellation status and stale-plan
 invalidation. It does not replace visual validation of the dock or large real
 asset packs. The editor harness can emit engine shutdown RID/ObjectDB warnings;
 these are not treated as evidence of a clean editor lifecycle.
+
+## Reference review and frame timing (0.33.0-dev.2)
+
+The following projects were reviewed as feature references. No source code was
+copied and no new dependency is required:
+
+| Reference | Useful capability | Nucleus decision |
+| --- | --- | --- |
+| [Smart Slicer / SpriteForge](https://github.com/hbrahimozdemir/godot-smart-slicer) (MIT in `addons/sprite_forge/LICENSE`) | Slice canvas, preview, undo snapshots, non-destructive export | A future slice-selection/preview UI should retain profiles as the sole authoring owner. Pixel painting/background removal would expand scope substantially. |
+| [Composite Spritesheet Generator](https://github.com/Shaihuludus/composite_spritesheet_generator) (Apache-2.0) | Layer order, offsets, composition to PNG | Useful optional authoring workflow for modular equipment. Keep composition separate from animation playback; not implemented here. |
+| [Sprite Dicing](https://github.com/elringus/sprite-dicing) (MIT) | Deduplicate repeated texture regions and reconstruct sprites | Evaluate only after measuring real pack repetition and runtime cost. Not a drop-in SpriteFrames optimization; no compression claims or renderer changes here. |
+| [Aseprite Spritesheet Importer](https://github.com/ColinHeathman/godot-aseprite-spritesheet-importer) (MIT) | Tags/layers/slices, native resources, frame delays | Adopt explicit per-frame timing now. JSON/tag import and trimmed-region reconstruction remain separate work. |
+| [Aseprite Wizard](https://github.com/viniciusgerevini/godot-aseprite-wizard) (MIT) | Reimport, animation direction and timing, native libraries | Preserve timing in both native output formats. Direction/tag/slice import is not yet implemented; existing explicit clip order still works. |
+
+`NucleusSpriteClip2D` and `NucleusSpriteSequenceClip2D` now expose
+`frame_durations_ms` in Godot's Resource Inspector. Leave it empty to retain the
+existing FPS-only behavior. Otherwise provide one finite positive millisecond
+value per cell/frame, for example `[100, 300, 200]`. SpriteFrames relative frame
+weights and AnimationPlayer key times/length are generated from the same values.
+The example lasts 0.6 seconds and holds the second frame three times longer than
+the first. Regeneration uses the existing protected merge pipeline.
+
+This is a backwards-compatible authoring field, not an Aseprite file importer.
+The prerelease advances to `0.33.0-dev.2`; existing serialized profiles remain
+valid without migration. Native Godot owns timing and resource caching; Nucleus
+only translates the explicit profile and does not add a playback clock.
+
+### Diagnostics from the supplied editor log
+
+- **Unexpected NUL:** the content-pack path policy constructed a NUL string
+  literal while parsing. It now checks code points without constructing that
+  literal. The path restriction remains enforced. The three startup diagnostics
+  no longer appear in the Godot 4.7.2 headless suite.
+- **Another resource is loaded from path:** generated merge copies must not
+  use `FLAG_CHANGE_PATH` to claim paths already owned by cached scene resources.
+  Saving now refreshes the existing cache with `CACHE_MODE_REPLACE`; scene export
+  uses that cached identity. A regression test holds the old resource reference,
+  writes changed data, and verifies both its updated properties and identity.
+- **SPRITES vs sprites:** sequence generation resolves actual disk spelling
+  before loading each texture, including old profile paths. Generated references
+  therefore use canonical names. Existing `.frames.tres` or scenes may still
+  contain old serialized references and warn when opened before regeneration.
+  Use the existing **Repair profile paths** action, and for protected old outputs
+  compare a generation in a separate directory as described above. Original
+  image names and arbitrary authored scenes are not rewritten automatically.
+- **Unknown UID:** the supplied UID identifies the repository's audio bus layout.
+  `audio/default_bus_layout` is explicit in `project.godot`. The original layout
+  and UID are preserved. On the affected project verify this setting points to
+  the existing file and let the editor rescan; do not manufacture a replacement UID.
+- **Empty save path:** Sprite Studio rejects empty paths before native saving,
+  covered by a regression assertion. The supplied line has no caller/stack trace,
+  so its specific origin is still unconfirmed. An audio-editor relationship is a
+  hypothesis, not a verified fix.
+
+The implementation was exercised with Godot 4.7.2, including the full headless
+suite and native resource cache/timing regression cases. Windows editor warnings,
+old user-generated resources, visual previews and Aseprite CLI interoperability
+still require the corresponding environment/assets; these are not certified by
+headless tests.

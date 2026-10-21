@@ -29,9 +29,13 @@ func is_relative_path_allowed(relative_path: String) -> bool:
 		or normalized.begins_with("res://")
 		or normalized.begins_with("user://")
 		or normalized.contains(":")
-		or normalized.contains("\u0000")
 	):
 		return false
+
+	# Avoid constructing a NUL-containing String literal during script parsing.
+	for index in range(normalized.length()):
+		if normalized.unicode_at(index) == 0:
+			return false
 
 	var segments: PackedStringArray = normalized.split("/", false)
 	if segments.is_empty():

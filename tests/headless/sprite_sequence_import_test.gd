@@ -8,6 +8,7 @@ func run() -> Dictionary:
 	)
 	_test_real_directory_grouping()
 	_test_native_scene_playback()
+	_test_sequence_timing_and_case()
 	return finish()
 
 
@@ -71,3 +72,30 @@ func _test_native_scene_playback() -> void:
 	expect_true(instance.get_node_or_null("AnimatedSprite2D") != null,
 		"Sprite remains owned and present after packing and instantiation.")
 	instance.free()
+
+
+func _test_sequence_timing_and_case() -> void:
+	var path := "res://tests/fixtures/frame_timing_%d.png" % Time.get_ticks_usec()
+	var image := Image.create(8, 8, false, Image.FORMAT_RGBA8)
+	image.fill(Color.WHITE)
+	expect_equal(image.save_png(path), OK, "Create a real filename for canonicalization.")
+	var texture := ImageTexture.create_from_image(image)
+	texture.take_over_path(path)
+	var profile := NucleusSpriteSequenceProfile2D.new()
+	var clip := NucleusSpriteSequenceClip2D.new()
+	clip.frame_paths = PackedStringArray([path.replace("fixtures", "FIXTURES"), path])
+	clip.frame_durations_ms = PackedFloat32Array([100.0, 300.0])
+	profile.clips.append(clip)
+	var frames := NucleusSpriteSequenceImporter2D.build_frames(profile)
+	expect_true(frames != null, "Canonical filenames are used before loading textures.")
+	if frames != null:
+		expect_equal(frames.get_frame_texture(&"idle", 0).resource_path, path,
+			"Generated resources contain the on-disk spelling.")
+		expect_float(frames.get_frame_duration(&"idle", 1) / clip.fps, 0.3,
+			"Sequence SpriteFrames preserves duration overrides.")
+	var animation := NucleusSpriteSequencePipeline2D.build_library(profile).get_animation(&"idle")
+	expect_float(animation.length, 0.4, "Sequence library uses the same timing as frames.")
+	expect_float(animation.track_get_key_time(1, 1), 0.1, "Sequence key starts after first hold.")
+	clip.frame_durations_ms = PackedFloat32Array([-1.0, 100.0])
+	expect_true(not clip.validate().is_empty(), "Negative sequence durations are invalid.")
+	DirAccess.remove_absolute(path)

@@ -120,11 +120,14 @@ static func build_frames(profile: NucleusSpriteSequenceProfile2D) -> SpriteFrame
 		frames.add_animation(clip.animation_name)
 		frames.set_animation_speed(clip.animation_name, clip.fps)
 		frames.set_animation_loop(clip.animation_name, clip.loop)
-		for path: String in clip.frame_paths:
+		for index in range(clip.frame_paths.size()):
+			var path := NucleusSpritePathCase2D.canonical_path(clip.frame_paths[index])
+			if path.is_empty():
+				return null
 			var texture := ResourceLoader.load(path, "Texture2D") as Texture2D
 			if texture == null:
 				return null
-			frames.add_frame(clip.animation_name, texture)
+			frames.add_frame(clip.animation_name, texture, clip.frame_seconds(index) * clip.fps)
 	return frames
 
 

@@ -9,7 +9,10 @@ static func build_library(profile: NucleusSpriteSequenceProfile2D) -> AnimationL
 	var library := AnimationLibrary.new()
 	for clip: NucleusSpriteSequenceClip2D in profile.clips:
 		var animation := Animation.new()
-		animation.length = float(clip.frame_paths.size()) / clip.fps
+		var duration := 0.0
+		for index in range(clip.frame_paths.size()):
+			duration += clip.frame_seconds(index)
+		animation.length = duration
 		animation.loop_mode = (
 			Animation.LOOP_LINEAR if clip.loop else Animation.LOOP_NONE
 		)
@@ -20,8 +23,10 @@ static func build_library(profile: NucleusSpriteSequenceProfile2D) -> AnimationL
 		var frame_track := animation.add_track(Animation.TYPE_VALUE)
 		animation.track_set_path(frame_track, NodePath("AnimatedSprite2D:frame"))
 		animation.value_track_set_update_mode(frame_track, Animation.UPDATE_DISCRETE)
+		var elapsed := 0.0
 		for index in range(clip.frame_paths.size()):
-			animation.track_insert_key(frame_track, float(index) / clip.fps, index)
+			animation.track_insert_key(frame_track, elapsed, index)
+			elapsed += clip.frame_seconds(index)
 		library.add_animation(clip.animation_name, animation)
 	return library
 
