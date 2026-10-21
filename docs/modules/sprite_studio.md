@@ -207,8 +207,7 @@ a floating window using Godot's dock controls.
   action checks every path before changing the selected profile and writes it
   to its existing explicit path. It does not delete scenes or assets.
 - UID `uid://cktnsh7pma6tc` belongs to the tracked `default_bus_layout.tres`,
-  not a generated sprite. The project now explicitly selects that resource by
-  path. Its UID is preserved; see the diagnostics section below.
+  not a generated sprite. Its UID is preserved; see the diagnostics section below.
 - The generic `Can't save resource to empty path` message likewise lacks a
   concrete caller in the log. The Sprite Studio save helpers already require
   a non-empty `res://` path; reproduce with the corresponding Godot stack
@@ -332,9 +331,11 @@ only translates the explicit profile and does not add a playback clock.
   compare a generation in a separate directory as described above. Original
   image names and arbitrary authored scenes are not rewritten automatically.
 - **Unknown UID:** the supplied UID identifies the repository's audio bus layout.
-  `audio/default_bus_layout` is explicit in `project.godot`. The original layout
-  and UID are preserved. On the affected project verify this setting points to
-  the existing file and let the editor rescan; do not manufacture a replacement UID.
+  The explicit `audio/default_bus_layout` override was reverted after a reported
+  project-import failure. `project.godot` retains the baseline configuration;
+  the original layout and UID are preserved. The reported import failure was
+  not reproduced in headless Godot 4.7.2 on Linux, before or after the rollback.
+  Inspect the affected project's exact error before changing settings or UIDs.
 - **Empty save path:** Sprite Studio rejects empty paths before native saving,
   covered by a regression assertion. The supplied line has no caller/stack trace,
   so its specific origin is still unconfirmed. An audio-editor relationship is a
