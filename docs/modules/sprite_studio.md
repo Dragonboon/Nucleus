@@ -217,3 +217,72 @@ a floating window using Godot's dock controls.
 Run the registered `sprite_path_case_test.gd` and Godot 4.7.2 editor plugin
 load test after updating the branch. None of these tests has been run in
 Godot by the authoring environment.
+
+## Reliable batch review and editing
+
+The current dock keeps native Godot animation ownership: profiles describe the
+clips, the Nucleus builders generate external resources, and `AnimationPlayer`
+drives the generated `AnimatedSprite2D`. Game-specific movement and animation
+selection remain in the consuming game. No extra playback service is introduced.
+
+1. In **Characters**, detect the source folder. All groups start selected;
+   use Ctrl/Shift to restrict the batch to the characters you need.
+2. Choose **Generate selected**. The dock locks its inputs and competing actions
+   until the operation finishes. **Cancel after current item** stops at the next
+   item boundary; already completed files remain on disk.
+3. Select exactly one group and use **Edit selected profile** for FPS, loop and
+   clip changes, or **Open selected scene** to inspect the generated visual.
+4. Regenerate the selection. Scenes remain untouched, while unmodified generated
+   resources follow the profile. Removing an unedited sequence clip now removes
+   it from both SpriteFrames and AnimationLibrary; edited clips remain conflicts.
+
+Changing the source invalidates the previous detection. Each batch snapshots its
+plan and output settings. Folder scans skip symlinks; sheet scans have a shared
+2048-image limit and depth limit of eight, rather than a separate allowance per
+subfolder. Reaching either limit may omit further files: split large packs into
+smaller source directories. Same-basename sheet images (including case-only
+collisions) are reported as ambiguous instead of sharing an output profile.
+
+The results panel reports skipped items and names of protected clips. Existing
+unreadable outputs and malformed provenance manifests are refused rather than
+replaced. Manifest write failure no longer counts as success. This remains a
+per-resource operation, **not an atomic transaction**: interruption or a disk
+error can leave partial output. Inspect the reported files before retrying.
+
+### Existing provenance compatibility
+
+Signatures now cover individual frame texture paths, atlas margin/filter settings,
+animation track enable/interpolation/update settings and key transitions.
+Previously these manual edits could be missed and overwritten on reimport.
+Old sidecar hashes can therefore produce conservative conflicts even for an
+unchanged animation. The importer deliberately does not automatically trust or
+replace those old hashes. Keep the old output, generate to a separate folder,
+compare native resources and migrate references explicitly after review. Do not
+remove a manifest to force an overwrite; missing provenance blocks updates.
+
+No serialized profile fields, node paths or baseline autoloads change; the
+current pre-release version and Godot 4.7.2 requirement remain unchanged.
+
+### Reproducible regression checks
+
+Run from the repository root with the pinned Godot 4.7.2 binary:
+
+```sh
+python3 scripts/ci/static_checks.py
+python3 scripts/ci/documentation_audit.py
+python3 scripts/ci/productization_audit.py
+python3 scripts/ci/use_case_audit.py
+godot --headless --path . --import
+python3 scripts/ci/run_godot_checked.py godot --headless --path . res://tests/headless/test_runner.tscn
+python3 scripts/ci/run_godot_checked.py godot --headless --editor --path . --script res://tests/editor/sprite_studio_dock_test.gd
+godot --headless --path . res://tests/smoke/smoke_main.tscn
+godot --headless --path . res://tests/smoke/resource_loading_smoke.tscn
+```
+
+The project-scene suite includes directory grouping, numeric frame ordering,
+output collisions, native animation playback/scene packing, manual-edit
+signatures, and sequence removal with conflict preservation. The separate
+editor-only harness checks dock re-entry, cancellation status and stale-plan
+invalidation. It does not replace visual validation of the dock or large real
+asset packs. The editor harness can emit engine shutdown RID/ObjectDB warnings;
+these are not treated as evidence of a clean editor lifecycle.

@@ -168,10 +168,12 @@ static func frames_signature(frames: SpriteFrames, name: StringName) -> String:
 	for index in range(frames.get_frame_count(name)):
 		var texture := frames.get_frame_texture(name, index)
 		var rect := Rect2()
-		var atlas_path := ""
+		var atlas_path := texture.resource_path if texture != null else ""
 		if texture is AtlasTexture:
 			var atlas := texture as AtlasTexture
 			rect = atlas.region
+			values.append(str(atlas.margin))
+			values.append(str(atlas.filter_clip))
 			if atlas.atlas != null:
 				atlas_path = atlas.atlas.resource_path
 		values.append(str(rect))
@@ -183,13 +185,19 @@ static func frames_signature(frames: SpriteFrames, name: StringName) -> String:
 static func animation_signature(animation: Animation) -> String:
 	if animation == null:
 		return ""
-	var values := [str(animation.length), str(animation.loop_mode)]
+	var values := [str(animation.length), str(animation.loop_mode), str(animation.step)]
 	for track in range(animation.get_track_count()):
 		values.append(str(animation.track_get_type(track)))
 		values.append(str(animation.track_get_path(track)))
+		values.append(str(animation.track_is_enabled(track)))
+		values.append(str(animation.track_get_interpolation_type(track)))
+		values.append(str(animation.track_get_interpolation_loop_wrap(track)))
+		if animation.track_get_type(track) == Animation.TYPE_VALUE:
+			values.append(str(animation.value_track_get_update_mode(track)))
 		values.append(str(animation.track_get_key_count(track)))
 		for key in range(animation.track_get_key_count(track)):
 			values.append(str(animation.track_get_key_time(track, key)))
+			values.append(str(animation.track_get_key_transition(track, key)))
 			values.append(str(animation.track_get_key_value(track, key)))
 	return "|".join(values).sha256_text()
 

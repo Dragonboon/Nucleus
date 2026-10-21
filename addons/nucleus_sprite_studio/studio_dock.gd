@@ -18,6 +18,10 @@ var _sequence_discovery: Array[Dictionary] = []
 var _progress: ProgressBar
 var _results: RichTextLabel
 var _status: Label
+var _busy: bool = false
+var _cancel_requested: bool = false
+var _cancel_button: Button
+var _actions: Array[Button] = []
 
 
 func _ready() -> void:
@@ -72,6 +76,16 @@ func _ready() -> void:
 	add_child(_save_dialog)
 	_build_sequence_workflow()
 	_organize_layout()
+	_cancel_button = Button.new()
+	_cancel_button.text = "Cancel after current item"
+	_cancel_button.disabled = true
+	_cancel_button.pressed.connect(func() -> void: _cancel_requested = true)
+	add_child(_cancel_button)
+	_sequence_source.text_changed.connect(func(_text: String) -> void:
+		_sequence_discovery.clear()
+		_sequence_preview.clear()
+		_info.text = "Source changed. Detect characters again before generating."
+	)
 	_on_profile_changed(null)
 
 
@@ -79,6 +93,7 @@ func _line(value: String, hint: String) -> LineEdit:
 	var control := LineEdit.new()
 	control.text = value
 	control.placeholder_text = hint
+	control.tooltip_text = hint
 	add_child(control)
 	return control
 
@@ -96,6 +111,7 @@ func _add_button(row: Control, label_text: String, callback: Callable) -> void:
 	var action := Button.new()
 	action.text = label_text
 	action.pressed.connect(callback)
+	_actions.append(action)
 	row.add_child(action)
 
 
@@ -202,18 +218,30 @@ func _reimport_batch() -> void:
 
 
 func _run_batch(reimport: bool) -> void:
+	if _busy:
+		return
+	var plan := _plan()
+	var cell_size := Vector2i(int(_cell_x.value), int(_cell_y.value))
 	var created := 0
 	var updated := 0
 	var protected := 0
 	var conflicts := 0
-	var plan_total := _plan().size()
+	var plan_total := plan.size()
 	_begin_progress(plan_total, "Importing spritesheets")
-	for entry: Dictionary in _plan():
+	for entry: Dictionary in plan:
 		_step_progress(str(entry["source"]))
 		await get_tree().process_frame
+		if _cancel_requested or not is_inside_tree():
+			break
+		_progress.value += 1
+		if entry.has("error"):
+			_report_failure(str(entry["error"]))
+			protected += 1
+			continue
 		var source: String = entry["source"]
 		var texture := ResourceLoader.load(source, "Texture2D") as Texture2D
 		if texture == null:
+			_report_failure("Invalid profile, protected output or failed write; see editor log.")
 			protected += 1
 			continue
 		var profile_path: String = entry["profile"]
@@ -222,21 +250,25 @@ func _run_batch(reimport: bool) -> void:
 			profile = ResourceLoader.load(profile_path) as NucleusSpriteSheetProfile2D
 		else:
 			profile = NucleusSpriteBatchImport2D.create_profile(
-				texture, Vector2i(int(_cell_x.value), int(_cell_y.value)),
+				texture, cell_size,
 			)
 			if profile == null or not profile.validate().is_empty():
+				_report_failure("Invalid profile, protected output or failed write; see editor log.")
 				protected += 1
 				continue
 			if NucleusSpriteReimport2D.write_new_resource(profile, profile_path) != OK:
+				_report_failure("Invalid profile, protected output or failed write; see editor log.")
 				protected += 1
 				continue
 		if profile == null or not profile.validate().is_empty():
+			_report_failure("Invalid profile, protected output or failed write; see editor log.")
 			protected += 1
 			continue
 		var frames_path: String = entry["frames"]
 		var library_path: String = entry["library"]
 		var manifest_path := profile_path + ".sprite-studio.json"
 		if not reimport and FileAccess.file_exists(frames_path):
+			_report_failure("Invalid profile, protected output or failed write; see editor log.")
 			protected += 1
 			continue
 		var frames: SpriteFrames
@@ -245,25 +277,40 @@ func _run_batch(reimport: bool) -> void:
 			frames = ResourceLoader.load(frames_path) as SpriteFrames
 		if FileAccess.file_exists(library_path):
 			library = ResourceLoader.load(library_path) as AnimationLibrary
+		if (FileAccess.file_exists(frames_path) and frames == null) or (
+			FileAccess.file_exists(library_path) and library == null
+		):
+			_report_failure("Existing output is unreadable or has the wrong resource type.")
+			protected += 1
+			continue
 		var previous := NucleusSpriteReimport2D.read_manifest(manifest_path)
 		# Unknown pre-existing output has no provenance: refuse updates.
 		if (frames != null or library != null) and previous.is_empty():
+			_report_failure("Invalid profile, protected output or failed write; see editor log.")
 			protected += 1
 			continue
 		var result := NucleusSpriteReimport2D.sync(profile, frames, library, previous)
 		if result.get("error", ERR_INVALID_DATA) != OK:
+			_report_failure("Invalid profile, protected output or failed write; see editor log.")
 			protected += 1
 			continue
 		var file_error := _save_generated(result["frames"], frames_path)
 		if file_error != OK:
+			_report_failure("Invalid profile, protected output or failed write; see editor log.")
 			protected += 1
 			continue
 		file_error = _save_generated(result["library"], library_path)
 		if file_error != OK:
+			_report_failure("Invalid profile, protected output or failed write; see editor log.")
 			protected += 1
 			continue
-		NucleusSpriteReimport2D.write_manifest(manifest_path, result["manifest"])
+		if NucleusSpriteReimport2D.write_manifest(manifest_path, result["manifest"]) != OK:
+			_report_failure("Could not save provenance manifest; check output permissions.")
+			protected += 1
+			continue
 		conflicts += (result["conflicts"] as Array).size()
+		for conflict: String in result["conflicts"]:
+			_results.add_text("  Preserved edited clip: " + conflict + "\n")
 		if previous.is_empty():
 			created += 1
 		else:
@@ -276,6 +323,8 @@ func _run_batch(reimport: bool) -> void:
 
 
 func _save_generated(resource: Resource, path: String) -> Error:
+	if resource == null or not path.begins_with("res://") or ".." in path:
+		return ERR_INVALID_PARAMETER
 	if FileAccess.file_exists(path):
 		return ResourceSaver.save(resource, path, ResourceSaver.FLAG_CHANGE_PATH)
 	return NucleusSpriteReimport2D.write_new_resource(resource, path)
@@ -290,14 +339,24 @@ func _build_sequence_workflow() -> void:
 	var controls := HFlowContainer.new()
 	add_child(controls)
 	_add_button(controls, "Detect characters", _scan_sequences)
-	_add_button(controls, "Generate scenes", _generate_sequences)
+	_add_button(controls, "Generate selected", _generate_sequences)
+	_add_button(controls, "Edit selected profile", _edit_sequence_profile)
+	_add_button(controls, "Open selected scene", _open_sequence_scene)
 	_add_button(controls, "Repair profile paths", _repair_sequence_paths)
 	_sequence_preview = ItemList.new()
+	_sequence_preview.select_mode = ItemList.SELECT_MULTI
+	_sequence_preview.tooltip_text = (
+		"All detected groups start selected. Ctrl/Shift to select a subset."
+	)
 	_sequence_preview.custom_minimum_size = Vector2(400, 110)
 	add_child(_sequence_preview)
 
 
 func _scan_sequences() -> void:
+	if _busy:
+		return
+	_sequence_discovery.clear()
+	_sequence_preview.clear()
 	var canonical := NucleusSpritePathCase2D.canonical_path(_sequence_source.text)
 	if canonical.is_empty():
 		_info.text = "Source folder not found; check capitalization."
@@ -310,30 +369,45 @@ func _scan_sequences() -> void:
 		for clip: Dictionary in entry["clips"]:
 			names.append("%s (%d)" % [clip["name"], (clip["paths"] as PackedStringArray).size()])
 		_sequence_preview.add_item("%s: %s" % [entry["id"], ", ".join(names)])
-	_info.text = "%d characters detected. Review before Generate scenes." % [
+		_sequence_preview.select(_sequence_preview.item_count - 1, false)
+	_info.text = "%d characters detected. Review selection before Generate selected." % [
 		_sequence_discovery.size(),
 	]
 
 
 func _generate_sequences() -> void:
+	if _busy:
+		return
 	if not _sequence_output.text.begins_with("res://") or ".." in _sequence_output.text:
 		_info.text = "Output must be a safe res:// folder."
 		return
 	if _sequence_discovery.is_empty():
 		_scan_sequences()
+	var selected: Array[Dictionary] = []
+	for index: int in _sequence_preview.get_selected_items():
+		selected.append(_sequence_discovery[index].duplicate(true))
+	if selected.is_empty():
+		_info.text = "Select at least one detected character."
+		return
+	var output := _sequence_output.text
+	var source := _sequence_source.text
 	var created := 0
 	var updated := 0
 	var protected := 0
 	var conflicts := 0
-	_begin_progress(_sequence_discovery.size(), "Generating character scenes")
-	for descriptor: Dictionary in _sequence_discovery:
+	_begin_progress(selected.size(), "Generating character scenes")
+	for descriptor: Dictionary in selected:
 		_step_progress(str(descriptor["id"]))
 		await get_tree().process_frame
+		if _cancel_requested or not is_inside_tree():
+			break
+		_progress.value += 1
 		var key := str(descriptor["id"])
 		if key.is_empty() or ".." in key:
+			_report_failure("Invalid profile, protected output or failed write; see editor log.")
 			protected += 1
 			continue
-		var stem := _sequence_output.text.path_join(key)
+		var stem := output.path_join(key)
 		var profile_path := stem + ".profile.tres"
 		var frames_path := stem + ".frames.tres"
 		var library_path := stem + ".animations.tres"
@@ -344,25 +418,29 @@ func _generate_sequences() -> void:
 			profile = ResourceLoader.load(profile_path) as NucleusSpriteSequenceProfile2D
 		else:
 			profile = NucleusSpriteSequenceImporter2D.create_profile(
-				_sequence_source.text, descriptor,
+				source, descriptor,
 			)
 			var create_error := NucleusSpriteReimport2D.write_new_resource(
 				profile, profile_path,
 			)
 			if create_error != OK:
+				_report_failure("Invalid profile, protected output or failed write; see editor log.")
 				protected += 1
 				continue
 		if profile == null or not profile.validate().is_empty():
+			_report_failure("Invalid profile, protected output or failed write; see editor log.")
 			protected += 1
 			continue
 		var old_manifest := NucleusSpriteReimport2D.read_manifest(manifest_path)
 		if (FileAccess.file_exists(frames_path) or FileAccess.file_exists(library_path)):
 			if old_manifest.is_empty():
+				_report_failure("Invalid profile, protected output or failed write; see editor log.")
 				protected += 1
 				continue
 		var expected_frames := NucleusSpriteSequenceImporter2D.build_frames(profile)
 		var expected_library := NucleusSpriteSequencePipeline2D.build_library(profile)
 		if expected_frames == null or expected_library == null:
+			_report_failure("Invalid profile, protected output or failed write; see editor log.")
 			protected += 1
 			continue
 		var frames: SpriteFrames
@@ -371,6 +449,12 @@ func _generate_sequences() -> void:
 			frames = ResourceLoader.load(frames_path) as SpriteFrames
 		if FileAccess.file_exists(library_path):
 			library = ResourceLoader.load(library_path) as AnimationLibrary
+		if (FileAccess.file_exists(frames_path) and frames == null) or (
+			FileAccess.file_exists(library_path) and library == null
+		):
+			_report_failure("Existing output is unreadable or has the wrong resource type.")
+			protected += 1
+			continue
 		var frame_merge := NucleusSpriteSequencePipeline2D.merge_frames(
 			expected_frames, frames, old_manifest.get("frames", {}),
 		)
@@ -378,14 +462,19 @@ func _generate_sequences() -> void:
 			expected_library, library, old_manifest.get("library", {}),
 		)
 		if frame_merge.get("error") != OK or library_merge.get("error") != OK:
+			_report_failure("Invalid profile, protected output or failed write; see editor log.")
 			protected += 1
 			continue
 		conflicts += (frame_merge["conflicts"] as Array).size()
 		conflicts += (library_merge["conflicts"] as Array).size()
+		for conflict: String in frame_merge["conflicts"] + library_merge["conflicts"]:
+			_results.add_text("  Preserved edited clip: " + conflict + "\n")
 		if _save_generated(frame_merge["resource"], frames_path) != OK:
+			_report_failure("Invalid profile, protected output or failed write; see editor log.")
 			protected += 1
 			continue
 		if _save_generated(library_merge["resource"], library_path) != OK:
+			_report_failure("Invalid profile, protected output or failed write; see editor log.")
 			protected += 1
 			continue
 		var manifest: Dictionary = {
@@ -394,6 +483,7 @@ func _generate_sequences() -> void:
 			"library": library_merge["managed"],
 		}
 		if NucleusSpriteReimport2D.write_manifest(manifest_path, manifest) != OK:
+			_report_failure("Invalid profile, protected output or failed write; see editor log.")
 			protected += 1
 			continue
 		if not FileAccess.file_exists(scene_path):
@@ -407,6 +497,7 @@ func _generate_sequences() -> void:
 				stored_frames, stored_library,
 			)
 			if root == null:
+				_report_failure("Invalid profile, protected output or failed write; see editor log.")
 				protected += 1
 				continue
 			var packed := PackedScene.new()
@@ -415,6 +506,7 @@ func _generate_sequences() -> void:
 			if pack_error != OK or (
 				NucleusSpriteReimport2D.write_new_resource(packed, scene_path) != OK
 			):
+				_report_failure("Invalid profile, protected output or failed write; see editor log.")
 				protected += 1
 				continue
 			created += 1
@@ -428,6 +520,8 @@ func _generate_sequences() -> void:
 
 
 func _begin_progress(total: int, title_text: String) -> void:
+	_cancel_requested = false
+	_set_busy(true)
 	_progress.max_value = maxi(total, 1)
 	_progress.value = 0
 	_status.text = "WORKING  |  " + title_text
@@ -436,14 +530,14 @@ func _begin_progress(total: int, title_text: String) -> void:
 
 
 func _step_progress(label_text: String) -> void:
-	_progress.value += 1
-	_results.append_text("[color=#86b8e5]Processing[/color]  " + label_text + "\n")
+	_results.add_text("Processing  " + label_text + "\n")
 
 
 func _complete_progress(created: int, updated: int, blocked: int, conflicts: int) -> void:
+	_set_busy(false)
 	var succeeded := created + updated
-	_status.text = "COMPLETE  |  %d succeeded, %d skipped, %d conflicts" % [
-		succeeded, blocked, conflicts,
+	_status.text = "%s  |  %d succeeded, %d skipped, %d conflicts" % [
+		"CANCELLED" if _cancel_requested else "COMPLETE", succeeded, blocked, conflicts,
 	]
 	_status.add_theme_color_override(
 		"font_color", Color(0.42, 0.85, 0.53) if blocked == 0 else Color(0.96, 0.7, 0.3),
@@ -506,11 +600,15 @@ func _create_tab(tabs: TabContainer, title_text: String, widgets: Array) -> void
 	contents.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scrolling.add_child(contents)
 	for widget: Control in widgets:
+		if widget is Label:
+			(widget as Label).autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		widget.reparent(contents)
 		widget.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
 
 func _repair_sequence_paths() -> void:
+	if _busy:
+		return
 	## Explicit action: update only profiles already generated for discovered characters.
 	var root := _sequence_output.text
 	if not root.begins_with("res://") or ".." in root:
@@ -542,3 +640,48 @@ func _repair_sequence_paths() -> void:
 	_info.text = "Path repair: %d profiles saved, %d blocked." % [repaired, blocked]
 	if repaired > 0:
 		EditorInterface.get_resource_filesystem().scan()
+
+
+func _set_busy(value: bool) -> void:
+	_busy = value
+	for action: Button in _actions:
+		action.disabled = value
+	for field: LineEdit in [_batch_source, _batch_output, _sequence_source, _sequence_output]:
+		field.editable = not value
+	_cell_x.editable = not value
+	_cell_y.editable = not value
+	_picker.editable = not value
+	_cancel_button.disabled = not value
+
+
+func _report_failure(reason: String) -> void:
+	_results.add_text("  Skipped: " + reason + "\n")
+
+
+func _selected_sequence_path(extension: String) -> String:
+	var selected := _sequence_preview.get_selected_items()
+	if selected.size() != 1:
+		_info.text = "Select exactly one character for this action."
+		return ""
+	var key := str(_sequence_discovery[selected[0]]["id"])
+	var path := _sequence_output.text.path_join(key) + extension
+	if not path.begins_with("res://") or ".." in path or not FileAccess.file_exists(path):
+		_info.text = "Generate this character first: " + path
+		return ""
+	return path
+
+
+func _edit_sequence_profile() -> void:
+	var path := _selected_sequence_path(".profile.tres")
+	if not path.is_empty():
+		EditorInterface.edit_resource(ResourceLoader.load(path))
+
+
+func _open_sequence_scene() -> void:
+	var path := _selected_sequence_path(".tscn")
+	if not path.is_empty():
+		EditorInterface.open_scene_from_path(path)
+
+
+func _exit_tree() -> void:
+	_cancel_requested = true

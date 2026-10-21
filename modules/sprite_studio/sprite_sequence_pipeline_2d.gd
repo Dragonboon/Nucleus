@@ -88,6 +88,20 @@ static func merge_frames(
 				expected.get_frame_duration(animation_name, index),
 			)
 		managed[key] = NucleusSpriteSheetBuilder2D.frames_signature(output, animation_name)
+	for old_key: Variant in last_managed.keys():
+		var key := str(old_key)
+		var animation_name := StringName(key)
+		if expected.has_animation(animation_name):
+			continue
+		if output.has_animation(animation_name):
+			if (
+				NucleusSpriteSheetBuilder2D.frames_signature(output, animation_name)
+				!= str(last_managed[old_key])
+			):
+				conflicts.append(key)
+				continue
+			output.remove_animation(animation_name)
+		managed.erase(key)
 	return {"error": OK, "resource": output, "managed": managed, "conflicts": conflicts}
 
 
@@ -123,4 +137,17 @@ static func merge_library(
 		managed[key] = NucleusSpriteSheetBuilder2D.animation_signature(
 			output.get_animation(animation_name)
 		)
+	for old_key: Variant in last_managed.keys():
+		var key := str(old_key)
+		var animation_name := StringName(key)
+		if expected.has_animation(animation_name):
+			continue
+		if output.has_animation(animation_name):
+			if NucleusSpriteSheetBuilder2D.animation_signature(
+				output.get_animation(animation_name)
+			) != str(last_managed[old_key]):
+				conflicts.append(key)
+				continue
+			output.remove_animation(animation_name)
+		managed.erase(key)
 	return {"error": OK, "resource": output, "managed": managed, "conflicts": conflicts}

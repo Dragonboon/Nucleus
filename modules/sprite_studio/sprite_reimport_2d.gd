@@ -59,8 +59,14 @@ static func read_manifest(path: String) -> Dictionary:
 	if not parsed is Dictionary:
 		return {}
 	var data: Dictionary = parsed
-	if int(data.get("version", -1)) != FORMAT_VERSION:
+	if data.get("version") != FORMAT_VERSION:
 		return {}
+	for section: String in ["frames", "library"]:
+		if not data.get(section) is Dictionary:
+			return {}
+		for signature: Variant in (data[section] as Dictionary).values():
+			if not signature is String:
+				return {}
 	return data
 
 
@@ -72,4 +78,4 @@ static func write_manifest(path: String, manifest: Dictionary) -> Error:
 		return FileAccess.get_open_error()
 	file.store_string(JSON.stringify(manifest, "\t"))
 	file.flush()
-	return OK
+	return file.get_error()

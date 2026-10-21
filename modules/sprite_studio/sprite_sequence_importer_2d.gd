@@ -137,7 +137,7 @@ static func _collect(folder: String, files: PackedStringArray, depth: int) -> vo
 	directory.list_dir_begin()
 	var filename := directory.get_next()
 	while filename != "" and files.size() < MAX_IMAGE_FILES:
-		if not filename.begins_with("."):
+		if not filename.begins_with(".") and not directory.is_link(filename):
 			var path := folder.path_join(filename)
 			if directory.current_is_dir():
 				_collect(path, files, depth + 1)

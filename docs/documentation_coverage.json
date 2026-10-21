@@ -8,6 +8,9 @@
     "components/world/*"
   ],
   "coverage": {
+    "modules/sprite_studio": [
+      "docs/modules/sprite_studio.md"
+    ],
     "components/gameplay/actions": [
       "docs/components/gameplay_actions_attributes_status.md"
     ],
