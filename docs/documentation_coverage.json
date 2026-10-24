@@ -148,6 +148,10 @@
       "docs/components/hex_grid_2d.md",
       "docs/components/hex_grid_3d.md"
     ],
+    "components/world/procedural": [
+      "docs/modules/flow_procedural_bullet_2d.md",
+      "docs/modules/flow_extensions_2d.md"
+    ],
     "components/world/rendering": [
       "docs/components/rendering_quality.md"
     ],
