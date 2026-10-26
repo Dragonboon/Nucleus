@@ -31,5 +31,28 @@ func run() -> Dictionary:
 	effects.append(second)
 	expect_equal(stack.validate_configuration(image, effects), ERR_OUT_OF_MEMORY,
 		"Configured pass budget is enforced.")
-	stack.free()
+	var screen := Control.new()
+	screen.size = Vector2(800, 450)
+	var host := Node.new()
+	host.add_child(screen)
+	screen.add_child(stack)
+	stack.backbuffer_target = screen
+	stack.backend = NucleusScreenShaderStack.Backend.BACKBUFFER
+	stack.max_passes = 2
+	expect_equal(stack.configure(image, effects), OK,
+		"Backbuffer configuration creates ordered native passes.")
+	expect_equal(stack.stage_count(), 2, "One copy for each enabled shader.")
+	expect_true(stack.get_pass_overlay(&"tint") != null,
+		"Backbuffer passes expose an overlay for shader parameters.")
+	expect_equal(stack.output_texture(), image,
+		"Backbuffer draws in-place and retains the original texture contract.")
+	expect_equal(stack.get_pass_canvas(&"tint"), null,
+		"Viewport-only accessor remains explicit for backbuffer rendering.")
+	expect_equal(stack.set_uniform(&"missing", &"value", 1.0), ERR_DOES_NOT_EXIST,
+		"Unknown pass cannot mutate another material.")
+	stack.max_passes = 1
+	expect_equal(stack.rebuild(), ERR_OUT_OF_MEMORY,
+		"Invalid rebuild must retain the previous render chain.")
+	expect_equal(stack.stage_count(), 2, "Rejected rebuild retains native stages.")
+	host.free()
 	return finish()
