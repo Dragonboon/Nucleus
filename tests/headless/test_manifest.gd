@@ -1,6 +1,9 @@
 extends RefCounted
 
 const SUITES: Array[Script] = [
+	preload("res://tests/headless/target_lifecycle_test.gd"),
+	preload("res://tests/headless/floating_text_test.gd"),
+	preload("res://tests/headless/directional_sprite_test.gd"),
 	preload("res://tests/headless/crowd_bullet_batch_2d_test.gd"),
 	preload("res://tests/headless/flow_extensions_2d_test.gd"),
 	preload("res://tests/headless/flow_procedural_bullet_test.gd"),

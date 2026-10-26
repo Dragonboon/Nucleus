@@ -59,6 +59,15 @@ var _refresh_requested: bool = true
 var _ranked_cache: Array[NucleusTargetable] = []
 
 
+func _enter_tree() -> void:
+	_prune_invalid_candidates()
+	for target: NucleusTargetable in _candidates.values():
+		_connect_target(target)
+	if is_node_ready():
+		_connect_rules()
+		request_refresh()
+
+
 func _ready() -> void:
 	if source == null:
 		source = get_parent()
@@ -187,6 +196,7 @@ func unregister_candidate_all(
 
 
 func clear_candidates() -> void:
+	_prune_invalid_candidates()
 	var ids: Array = _candidates.keys()
 
 	for target_id: Variant in ids:
@@ -535,7 +545,7 @@ func _prune_invalid_candidates() -> void:
 	var ids: Array = _candidates.keys()
 
 	for target_id: Variant in ids:
-		var target: NucleusTargetable = _candidates[int(target_id)]
+		var target: Variant = _candidates[int(target_id)]
 
 		if target and is_instance_valid(target):
 			continue
@@ -556,7 +566,7 @@ func _prune_ranked_cache() -> void:
 		-1,
 		-1,
 	):
-		var target: NucleusTargetable = _ranked_cache[index]
+		var target: Variant = _ranked_cache[index]
 
 		if (
 			target
@@ -606,6 +616,9 @@ func _disconnect_rules() -> void:
 
 
 func _connect_target(target: NucleusTargetable) -> void:
+	var exiting := _on_target_tree_exiting.bind(target.get_instance_id())
+	if not target.tree_exiting.is_connected(exiting):
+		target.tree_exiting.connect(exiting)
 	if not target.availability_changed.is_connected(
 		_on_target_availability_changed
 	):
@@ -621,6 +634,10 @@ func _disconnect_target(target: NucleusTargetable) -> void:
 	if target == null or not is_instance_valid(target):
 		return
 
+	var exiting := _on_target_tree_exiting.bind(target.get_instance_id())
+	if target.tree_exiting.is_connected(exiting):
+		target.tree_exiting.disconnect(exiting)
+
 	if target.availability_changed.is_connected(
 		_on_target_availability_changed
 	):
@@ -633,11 +650,17 @@ func _disconnect_target(target: NucleusTargetable) -> void:
 
 
 func _disconnect_all_targets() -> void:
-	for target: NucleusTargetable in _candidates.values():
-		_disconnect_target(target)
+	for target: Variant in _candidates.values():
+		if is_instance_valid(target):
+			_disconnect_target(target)
 
 
 func _on_target_availability_changed(
 	_available: bool,
 ) -> void:
 	request_refresh()
+
+
+func _on_target_tree_exiting(target_id: int) -> void:
+	# Remove while signals can still carry a valid endpoint.
+	_remove_candidate(target_id)

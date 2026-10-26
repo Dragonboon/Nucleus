@@ -12,7 +12,8 @@
       "docs/components/gameplay_actions_attributes_status.md"
     ],
     "components/gameplay/animation": [
-      "docs/components/animation_integration.md"
+      "docs/components/animation_integration.md",
+      "docs/components/presentation_2d.md"
     ],
     "components/gameplay/attributes": [
       "docs/components/gameplay_actions_attributes_status.md"
@@ -33,7 +34,8 @@
       "docs/components/world_decals.md"
     ],
     "components/gameplay/feedback": [
-      "docs/components/camera_game_feel.md"
+      "docs/components/camera_game_feel.md",
+      "docs/components/presentation_2d.md"
     ],
     "components/gameplay/interaction": [
       "docs/components/gameplay_foundation.md"

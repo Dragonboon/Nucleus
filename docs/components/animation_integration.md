@@ -491,3 +491,10 @@ network bone replication
 
 The goal is a fast, high-quality starting point that remains ordinary Godot
 content once the game's animation needs become specialized.
+
+## Directional AnimatedSprite2D presentation
+
+For four/eight-direction SpriteFrames, use the optional
+`NucleusDirectionalSpriteAnimator2D` and `NucleusDirectionalSpriteProfile2D`.
+See [2D presentation](presentation_2d.md) for contracts, ownership and validation.
+Existing AnimationTree and 3D contracts are unchanged.

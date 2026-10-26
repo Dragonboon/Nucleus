@@ -74,3 +74,14 @@ required selection.
 New acquisition behavior should normally be a sensor, filter, or scorer.
 Introduce a global targeting service only if a future feature genuinely requires
 cross-scene target ownership.
+
+## Target endpoint lifetime
+
+TargetingAgent removes an endpoint on `tree_exiting`, before it is freed. All
+sensor registrations, cached ranks, selection and lock for that endpoint are
+removed together. A still-valid endpoint is carried by the removal signals.
+If an endpoint re-enters the tree, sensors must register it again; the agent
+does not silently restore stale ownership. Detached endpoints freed without a
+tree-exit signal are pruned on registry/cache reads or selection refresh.
+Agent exit disconnects subscriptions; re-entry reconnects surviving candidates.
+Regression coverage: `tests/headless/target_lifecycle_test.gd`.

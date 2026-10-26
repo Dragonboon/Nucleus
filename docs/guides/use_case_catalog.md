@@ -1,6 +1,6 @@
 # Game Development Use Cases
 
-**73 game-development scenarios · five capability areas · one source of truth**
+**75 game-development scenarios · five capability areas · one source of truth**
 
 > [!TIP]
 > **Start with the feature you want.** Find its row, follow the existing
@@ -64,6 +64,7 @@
 | AnimationTree character state integration | [Compose animation adapters rather than replacing AnimationTree](../components/animation_integration.md) | Animation assets and transition semantics |
 | Ragdoll on death or impact | [Use humanoid ragdoll authoring helpers with native physics](../components/ragdoll_authoring_3d.md) | Rig, reactions and cinematic choices |
 | Compose a grounded or floating 2D character | [Use CharacterMotor2D with native motion_mode and shared intent sources](../components/2d_foundation.md) | Jump rules, sprites, combat and level design |
+| Animate four/eight-direction 2D sprites with temporary actions | [Select native AnimatedSprite2D clips with explicit profile and lifecycle](../components/presentation_2d.md) | Art, motion and aim sources, action semantics and terminal states |
 
 ## 🟪 UI
 
@@ -79,6 +80,7 @@
 | Touch screen controls | [Use mobile touch input and semantic actions](../guides/mobile_quickstart.md) | Touch layout, gestures and ergonomics |
 | Select thousands of objects in a 2D editor | [Use SpatialRectIndex2D as broad phase before exact hit testing](../components/spatial_rect_index_2d.md) | Object IDs, draw order and precision selection |
 | Show active input glyphs and prompts | [Use input-source-aware UI adapters](../guides/settings_input_quickstart.md) | Localized action labels and glyph art |
+| Show floating damage, healing or collection numbers in a 2D world | [Bound scene-owned Labels and Tweens with configurable presentation](../components/presentation_2d.md) | Confirmed events, text, numeric precision and styles |
 
 ## 🟨 World
 

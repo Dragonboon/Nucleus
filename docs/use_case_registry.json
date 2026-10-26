@@ -512,6 +512,20 @@
       "nucleus_role": "Use persistent world state with stable IDs",
       "guide": "docs/modules/persistent_world_state.md",
       "game_owns": "What the world must remember"
+    },
+    {
+      "domain": "Gameplay",
+      "need": "Animate four/eight-direction 2D sprites with temporary actions",
+      "nucleus_role": "Select native AnimatedSprite2D clips with explicit profile and lifecycle",
+      "guide": "docs/components/presentation_2d.md",
+      "game_owns": "Art, motion and aim sources, action semantics and terminal states"
+    },
+    {
+      "domain": "UI",
+      "need": "Show floating damage, healing or collection numbers in a 2D world",
+      "nucleus_role": "Bound scene-owned Labels and Tweens with configurable presentation",
+      "guide": "docs/components/presentation_2d.md",
+      "game_owns": "Confirmed events, text, numeric precision and styles"
     }
   ]
 }
