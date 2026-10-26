@@ -54,7 +54,9 @@ func change_page(id: StringName) -> Error:
 			return preflight
 		if shader_stack.configure(page.image, page.effect_passes) != OK:
 			return ERR_CANT_CREATE
-		page_image = shader_stack.output_texture()
+		# Backbuffer effects are drawn over the screen, not baked into its texture.
+		if shader_stack.backend == NucleusScreenShaderStack.Backend.VIEWPORT_CHAIN:
+			page_image = shader_stack.output_texture()
 	var result := screen.set_screen(page.id, page_image, page.hotspots)
 	if result != OK:
 		return result
