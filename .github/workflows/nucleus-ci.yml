@@ -64,6 +64,15 @@ jobs:
             --path . \
             --import
 
+      - name: Validate gettext and editor localization pipeline
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y gettext
+          python3 scripts/localization/catalogs.py check core/localization/translations/*.po
+          python3 scripts/ci/check_localization_pipeline.py "${{ steps.godot.outputs.bin }}"
+          python3 scripts/ci/run_godot_checked.py "${{ steps.godot.outputs.bin }}" \
+            --headless --path . res://tests/smoke/localization_smoke.tscn
+
       - name: Run native headless test scene
         run: |
           python3 scripts/ci/run_godot_checked.py "${{ steps.godot.outputs.bin }}" \

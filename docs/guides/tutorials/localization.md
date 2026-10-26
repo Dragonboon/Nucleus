@@ -11,6 +11,14 @@ At the end:
 - the player's explicit language choice persists;
 - `Automatic` follows Nucleus locale resolution/fallback rules.
 
+## Optional authoring shortcut
+
+The [localization pipeline](../../components/localization_pipeline.md) supplies
+an editor addon for registering PO files and collecting source folders, plus
+message Resources and bindings for dynamic text. The manual native workflow below
+remains supported. The framework's common EN/ES files are already registered;
+these example menu strings belong to the consuming game.
+
 ## 1. Create translation files
 
 Create a game-owned directory:

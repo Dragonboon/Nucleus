@@ -115,7 +115,7 @@ func _resolve_text(
 	fallback: String,
 ) -> String:
 	if key == &"":
-		return fallback
+		return str(TranslationServer.translate(fallback))
 
 	var translated: String = str(
 		TranslationServer.translate(key)

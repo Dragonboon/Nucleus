@@ -526,6 +526,13 @@
       "nucleus_role": "Bound scene-owned Labels and Tweens with configurable presentation",
       "guide": "docs/components/presentation_2d.md",
       "game_owns": "Confirmed events, text, numeric precision and styles"
+    },
+    {
+      "domain": "Core",
+      "need": "Import gettext translations and extract source templates from scenes and message Resources",
+      "nucleus_role": "Compose native PO/MO loading and extraction with optional editor tools and live text bindings",
+      "guide": "docs/components/localization_pipeline.md",
+      "game_owns": "Translation content, source scope, fonts, language review and runtime arguments"
     }
   ]
 }

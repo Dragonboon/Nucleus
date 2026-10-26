@@ -241,6 +241,8 @@ static func _create_runtime_definition(
 ) -> NucleusLocaleDefinition:
 	var definition := NucleusLocaleDefinition.new()
 	definition.locale = locale
+	definition.native_name = ""
+	definition.english_name = ""
 
 	if catalog:
 		var catalog_definition: NucleusLocaleDefinition = (

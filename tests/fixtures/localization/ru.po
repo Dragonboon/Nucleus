@@ -1,0 +1,12 @@
+msgid ""
+msgstr ""
+"Language: ru\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<12 || n%100>14) ? 1 : 2);\n"
+
+#, python-brace-format
+msgid "{count} item"
+msgid_plural "{count} items"
+msgstr[0] "{count} предмет"
+msgstr[1] "{count} предмета"
+msgstr[2] "{count} предметов"

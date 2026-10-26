@@ -1,0 +1,50 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Nucleus 0.35.0-dev.1\n"
+"Report-Msgid-Bugs-To: https://github.com/Dragonboon/Nucleus/issues\n"
+"PO-Revision-Date: 2026-10-26 00:00+0000\n"
+"Last-Translator: Nucleus contributors\n"
+"Language-Team: es\n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Automatic"
+msgstr "Automático"
+
+msgid "Back"
+msgstr "Volver"
+
+msgid "Cancel"
+msgstr "Cancelar"
+
+msgid "Close"
+msgstr "Cerrar"
+
+msgid "Controller"
+msgstr "Mando"
+
+msgid "Controller connected"
+msgstr "Mando conectado"
+
+msgid "Controller disconnected"
+msgstr "Mando desconectado"
+
+msgid "Language"
+msgstr "Idioma"
+
+msgid "Loading…"
+msgstr "Cargando…"
+
+msgid "OK"
+msgstr "Aceptar"
+
+#, python-brace-format
+msgid "{device} is ready."
+msgstr "{device} está listo."
+
+#, python-brace-format
+msgid "{device} was disconnected."
+msgstr "Se ha desconectado {device}."

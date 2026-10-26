@@ -101,7 +101,8 @@
       "docs/components/ui_and_accessibility.md"
     ],
     "components/ui/localization": [
-      "docs/components/ui_and_accessibility.md"
+      "docs/components/ui_and_accessibility.md",
+      "docs/components/localization_pipeline.md"
     ],
     "components/ui/modal": [
       "docs/components/ui_and_accessibility.md"
@@ -189,7 +190,8 @@
       "docs/components/runtime_optimization.md"
     ],
     "core/localization": [
-      "docs/components/audio_save_scene_localization.md"
+      "docs/components/audio_save_scene_localization.md",
+      "docs/components/localization_pipeline.md"
     ],
     "core/platform": [
       "docs/components/core_runtime.md"
@@ -289,6 +291,9 @@
     ],
     "components/gameplay/turns": [
       "docs/components/turn_sessions.md"
+    ],
+    "modules/localization": [
+      "docs/components/localization_pipeline.md"
     ]
   }
 }

@@ -38,6 +38,9 @@ func _run_all() -> void:
 
 
 func _execute_suites() -> Dictionary:
+	# Presentation assertions use a deterministic source locale on every developer OS.
+	var previous_locale := TranslationServer.get_locale()
+	TranslationServer.set_locale("en")
 	var total_checks: int = 0
 	var failures := PackedStringArray()
 
@@ -52,6 +55,7 @@ func _execute_suites() -> Dictionary:
 				% [suite_script.resource_path.get_file(), failure]
 			)
 
+	TranslationServer.set_locale(previous_locale)
 	return {
 		"checks": total_checks,
 		"failures": failures,

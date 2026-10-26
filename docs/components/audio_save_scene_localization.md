@@ -44,7 +44,10 @@ resource bundle, compose `NucleusResourceLoadQueue`, then hand a retained
 
 `NucleusLocalization` remains a thin facade around `TranslationServer` and locale
 metadata. Translation resources and actual localized content remain Godot/game
-owned.
+owned. Optional message Resources, locale-aware Control bindings, editor PO/MO
+registration and template extraction are documented in the
+[localization pipeline](localization_pipeline.md). Source catalogs contain message
+identities only; no second translated database or Autoload is introduced.
 
 ## Boundaries
 

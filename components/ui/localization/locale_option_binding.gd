@@ -24,39 +24,57 @@ const DEFAULT_CATALOG := preload(
 @export var translate_automatic_label: bool = true
 
 
+func _enter_tree() -> void:
+	if is_node_ready():
+		_bind()
+
+
 func _ready() -> void:
+	_bind()
+
+
+func _bind() -> void:
 	if not _resolve_dependencies():
 		return
+	if not target.item_selected.is_connected(_on_item_selected):
+		target.item_selected.connect(_on_item_selected)
+	if not NucleusSettings.setting_changed.is_connected(_on_setting_changed):
+		NucleusSettings.setting_changed.connect(_on_setting_changed)
+	refresh()
+	if not NucleusSettings.is_initialized():
+		if not NucleusSettings.settings_loaded.is_connected(_sync_from_settings):
+			NucleusSettings.settings_loaded.connect(_sync_from_settings, CONNECT_ONE_SHOT)
 
-	target.item_selected.connect(_on_item_selected)
-	NucleusSettings.setting_changed.connect(_on_setting_changed)
 
-	_populate()
-
-	if NucleusSettings.is_initialized():
+func refresh() -> void:
+	if is_instance_valid(target) and setting != null and is_inside_tree():
+		_populate()
 		_sync_from_settings()
-	else:
-		NucleusSettings.settings_loaded.connect(
-			_sync_from_settings,
-			CONNECT_ONE_SHOT,
-		)
+
+
+func _exit_tree() -> void:
+	if is_instance_valid(target) and target.item_selected.is_connected(_on_item_selected):
+		target.item_selected.disconnect(_on_item_selected)
+	if NucleusSettings.setting_changed.is_connected(_on_setting_changed):
+		NucleusSettings.setting_changed.disconnect(_on_setting_changed)
+	if NucleusSettings.settings_loaded.is_connected(_sync_from_settings):
+		NucleusSettings.settings_loaded.disconnect(_sync_from_settings)
 
 
 func _notification(what: int) -> void:
 	if (
 		what == NOTIFICATION_TRANSLATION_CHANGED
-		and target
+		and is_instance_valid(target)
 		and is_inside_tree()
 	):
-		_populate()
-		_sync_from_settings()
+		refresh()
 
 
 func _resolve_dependencies() -> bool:
-	if target == null:
+	if not is_instance_valid(target):
 		target = get_parent() as OptionButton
 
-	if target == null:
+	if not is_instance_valid(target):
 		NucleusLog.error(
 			"%s requires an OptionButton target or parent." % get_path(),
 			&"LocaleBinding",
@@ -112,6 +130,8 @@ func _add_option(
 
 
 func _sync_from_settings() -> void:
+	if not is_instance_valid(target) or setting == null:
+		return
 	var current_value: String = str(
 		NucleusSettings.get_value(
 			setting.get_id(),
@@ -127,6 +147,12 @@ func _sync_from_settings() -> void:
 			target.select(item_index)
 			return
 
+	if current_value != NucleusLocalization.AUTOMATIC_LOCALE:
+		var resolved := NucleusLocalization.resolve_locale(current_value)
+		for item_index: int in range(target.item_count):
+			if str(target.get_item_metadata(item_index)) == resolved:
+				target.select(item_index)
+				return
 	if include_automatic and target.item_count > 0:
 		target.select(0)
 

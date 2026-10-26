@@ -1,6 +1,6 @@
 # Game Development Use Cases
 
-**75 game-development scenarios · five capability areas · one source of truth**
+**76 game-development scenarios · five capability areas · one source of truth**
 
 > [!TIP]
 > **Start with the feature you want.** Find its row, follow the existing
@@ -43,6 +43,7 @@
 | Respect reduced motion and accessibility options | [Read neutral preferences and connect visuals to adapters](../components/accessibility_preferences.md) | Accessibility presentation and gameplay assistance |
 | Diagnose errors and log important operations | [Use diagnostic scopes, reports and logging](../components/diagnostics.md) | Relevant failure messages and privacy |
 | Format large numbers or bound integer arithmetic | [Use NumberFormatter and BoundedIntMath without game-specific counters](../components/numeric_utilities.md) | Displayed units, numeric limits and economy policy |
+| Import gettext translations and extract source templates from scenes and message Resources | [Compose native PO/MO loading and extraction with optional editor tools and live text bindings](../components/localization_pipeline.md) | Translation content, source scope, fonts, language review and runtime arguments |
 
 ## 🟩 Gameplay
 
