@@ -1,6 +1,6 @@
 # Game Development Use Cases
 
-**77 game-development scenarios · five capability areas · one source of truth**
+**78 game-development scenarios · five capability areas · one source of truth**
 
 > [!TIP]
 > **Start with the feature you want.** Find its row, follow the existing
@@ -72,6 +72,7 @@
 
 | What you want to build | Reuse this contract | The game still decides |
 | --- | --- | --- |
+| Build image-driven point-and-click screens with resolution-independent hotspots | [Compose image-screen interaction with native Control input](../components/image_screen_interaction.md) | Artwork, room graph, puzzle rules, accessible focus UI and save flags |
 | Menus and keyboard/gamepad focus | [Use focus, navigation and modal ownership](../components/ui_and_accessibility.md) | Menu hierarchy and visual theme |
 | Responsive HUD and safe area | [Compose UI layout and scale policies](../components/ui_and_accessibility.md) | Breakpoints, art and hierarchy |
 | Inventory slots, health bars and data-bound widgets | [Bind presentation to game-owned state](../components/ui_runtime_bindings.md) | Inventory or combat semantics |
