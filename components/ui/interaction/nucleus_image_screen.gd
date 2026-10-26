@@ -25,6 +25,7 @@ var _pressed_id: StringName
 var _press_point := Vector2.ZERO
 var _is_pressed := false
 var _dispatching := false
+var _press_screen: StringName
 
 
 func _ready() -> void:
@@ -73,7 +74,11 @@ func focus_next(step: int = 1) -> StringName:
 		focused_hotspot = &""
 		return focused_hotspot
 	var index := available.find(focused_hotspot)
-	focused_hotspot = available[posmod(index + step, available.size())]
+	if index < 0:
+		index = 0 if step >= 0 else available.size() - 1
+	else:
+		index = posmod(index + step, available.size())
+	focused_hotspot = available[index]
 	hotspot_focus_changed.emit(focused_hotspot)
 	queue_redraw()
 	return focused_hotspot
@@ -169,6 +174,7 @@ func _begin_press(local_point: Vector2) -> void:
 		return
 	_is_pressed = true
 	_press_point = point
+	_press_screen = screen_id
 	var target := hotspot_at(point)
 	_pressed_id = target.id if target != null else &""
 
@@ -178,7 +184,10 @@ func _finish_press(local_point: Vector2) -> void:
 		return
 	var previous_id := _pressed_id
 	var original_point := _press_point
+	var pressed_screen := _press_screen
 	_cancel_press()
+	if pressed_screen != screen_id:
+		return
 	var point := normalized_point(local_point)
 	if point.x < 0 or point.distance_to(original_point) > tap_slop_normalized:
 		return
@@ -193,6 +202,7 @@ func _finish_press(local_point: Vector2) -> void:
 func _cancel_press() -> void:
 	_is_pressed = false
 	_pressed_id = &""
+	_press_screen = &""
 
 
 func _draw() -> void:
