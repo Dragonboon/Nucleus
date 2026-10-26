@@ -115,3 +115,45 @@ func _valid_point(point: Vector2) -> bool:
 
 func _cell(point: Vector2) -> Vector2i:
 	return Vector2i(floori(point.x / cell_size), floori(point.y / cell_size))
+
+
+## Approximate steering only: bounded cells and candidate inspections, no sorting.
+## Stable for unchanged membership; not nearest-N and never for authoritative hits.
+func query_radius_bounded(
+	center: Vector2, radius: float, maximum_results: int = 24,
+	maximum_candidates: int = 96, maximum_cells: int = 64, excluded_id: int = -1,
+) -> Array[int]:
+	var result: Array[int] = []
+	if not _valid_point(center) or not is_finite(radius) or radius <= 0.0:
+		return result
+	if maximum_results <= 0 or maximum_candidates <= 0 or maximum_cells <= 0:
+		return result
+	var center_cell := _cell(center)
+	var extent := mini(ceili(minf(radius / cell_size, 4096.0)), 4096)
+	var inspected := 0
+	var visited := 0
+	var squared := radius * radius
+	# Center first, then concentric square rings. No allocation of all neighbors.
+	for ring in range(extent + 1):
+		for y in range(-ring, ring + 1):
+			for x in range(-ring, ring + 1):
+				if maxi(absi(x), absi(y)) != ring:
+					continue
+				visited += 1
+				if visited > maximum_cells:
+					return result
+				var cell := center_cell + Vector2i(x, y)
+				if not _cells.has(cell):
+					continue
+				for id: Variant in _cells[cell]:
+					inspected += 1
+					if inspected > maximum_candidates:
+						return result
+					if int(id) == excluded_id:
+						continue
+					var point: Vector2 = _positions[id]
+					if point.distance_squared_to(center) <= squared:
+						result.append(int(id))
+						if result.size() >= maximum_results:
+							return result
+	return result

@@ -7,6 +7,8 @@ const MAX_HITS_PER_QUERY: int = 16384
 
 var _index := NucleusSpatialRectIndex2D.new()
 var _targets: Dictionary = {}
+var _candidates: Array[int] = []
+var _query_scratch: Dictionary = {}
 
 
 func configure_cell_size(value: float) -> Error:
@@ -46,8 +48,23 @@ func query_bullet_hits(
 ) -> Array[Vector2i]:
 	## Each result is Vector2i(bullet_id, target_id), in field-local space.
 	var results: Array[Vector2i] = []
-	if field == null or maximum_pairs <= 0:
-		return results
+	if maximum_pairs > 0:
+		query_bullet_hits_into(field, results, maximum_pairs)
+	return results
+
+
+## Reuses caller output and per-batch broad-phase scratch. No callbacks/reentrancy.
+## A result cap is not a CPU budget. Use 0 for all hits, with game-owned memory limits.
+func query_bullet_hits_into(
+	field: NucleusBulletField2D,
+	results: Array[Vector2i],
+	maximum_pairs: int = 0,
+) -> void:
+	results.clear()
+	if not is_instance_valid(field) or maximum_pairs < 0:
+		return
+	if _targets.is_empty():
+		return
 	var budget := mini(maximum_pairs, MAX_HITS_PER_QUERY)
 	var bullet_radius := maxf(field.projectile_radius, 0.0)
 	for bullet_index in range(field.active_count()):
@@ -61,8 +78,8 @@ func query_bullet_hits(
 		)
 		var margin := Vector2.ONE * maxf(0.001, bullet_radius)
 		var broad_phase := Rect2(low - margin, high - low + margin * 2.0)
-		var candidates: Array[int] = _index.query_region(broad_phase)
-		for target_id: int in candidates:
+		_index.query_region_into(broad_phase, _candidates, _query_scratch)
+		for target_id: int in _candidates:
 			var target: Dictionary = _targets[target_id]
 			var center: Vector2 = target["center"]
 			var radius: float = float(target["radius"]) + bullet_radius
@@ -71,6 +88,5 @@ func query_bullet_hits(
 			)
 			if nearest.distance_squared_to(center) <= radius * radius:
 				results.append(Vector2i(field.bullet_id_at(bullet_index), target_id))
-				if results.size() >= budget:
-					return results
-	return results
+				if budget > 0 and results.size() >= budget:
+					return

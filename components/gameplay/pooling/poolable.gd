@@ -23,6 +23,7 @@ var _pool: NucleusObjectPool
 var _active: bool = false
 var _baseline_captured: bool = false
 
+var _managed_nodes: Array[Node] = []
 var _process_modes: Dictionary = {}
 var _visibility: Dictionary = {}
 var _collision_disabled: Dictionary = {}
@@ -107,10 +108,12 @@ func _capture_baseline(force: bool) -> void:
 	if target == null:
 		return
 
-	for node: Node in NucleusNodeUtils.descendants(
-		target,
-		true,
-	):
+	_managed_nodes.assign([target])
+	_managed_nodes.append_array(NucleusNodeUtils.descendants(target, true))
+
+	for node: Node in _managed_nodes:
+		if not is_instance_valid(node):
+			continue
 		if manage_process_modes:
 			_process_modes[node] = node.process_mode
 
@@ -222,20 +225,6 @@ func _apply_inactive_state() -> void:
 					true,
 				)
 
-	if reset_physics_velocity:
-		for node: Variant in _rigid_sleeping:
-			if not is_instance_valid(node):
-				continue
-
-			if node is RigidBody2D:
-				(node as RigidBody2D).sleeping = bool(
-					_rigid_sleeping[node]
-				)
-			elif node is RigidBody3D:
-				(node as RigidBody3D).sleeping = bool(
-					_rigid_sleeping[node]
-				)
-
 	if manage_visibility:
 		for node: Variant in _visibility:
 			if not is_instance_valid(node):
@@ -273,10 +262,9 @@ func _set_collision_disabled(
 
 
 func _reset_physics_velocity() -> void:
-	for node: Node in NucleusNodeUtils.descendants(
-		target,
-		true,
-	):
+	for node: Node in _managed_nodes:
+		if not is_instance_valid(node):
+			continue
 		if node is CharacterBody2D:
 			(node as CharacterBody2D).velocity = Vector2.ZERO
 		elif node is CharacterBody3D:
@@ -294,10 +282,9 @@ func _reset_physics_velocity() -> void:
 
 
 func _stop_audio() -> void:
-	for node: Node in NucleusNodeUtils.descendants(
-		target,
-		true,
-	):
+	for node: Node in _managed_nodes:
+		if not is_instance_valid(node):
+			continue
 		if node is AudioStreamPlayer:
 			(node as AudioStreamPlayer).stop()
 		elif node is AudioStreamPlayer2D:
@@ -307,10 +294,9 @@ func _stop_audio() -> void:
 
 
 func _stop_particles() -> void:
-	for node: Node in NucleusNodeUtils.descendants(
-		target,
-		true,
-	):
+	for node: Node in _managed_nodes:
+		if not is_instance_valid(node):
+			continue
 		if node is GPUParticles2D:
 			(node as GPUParticles2D).emitting = false
 		elif node is GPUParticles3D:

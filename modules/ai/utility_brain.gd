@@ -58,6 +58,12 @@ var _context_providers: Array[NucleusAIContextProvider] = []
 var _scheduler_token: int = -1
 
 
+func _enter_tree() -> void:
+	if is_node_ready() and not Engine.is_editor_hint():
+		_connect_context_providers()
+		_refresh_evaluation_driver()
+
+
 func _ready() -> void:
 	if context_root == null:
 		context_root = self
@@ -354,7 +360,7 @@ func _unregister_scheduler_task() -> void:
 
 
 func _on_scheduled_evaluation(_elapsed_seconds: float) -> void:
-	if not active or not automatic_evaluation:
+	if not is_inside_tree() or not can_process() or not active or not automatic_evaluation:
 		return
 
 	_elapsed = 0.0

@@ -8,6 +8,9 @@ extends NucleusMotionSource2D
 @export_range(0.0, 5.0, 0.05) var separation_weight: float = 0.6
 @export_range(1, 128, 1) var maximum_neighbors: int = 24
 
+## 0 preserves exact legacy neighbor selection; positive enables approximate steering.
+@export_range(0, 4096, 1) var maximum_candidates: int = 0
+
 var spatial_index: NucleusSpatialPointIndex2D
 var actor_id: int = -1
 
@@ -23,7 +26,7 @@ func get_desired_velocity(
 		desired = primary_source.get_desired_velocity(body, max_speed)
 	var avoidance := NucleusCrowdSeparation2D.calculate(
 		actor_id, body.global_position, spatial_index,
-		separation_radius, maximum_neighbors,
+		separation_radius, maximum_neighbors, maximum_candidates,
 	)
 	var combined := desired / maxf(max_speed, 0.001) + avoidance * separation_weight
 	if combined.is_zero_approx():

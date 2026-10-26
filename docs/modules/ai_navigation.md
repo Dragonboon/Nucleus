@@ -251,3 +251,12 @@ Persist durable actor state and reconstruct native path internals after load.
 For authoritative multiplayer, run decision/navigation/gameplay movement on the
 authority and replicate resolved gameplay state. This module defines no RPC
 protocol.
+
+## Scheduled path requests and bounded separation
+
+Both navigation followers accept a scene-owned `update_scheduler` assigned before
+tree entry. This schedules permission for target path requests while native path
+following and the character motor remain fixed-step. `CrowdMotionSource2D` exposes
+opt-in `maximum_candidates` (0 preserves exact legacy selection). See
+[the workload contract](../components/runtime_optimization.md#physics-workload-integration-037)
+for defaults, latency, lifecycle and approximation limits.

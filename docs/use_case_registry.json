@@ -488,7 +488,7 @@
     {
       "domain": "Optional modules",
       "need": "Reduce update spikes and node churn",
-      "nucleus_role": "Use schedulers, gates, prewarm and native profiling evidence",
+      "nucleus_role": "Use schedulers, reusable physics queries, pool prewarm and the live workload lab",
       "guide": "docs/components/runtime_optimization.md",
       "game_owns": "Permissible latency and gameplay rules"
     },

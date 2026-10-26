@@ -101,27 +101,54 @@ func query_point(point: Vector2) -> Array[int]:
 
 
 func query_region(region: Rect2, include_borders: bool = true) -> Array[int]:
+	var result: Array[int] = []
+	var scratch: Dictionary = {}
+	query_region_into(region, result, scratch, include_borders)
+	return result
+
+
+## Caller-owned output/scratch are cleared on every call. Do not share during a query.
+## Sorting defaults to the existing deterministic draw-order contract.
+func query_region_into(
+	region: Rect2,
+	result: Array[int],
+	scratch: Dictionary,
+	include_borders: bool = true,
+	sorted_results: bool = true,
+) -> void:
+	result.clear()
+	scratch.clear()
 	if not _valid_rect(region) or not _can_index(region):
-		return []
+		return
 	var first := _cell(region.position)
 	var last := _cell(region.end)
 	var span_x := float(last.x - first.x + 1)
 	var span_y := float(last.y - first.y + 1)
-	var found: Dictionary = _overflow.duplicate()
 	if span_x * span_y > float(maxi(1, max_query_cells)):
-		found = _items # Exact scan is safer than allocating enormous empty cell loops.
+		for id: Variant in _items:
+			_append_intersection(int(id), region, include_borders, result)
 	else:
+		for id: Variant in _overflow:
+			scratch[id] = true
 		for y: int in range(first.y, last.y + 1):
 			for x: int in range(first.x, last.x + 1):
-				for id: Variant in _cells.get(Vector2i(x, y), {}):
-					found[id] = true
-	var result: Array[int] = []
-	for id: Variant in found:
-		var bounds: Rect2 = _items[id]["bounds"]
-		if bounds.intersects(region, include_borders):
-			result.append(int(id))
-	_sort_candidates(result)
-	return result
+				var cell := Vector2i(x, y)
+				if not _cells.has(cell):
+					continue
+				for id: Variant in _cells[cell]:
+					scratch[id] = true
+		for id: Variant in scratch:
+			_append_intersection(int(id), region, include_borders, result)
+	if sorted_results:
+		_sort_candidates(result)
+
+
+func _append_intersection(
+	id: int, region: Rect2, include_borders: bool, result: Array[int],
+) -> void:
+	var bounds: Rect2 = _items[id]["bounds"]
+	if bounds.intersects(region, include_borders):
+		result.append(id)
 
 
 func _sort_candidates(ids: Array[int]) -> void:

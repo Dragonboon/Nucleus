@@ -127,3 +127,12 @@ measure the renderer on your hardware. The fixture uses MultiMesh, a repeating
 emitter and reserved buffers. Compare frame times, allocations, material/texture
 cost and hit-query cost on each target platform before committing to a bullet
 count. CI export success does not certify GPU throughput or gameplay readability.
+
+## Complete reusable hit queries
+
+Use `NucleusBulletTargetBatch2D.query_bullet_hits_into(field, results)` for complete
+hits with caller-owned output and reused broad-phase scratch. Its default zero
+cap means all pairs; memory/work still scale with actual overlap. The older
+returning method retains its prior result caps. See
+[runtime workload integration](runtime_optimization.md#physics-workload-integration-037)
+for exact/approximate query boundaries and the live measurement scene.

@@ -10,12 +10,19 @@ static func calculate(
 	index: NucleusSpatialPointIndex2D,
 	radius: float,
 	maximum_neighbors: int = 24,
+	maximum_candidates: int = 0,
 ) -> Vector2:
 	if index == null or not agent_position.is_finite():
 		return Vector2.ZERO
 	if not is_finite(radius) or radius <= 0.0 or maximum_neighbors <= 0:
 		return Vector2.ZERO
-	var nearby := index.query_radius(agent_position, radius)
+	var nearby: Array[int]
+	if maximum_candidates > 0:
+		nearby = index.query_radius_bounded(
+			agent_position, radius, maximum_neighbors, maximum_candidates, 64, agent_id,
+		)
+	else:
+		nearby = index.query_radius(agent_position, radius)
 	var repulsion := Vector2.ZERO
 	var processed := 0
 	for other_id: int in nearby:

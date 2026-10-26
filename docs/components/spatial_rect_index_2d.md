@@ -63,3 +63,12 @@ R-tree, a spatial partition for networking, or a physics broad phase.
 
 Use native physics querying for collidable bodies. Use the network 3D interest
 index for authoritative peer visibility; this 2D index is neither of those.
+
+## Caller-owned query storage
+
+`query_region_into(region, result, scratch, include_borders=true,
+sorted_results=true)` clears/reuses caller-owned `Array[int]` and `Dictionary`.
+It retains the complete exact rectangle candidate set, including overflow and
+large-query fallback. Default ordering matches `query_region`; disabling sorting
+is explicit. Do not share scratch during concurrent/reentrant queries. See the
+[runtime workload contract](runtime_optimization.md) for composition and limits.

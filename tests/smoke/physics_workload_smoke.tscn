@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="PackedScene" path="res://examples/physics_workload_2d/physics_workload_lab.tscn" id="1"]
+
+[node name="PhysicsWorkloadSmoke" instance=ExtResource("1")]
+automatic_exit_ticks = 180

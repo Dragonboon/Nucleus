@@ -123,7 +123,7 @@
 | Load DLC or data-only community content | [Use content-pack trust boundaries](../modules/content_packs.md) | Content policies and moderation |
 | Measure framerate, stutter, memory and work | [Use performance sampler, monitors and reports](../modules/performance.md) | Budget, representative workload and decisions |
 | Find expensive code sections and frame hitches | [Use optional section profiling beside native profiler](../modules/performance_sections.md) | Instrumented sections and performance targets |
-| Reduce update spikes and node churn | [Use schedulers, gates, prewarm and native profiling evidence](../components/runtime_optimization.md) | Permissible latency and gameplay rules |
+| Reduce update spikes and node churn | [Use schedulers, reusable physics queries, pool prewarm and the live workload lab](../components/runtime_optimization.md) | Permissible latency and gameplay rules |
 | Build safe editor commands | [Use explicit development command registry, never eval](../modules/development_tools.md) | Permitted operations and trust |
 | Validate a PackedScene before editor placement | [Inspect stored SceneState without instantiation](../modules/packed_scene_preflight.md) | Shape compatibility and authored metadata |
 | Communicate across distant independent systems | [Use optional EventBus only when local signals are insufficient](../modules/event_bus.md) | Event semantics and ownership |

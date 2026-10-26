@@ -44,6 +44,9 @@ var current_target_bonus: float = 0.25
 @export_range(0.0, 10.0, 0.01, "or_greater")
 var refresh_interval: float = 0.10
 @export var refresh_physics_priority: int = 100
+## Assign before entering the tree. Immediate refresh_selection() remains available.
+@export var update_scheduler: NucleusUpdateScheduler
+var _scheduler_token: int = -1
 
 var current: NucleusTargetable
 
@@ -66,6 +69,7 @@ func _enter_tree() -> void:
 	if is_node_ready():
 		_connect_rules()
 		request_refresh()
+		_register_scheduled_refresh()
 
 
 func _ready() -> void:
@@ -86,10 +90,14 @@ func _ready() -> void:
 	_discover_rules()
 	_connect_rules()
 
-	set_physics_process(automatic_refresh)
+	_register_scheduled_refresh()
+	set_physics_process(automatic_refresh and _scheduler_token == -1)
 
 
 func _exit_tree() -> void:
+	if is_instance_valid(update_scheduler) and _scheduler_token != -1:
+		update_scheduler.unregister_task(_scheduler_token)
+	_scheduler_token = -1
 	_disconnect_rules()
 	_disconnect_all_targets()
 
@@ -205,6 +213,8 @@ func clear_candidates() -> void:
 
 func request_refresh() -> void:
 	_refresh_requested = true
+	if is_instance_valid(update_scheduler) and _scheduler_token != -1:
+		update_scheduler.request_task(_scheduler_token)
 
 
 func refresh_rules() -> void:
@@ -664,3 +674,20 @@ func _on_target_availability_changed(
 func _on_target_tree_exiting(target_id: int) -> void:
 	# Remove while signals can still carry a valid endpoint.
 	_remove_candidate(target_id)
+
+
+func _register_scheduled_refresh() -> void:
+	if not automatic_refresh or refresh_interval <= 0.0 or _scheduler_token != -1:
+		return
+	if not is_instance_valid(update_scheduler):
+		return
+	_scheduler_token = update_scheduler.register_task(_scheduled_refresh, refresh_interval)
+	set_physics_process(_scheduler_token == -1)
+
+
+func _scheduled_refresh(_elapsed: float) -> void:
+	if not is_inside_tree() or not can_process() or not automatic_refresh or not enabled:
+		return
+	_refresh_elapsed = 0.0
+	_refresh_requested = false
+	refresh_selection()

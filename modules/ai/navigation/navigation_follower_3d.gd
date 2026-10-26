@@ -41,6 +41,10 @@ var movement_speed: float = 5.0
 var target_repath_distance: float = 0.5
 @export_range(0.0, 60.0, 0.01, "or_greater")
 var minimum_repath_interval: float = 0.20
+## Assign before tree entry. Only path requests are scheduled; movement stays fixed-step.
+@export var update_scheduler: NucleusUpdateScheduler
+var _scheduler_token: int = -1
+var _repath_permitted: bool = false
 
 @export_group("Behavior")
 @export var active: bool = true:
@@ -61,6 +65,12 @@ var _repath_elapsed: float = 0.0
 var _finished_emitted: bool = false
 
 
+func _enter_tree() -> void:
+	if is_node_ready() and not Engine.is_editor_hint():
+		_connect_agent()
+		_register_repath_schedule()
+
+
 func _ready() -> void:
 	if origin == null:
 		origin = get_parent() as Node3D
@@ -70,6 +80,7 @@ func _ready() -> void:
 		return
 
 	_connect_agent()
+	_register_repath_schedule()
 	set_physics_process(active)
 
 	if target_node != null:
@@ -77,6 +88,10 @@ func _ready() -> void:
 
 
 func _exit_tree() -> void:
+	if is_instance_valid(update_scheduler) and _scheduler_token != -1:
+		update_scheduler.unregister_task(_scheduler_token)
+	_scheduler_token = -1
+	_repath_permitted = false
 	_disconnect_agent()
 
 
@@ -103,8 +118,13 @@ func _physics_process(delta: float) -> void:
 		else _manual_target
 	)
 
-	if _should_request_target(target_position):
-		_request_target(target_position)
+	if _scheduler_token == -1 or _repath_permitted:
+		_repath_permitted = false
+		if _should_request_target(target_position):
+			_request_target(target_position)
+	if not _has_requested_target:
+		_stop_output()
+		return
 
 	var next_position: Vector3 = agent.get_next_path_position()
 
@@ -171,7 +191,7 @@ func follow_node(node: Node3D) -> Error:
 	_repath_elapsed = minimum_repath_interval
 	_finished_emitted = false
 
-	if _is_configured() and _navigation_map_ready():
+	if _scheduler_token == -1 and _is_configured() and _navigation_map_ready():
 		_request_target(node.global_position)
 
 	return OK
@@ -187,13 +207,14 @@ func set_target_position(
 	_repath_elapsed = minimum_repath_interval
 	_finished_emitted = false
 
-	if _is_configured() and _navigation_map_ready():
+	if _scheduler_token == -1 and _is_configured() and _navigation_map_ready():
 		_request_target(position)
 
 	return OK
 
 
 func clear_target() -> void:
+	_repath_permitted = false
 	target_node = null
 	_has_target = false
 	_has_requested_target = false
@@ -350,3 +371,18 @@ func _navigation_map_ready() -> bool:
 			navigation_map
 		) > 0
 	)
+
+
+func _register_repath_schedule() -> void:
+	if _scheduler_token != -1 or minimum_repath_interval <= 0.0:
+		return
+	if not is_instance_valid(update_scheduler):
+		return
+	_scheduler_token = update_scheduler.register_task(
+		_allow_repath, minimum_repath_interval,
+	)
+
+
+func _allow_repath(_elapsed: float) -> void:
+	if is_inside_tree() and can_process() and active and _has_target:
+		_repath_permitted = true
