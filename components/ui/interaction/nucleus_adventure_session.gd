@@ -8,11 +8,13 @@ signal state_changed
 signal page_changed(id: StringName)
 
 @export var screen: NucleusImageScreen
-@export var inventory: NucleusInventory
+## Optional adapter: avoids a compile-time dependency on modules/inventory.
+@export var inventory: Node
 @export var shader_stack: NucleusScreenShaderStack
 @export var save_session: NucleusSaveSession
 @export var participant_id: StringName = &"adventure"
 @export var pages: Array[NucleusAdventurePage] = []
+@export var initial_page: StringName
 @export var combinations: Array[NucleusScreenCombination] = []
 
 var current_page: StringName
@@ -31,8 +33,12 @@ func _ready() -> void:
 		screen.hotspot_activated.connect(_on_hotspot)
 	if save_session != null and participant_id != &"":
 		save_session.register_participant(participant_id, capture_state, restore_state)
-	if current_page == &"" and not pages.is_empty() and pages[0] != null:
-		change_page(pages[0].id)
+	if current_page == &"":
+		var first_page := initial_page
+		if first_page == &"" and not _page_index.is_empty():
+			first_page = _page_index.keys()[0]
+		if first_page != &"":
+			change_page(first_page)
 
 
 func _exit_tree() -> void:
@@ -46,6 +52,8 @@ func change_page(id: StringName) -> Error:
 	if not _page_index.has(id):
 		return ERR_DOES_NOT_EXIST
 	var page: NucleusAdventurePage = _page_index[id]
+	if not page.is_valid_page():
+		return ERR_INVALID_DATA
 	var page_image: Texture2D = page.image
 	if shader_stack != null:
 		var preflight := shader_stack.validate_configuration(
@@ -105,13 +113,15 @@ func activate_hotspot(id: StringName) -> Error:
 			action_rejected.emit(&"forbidden_flag")
 			return ERR_UNAVAILABLE
 	if action.required_item != &"" and (
-		inventory == null or not inventory.has_item(action.required_item)
+		not _inventory_ready() or not bool(inventory.call(
+			"has_item", action.required_item))
 	):
 		action_rejected.emit(&"missing_item")
 		return ERR_UNAVAILABLE
 	if action.give_item != &"" and (
-		inventory == null or not inventory.can_add_item(
-			inventory.get_definition(action.give_item))
+		not _inventory_ready()
+		or not _can_add_after_removal(
+			action.give_item, action.required_item if action.consume_item else &"")
 	):
 		return ERR_UNAVAILABLE
 	var next_id := action.next_screen
@@ -124,52 +134,109 @@ func activate_hotspot(id: StringName) -> Error:
 		if validation != OK:
 			return validation
 	_busy = true
-	if action.consume_item and inventory.remove_item(action.required_item) != 1:
+	if action.consume_item and int(inventory.call(
+		"remove_item", action.required_item)) != 1:
 		_busy = false
 		return ERR_UNAVAILABLE
-	if action.give_item != &"":
-		inventory.add_item_by_id(action.give_item)
+	if action.give_item != "":
+		var accepted := int(inventory.call("add_item_by_id", action.give_item))
+		if accepted != 1:
+			_busy = false
+			return ERR_UNAVAILABLE
 	for flag in action.set_flags:
 		flags[String(flag)] = true
 	for flag in action.clear_flags:
 		flags[String(flag)] = false
 	if action.one_shot:
 		completed[completed_key] = true
-	_busy = false
-	if action.message_key != &"":
-		message_requested.emit(action.message_key)
+	var result := OK
 	if next_id != &"":
-		change_page(next_id)
+		result = change_page(next_id)
 	else:
 		state_changed.emit()
-	return OK
+	_busy = false
+	if result == OK and action.message_key != &"":
+		message_requested.emit(action.message_key)
+	return result
 
 
 func combine_items(first: StringName, second: StringName) -> Error:
-	if inventory == null or first == &"" or second == &"":
+	if not _inventory_ready() or first == &"" or second == &"":
 		return ERR_UNCONFIGURED
+	if _busy:
+		return ERR_BUSY
 	for recipe in combinations:
 		if recipe == null or not recipe.is_valid_recipe() or not recipe.matches(first, second):
 			continue
-		var required_amount := 2 if first == second else 1
-		if not inventory.has_item(first, required_amount) or not inventory.has_item(second):
+		var amount := 2 if first == second else 1
+		if not bool(inventory.call("has_item", first, amount)):
 			return ERR_UNAVAILABLE
-		var output := inventory.get_definition(recipe.result_item)
-		if output == null:
-			return ERR_DOES_NOT_EXIST
-		if not inventory.can_add_item(output):
+		if not bool(inventory.call("has_item", second)):
 			return ERR_UNAVAILABLE
+		var remove_first := first if recipe.consume_inputs else &""
+		var remove_second := second if recipe.consume_inputs else &""
+		if not _can_add_after_removal(recipe.result_item, remove_first, remove_second):
+			return ERR_UNAVAILABLE
+		_busy = true
 		if recipe.consume_inputs:
-			inventory.remove_item(first, required_amount)
+			if int(inventory.call("remove_item", first, amount)) != amount:
+				_busy = false
+				return ERR_UNAVAILABLE
 			if first != second:
-				inventory.remove_item(second)
-		inventory.add_item(output)
+				if int(inventory.call("remove_item", second)) != 1:
+					_busy = false
+					return ERR_UNAVAILABLE
+		if int(inventory.call("add_item_by_id", recipe.result_item)) != 1:
+			_busy = false
+			return ERR_UNAVAILABLE
 		if recipe.set_flag != &"":
-			set_flag(recipe.set_flag)
+			flags[String(recipe.set_flag)] = true
+		_busy = false
 		state_changed.emit()
 		return OK
 	return ERR_DOES_NOT_EXIST
 
+
+## Only the established Inventory API is used. This adapter remains optional.
+func _inventory_ready() -> bool:
+	if inventory == null or not is_instance_valid(inventory):
+		return false
+	for method in [
+		"has_item", "get_definition", "can_add_item", "add_item_by_id",
+		"remove_item", "capture_state", "restore_state"
+	]:
+		if not inventory.has_method(method):
+			return false
+	return true
+
+
+## Simulate consumption before checking capacity; never mutate live inventory on denial.
+func _can_add_after_removal(
+	item_id: StringName,
+	first_removed: StringName = &"",
+	second_removed: StringName = &"",
+) -> bool:
+	if not _inventory_ready():
+		return false
+	var item: Variant = inventory.call("get_definition", item_id)
+	if item == null:
+		return false
+	if first_removed == &"" and second_removed == &"":
+		return bool(inventory.call("can_add_item", item))
+	var sample := inventory.duplicate(Node.DUPLICATE_SCRIPTS)
+	if sample == null or not sample.has_method("restore_state"):
+		if sample != null:
+			sample.free()
+		return false
+	sample.call("restore_state", inventory.call("capture_state"))
+	var amount := 2 if first_removed != &"" and first_removed == second_removed else 1
+	if first_removed != &"":
+		sample.call("remove_item", first_removed, amount)
+	if second_removed != &"" and first_removed != second_removed:
+		sample.call("remove_item", second_removed)
+	var allowed := bool(sample.call("can_add_item", item))
+	sample.free()
+	return allowed
 
 func capture_state() -> Dictionary:
 	return {
@@ -197,14 +264,18 @@ func restore_state(snapshot: Dictionary) -> Error:
 		for key in data:
 			if not key is String or not data[key] is bool:
 				return ERR_INVALID_DATA
-	if change_page(destination) != OK:
-		return ERR_CANT_CREATE
+	var old_flags := flags
+	var old_visited := visited
+	var old_completed := completed
 	flags = restored_flags
 	visited = restored_visited
-	visited[String(destination)] = true
 	completed = restored_completed
-	state_changed.emit()
-	return OK
+	var restore_error := change_page(destination)
+	if restore_error != OK:
+		flags = old_flags
+		visited = old_visited
+		completed = old_completed
+	return restore_error
 
 
 func _on_hotspot(id: StringName, _destination: StringName) -> void:
