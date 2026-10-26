@@ -30,6 +30,16 @@ func run() -> Dictionary:
 	expect_false(session.has_flag(&"solved"), "Restored flags replace transient flags.")
 	expect_equal(session.restore_state({"version": 9}), ERR_FILE_UNRECOGNIZED,
 		"Unknown save version is rejected.")
+	var before := session.capture_state()
+	var corrupt := before.duplicate(true)
+	corrupt["flags"] = {"wrong": 42}
+	expect_equal(session.restore_state(corrupt), ERR_INVALID_DATA,
+		"Invalid flag payload must be rejected before page mutation.")
+	expect_equal(session.capture_state(), before,
+		"Invalid restore preserves previously committed state.")
+	screen.size = Vector2(800, 600)
+	expect_equal(screen.focus_next(), &"door", "Initial focus selects the first hotspot.")
+	expect_equal(screen.activate_focused(), OK, "Focused hotspot can be activated.")
 	session.free()
 	screen.free()
 	return finish()
