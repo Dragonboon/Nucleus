@@ -38,7 +38,7 @@ func contains_normalized(point: Vector2) -> bool:
 		if _cached_image == null or _cached_image.is_empty():
 			return false
 		var uv := (point - bounds.position) / bounds.size
-		var x := clampi(int(uv.x * _cached_image.get_width()), 0, image.get_width() - 1)
-		var y := clampi(int(uv.y * _cached_image.get_height()), 0, image.get_height() - 1)
+		var x := clampi(int(uv.x * _cached_image.get_width()), 0, _cached_image.get_width() - 1)
+		var y := clampi(int(uv.y * _cached_image.get_height()), 0, _cached_image.get_height() - 1)
 		return _cached_image.get_pixel(x, y).a >= alpha_threshold
 	return true
