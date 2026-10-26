@@ -50,6 +50,10 @@ func configure(
 
 
 func rebuild() -> Error:
+	if source_texture != null:
+		var preflight := validate_configuration(source_texture, passes)
+		if preflight != OK:
+			return preflight
 	for stage in _stages:
 		if is_instance_valid(stage):
 			remove_child(stage)
@@ -60,9 +64,6 @@ func rebuild() -> Error:
 	if source_texture == null:
 		output_changed.emit(null)
 		return OK
-	var error := validate_configuration(source_texture, passes)
-	if error != OK:
-		return error
 	var image_size := source_texture.get_size()
 	var ratio: float = minf(1.0, float(max_dimension) / maxf(
 		float(image_size.x), float(image_size.y)))
@@ -80,6 +81,7 @@ func rebuild() -> Error:
 		stage.disable_3d = true
 		stage.transparent_bg = true
 		stage.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+		stage.gui_disable_input = true
 		add_child(stage)
 		var quad := TextureRect.new()
 		quad.name = "Source"
