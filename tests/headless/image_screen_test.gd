@@ -15,7 +15,8 @@ func run() -> Dictionary:
 	top.id = &"note"
 	top.bounds = Rect2(0.25, 0.25, 0.2, 0.2)
 	top.priority = 10
-	expect_equal(screen.set_screen(&"room", texture, [left, top]), OK,
+	var entries: Array[NucleusScreenHotspot] = [left, top]
+	expect_equal(screen.set_screen(&"room", texture, entries), OK,
 		"Valid image screen admitted.")
 	expect_equal(screen.image_rect(), Rect2(350, 0, 900, 900),
 		"Square image letterboxed in widescreen.")
@@ -41,7 +42,8 @@ func run() -> Dictionary:
 	var invalid := NucleusScreenHotspot.new()
 	invalid.id = &"bad"
 	invalid.bounds = Rect2(0.9, 0.9, 0.2, 0.2)
-	expect_equal(screen.set_screen(&"broken", texture, [invalid]), ERR_INVALID_DATA,
+	var invalid_entries: Array[NucleusScreenHotspot] = [invalid]
+	expect_equal(screen.set_screen(&"broken", texture, invalid_entries), ERR_INVALID_DATA,
 		"Reject out-of-range hotspot.")
 	expect_equal(screen.screen_id, &"room", "Invalid replacement remains atomic.")
 	screen.size = Vector2(600, 1000)
