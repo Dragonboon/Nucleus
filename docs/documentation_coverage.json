@@ -96,7 +96,8 @@
       "docs/components/ui_and_accessibility.md"
     ],
     "components/ui/interaction": [
-      "docs/components/ui_and_accessibility.md"
+      "docs/components/ui_and_accessibility.md",
+      "docs/components/image_screen_interaction.md"
     ],
     "components/ui/layout": [
       "docs/components/ui_and_accessibility.md"
