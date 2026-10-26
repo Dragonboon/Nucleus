@@ -7,6 +7,7 @@ signal hotspot_activated(id: StringName, destination: StringName)
 signal background_activated(image_point: Vector2)
 signal screen_changed(id: StringName)
 signal invalid_screen_requested(id: StringName)
+signal hotspot_focus_changed(id: StringName)
 
 @export var screen_id: StringName
 @export var background: Texture2D:
@@ -19,6 +20,7 @@ signal invalid_screen_requested(id: StringName)
 @export var interaction_enabled := true
 @export_range(0.0, 0.25, 0.001) var tap_slop_normalized := 0.02
 
+var focused_hotspot: StringName
 var _pressed_id: StringName
 var _press_point := Vector2.ZERO
 var _is_pressed := false
@@ -62,6 +64,43 @@ func hotspot_at(point: Vector2) -> NucleusScreenHotspot:
 	return selected
 
 
+func focus_next(step: int = 1) -> StringName:
+	var available: Array[StringName] = []
+	for entry in hotspots:
+		if entry != null and entry.enabled and entry.is_valid_hotspot():
+			available.append(entry.id)
+	if available.is_empty():
+		focused_hotspot = &""
+		return focused_hotspot
+	var index := available.find(focused_hotspot)
+	focused_hotspot = available[posmod(index + step, available.size())]
+	hotspot_focus_changed.emit(focused_hotspot)
+	queue_redraw()
+	return focused_hotspot
+
+
+func activate_focused() -> Error:
+	if focused_hotspot == &"":
+		focus_next()
+	if focused_hotspot == &"":
+		return ERR_DOES_NOT_EXIST
+	return activate(focused_hotspot)
+
+
+func _unhandled_key_input(event: InputEvent) -> void:
+	if not has_focus() or not interaction_enabled or Engine.is_editor_hint():
+		return
+	if event.is_action_pressed("ui_right") or event.is_action_pressed("ui_down"):
+		focus_next(1)
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed("ui_left") or event.is_action_pressed("ui_up"):
+		focus_next(-1)
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed("ui_accept"):
+		activate_focused()
+		get_viewport().set_input_as_handled()
+
+
 func activate(id: StringName) -> Error:
 	if not interaction_enabled or _dispatching:
 		return ERR_BUSY
@@ -89,6 +128,7 @@ func set_screen(
 			return ERR_INVALID_DATA
 		identifiers[item.id] = true
 	_cancel_press()
+	focused_hotspot = &""
 	screen_id = id
 	background = texture
 	hotspots = entries.duplicate()
@@ -161,3 +201,12 @@ func _draw() -> void:
 	var area := image_rect()
 	if area.has_area():
 		draw_texture_rect(background, area, false)
+		if focused_hotspot != &"" and has_focus():
+			for entry in hotspots:
+				if entry != null and entry.id == focused_hotspot:
+					var rect := Rect2(
+						area.position + entry.bounds.position * area.size,
+						entry.bounds.size * area.size
+					)
+					draw_rect(rect, Color(1.0, 0.9, 0.3), false, 3.0)
+					break
