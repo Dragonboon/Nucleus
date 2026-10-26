@@ -62,6 +62,7 @@ discovery routes for machine-assisted tools. It does not execute code.
 | Audio, save and localization | [`guides/runtime_services_quickstart.md`](guides/runtime_services_quickstart.md) |
 | Save directories, formats, security, backups and migrations | [`components/save_system.md`](components/save_system.md) |
 | Continue/resume newest save | [`components/save_resume.md`](components/save_resume.md) |
+| Image-driven adventures, point-and-click and shader passes | [`components/image_screen_interaction.md`](components/image_screen_interaction.md) |
 | Scene transitions and recovery | [`guides/scene_flow_quickstart.md`](guides/scene_flow_quickstart.md) |
 | Resource batches / loading presentation | [`guides/resource_loading_quickstart.md`](guides/resource_loading_quickstart.md) |
 | Build a turn-based game: first steps | [`guides/turns_composition_quickstart.md`](guides/turns_composition_quickstart.md) |
