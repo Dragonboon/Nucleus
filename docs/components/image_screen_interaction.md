@@ -53,37 +53,70 @@ ultrawide letterboxing and scaled window modes.
 
 ## Multiple shaders / filters
 
-A CanvasItem has a single active material. To apply **multiple shaders
-sequentially**, use an optional NucleusScreenShaderStack: each enabled
-NucleusScreenEffectPass renders the previous pass's texture through a
-native SubViewport and a duplicated authored ShaderMaterial. Pass order is
-the order of the exported resources. Bind the stack on the session; page
-changes select per-page passes and display the resulting texture.
+`NucleusScreenShaderStack` provides two optional, native Godot rendering backends.
+The default remains `VIEWPORT_CHAIN` for backwards compatibility. Choose the
+backend explicitly; neither mode changes puzzle state, hotspot coordinates or
+the game's UI policy.
 
-Passes expose semantic stable IDs. `set_uniform(pass_id, parameter, value)`
-updates the local material. `get_pass_canvas(pass_id)` returns the pass
-TextureRect, so a child NucleusUIShaderEffect can animate the material
-parameters with NucleusUIMotion; prefer INSTANCE_UNIFORM or SHARED_MATERIAL
-only when intentional. Source shader resources are not mutated by default.
+- `VIEWPORT_CHAIN` applies CanvasItem materials to successive `SubViewport`
+  textures and exposes the result through `output_texture()`. These shaders
+  sample the incoming image with `TEXTURE`; the pipeline can render at a bounded
+  resolution (`max_dimension`, default 2048).
+- `BACKBUFFER` inserts ordered `BackBufferCopy` / `ColorRect` pairs under
+  `backbuffer_target` (or its parent Control). Every copy captures the previously
+  drawn canvas before the next screen-reading filter. This mode operates
+  **in-place**: `output_texture()` still returns the original source texture.
+  The shader must explicitly use a `sampler2D` with `hint_screen_texture`,
+  not `TEXTURE`, to read the preceding pass.
 
-The stack caps concurrent stages (`max_passes`, default 6) and each
-intermediate texture dimension (`max_dimension`, default 2048). Each enabled
-pass creates a render target and updates continuously; memory and fill rate
-scale with pass count and pixels. Use fewer passes, lower dimensions and
-static textures on low-end hardware. Do not use a SCREEN_TEXTURE shader in
-a pass expecting the prior pass automatically: sample TEXTURE, since
-each TextureRect receives the previous pass's output.
+For `BACKBUFFER`, assign the same image Control used by
+`NucleusImageScreen` as the target, and keep the adapter outside overlays.
+Godot draws the image before its children, so copies and filters are applied
+after the image without altering its interactive geometry. Additional authored
+siblings, CanvasLayers or screen-reading shaders outside this chain can affect
+capture order. Keep HUD, captions, cursor and input panels outside the filtered
+image Control when they must remain untouched. No implicit CanvasLayer or global
+filter service is created.
 
-The stack preflights validity before discarding existing stages. A stage
-rebuild still recreates render targets, so avoid rebuilding every frame;
-use per-pass uniforms for animated parameters. An unfiltered page uses the
-original image without intermediate render targets.
+`backbuffer_full_viewport = true` is the safe default for screen-reading
+shaders. Rectangular copies are opt-in; pixels outside the copied region are not
+guaranteed to contain the previous pass. `BackBufferCopy` does **not** expose
+the processed output as a reusable texture; use `VIEWPORT_CHAIN` for thumbnails,
+texture exports, viewport isolation, postprocessing at a different resolution or
+visuals that must not sample neighboring canvas content.
 
-Render targets update asynchronously in Godot's render loop. Transition
-effects and first-frame presentation must be reviewed visually. Keep logical
-hit tests in the source image coordinate space; effect passes must not
-geometrically displace interactive objects unless the game explicitly
-provides a corresponding input-space transform.
+Both paths validate `max_passes` (default 6), duplicate materials per session,
+retain authoring order and offer `set_uniform(id, name, value)`.
+`get_pass_material(id)` returns the local material. In viewport mode,
+`get_pass_canvas(id)` returns the corresponding TextureRect; in backbuffer
+mode use `get_pass_overlay(id)` or `get_pass_canvas_item(id)` for the ColorRect.
+A `NucleusUIShaderEffect` can animate that CanvasItem without duplicating the
+render pipeline, provided material ownership is configured accordingly.
+
+Backbuffer copies, just like render targets, consume GPU memory and bandwidth.
+Never assume they outperform SubViewport passes without benchmarking the actual
+shader, device and resolution. Shader displacement can visually relocate objects
+while the original normalized hotspots remain in place. The game must either
+avoid such transformations on interactive art or explicitly account for them.
+
+Example screen shader for `BACKBUFFER`:
+
+```glsl
+shader_type canvas_item;
+uniform sampler2D screen_texture : hint_screen_texture, filter_linear;
+void fragment() {
+    COLOR = texture(screen_texture, SCREEN_UV);
+}
+```
+
+## Visual and lifecycle verification
+
+Run the headless suite for validation and failure boundaries, then test a real
+composed scene at portrait, 16:9 and ultrawide with one and several passes.
+Check the exact filter order, UI isolation, material independence, resize,
+first-frame readiness, touch hit alignment and reduced-motion settings.
+A passing parser/headless suite alone cannot certify GPU performance or
+the screen texture contents.
 
 ## Maintenance boundaries
 
