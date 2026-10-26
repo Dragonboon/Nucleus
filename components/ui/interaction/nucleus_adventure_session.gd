@@ -9,6 +9,7 @@ signal page_changed(id: StringName)
 
 @export var screen: NucleusImageScreen
 @export var inventory: NucleusInventory
+@export var shader_stack: NucleusScreenShaderStack
 @export var save_session: NucleusSaveSession
 @export var participant_id: StringName = &"adventure"
 @export var pages: Array[NucleusAdventurePage] = []
@@ -43,7 +44,16 @@ func change_page(id: StringName) -> Error:
 	if not _page_index.has(id) or screen == null:
 		return ERR_DOES_NOT_EXIST
 	var page: NucleusAdventurePage = _page_index[id]
-	var result := screen.set_screen(page.id, page.image, page.hotspots)
+	var page_image: Texture2D = page.image
+	if shader_stack != null:
+		var preflight := shader_stack.validate_configuration(
+			page.image, page.effect_passes)
+		if preflight != OK:
+			return preflight
+		if shader_stack.configure(page.image, page.effect_passes) != OK:
+			return ERR_CANT_CREATE
+		page_image = shader_stack.output_texture()
+	var result := screen.set_screen(page.id, page_image, page.hotspots)
 	if result != OK:
 		return result
 	current_page = id
