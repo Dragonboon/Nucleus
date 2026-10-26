@@ -1,6 +1,6 @@
 # Game Development Use Cases
 
-**77 game-development scenarios · five capability areas · one source of truth**
+**78 game-development scenarios · five capability areas · one source of truth**
 
 > [!TIP]
 > **Start with the feature you want.** Find its row, follow the existing
