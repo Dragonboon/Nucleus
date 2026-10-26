@@ -27,7 +27,10 @@ another NucleusSaveSession participant and restore it **before** the adventure
 session if the game requires restored item presentation during page signals.
 NucleusAdventureSession registers its own `capture_state/restore_state`;
 saves contain page IDs, visited pages, flags and completed interactions.
-A missing target page or incompatible version rejects restoration.
+A missing target page, malformed flag dictionaries or incompatible version
+rejects restoration. Hotspot resources are authored data and are not copied
+into save files; the game should not mutate shared Resource instances as
+per-player state.
 
 ## Geometry and accessibility
 
@@ -36,7 +39,9 @@ polygons and optional per-hotspot alpha masks. Polygon vertices are in **image**
 coordinates (0-1), not relative to bounds. Alpha images are mapped within the
 hotspot rectangle. Use `alpha_threshold` for transparent areas. Use sparse
 polygons rather than huge alpha images on low-end devices: alpha image reads
-on pointer hit-tests are comparatively expensive.
+on pointer hit-tests are comparatively expensive. Mask images are cached after
+first access; replacing the mask Resource invalidates the cache, but mutating
+the pixels of the same Texture2D in place requires assigning a new resource.
 
 Input commits on release within the originally pressed target, with drag
 threshold and cancellation. Use `focus_next()`, `activate_focused()` or
@@ -69,11 +74,29 @@ static textures on low-end hardware. Do not use a SCREEN_TEXTURE shader in
 a pass expecting the prior pass automatically: sample TEXTURE, since
 each TextureRect receives the previous pass's output.
 
+The stack preflights validity before discarding existing stages. A stage
+rebuild still recreates render targets, so avoid rebuilding every frame;
+use per-pass uniforms for animated parameters. An unfiltered page uses the
+original image without intermediate render targets.
+
 Render targets update asynchronously in Godot's render loop. Transition
 effects and first-frame presentation must be reviewed visually. Keep logical
 hit tests in the source image coordinate space; effect passes must not
 geometrically displace interactive objects unless the game explicitly
 provides a corresponding input-space transform.
+
+## Maintenance boundaries
+
+NucleusImageScreen owns pointer-to-image coordinate conversion and focus;
+NucleusAdventureSession owns logical page/flag progress and delegates item
+balances to NucleusInventory and storage to NucleusSaveSession. No additional
+Autoload or generic dialogue/quest framework is required. Existing Godot
+Controls, NucleusUIFocusScope and NucleusUIShaderEffect remain the right
+owners for UI layout, accessibility prompts and individual shader parameter
+animation. Do not replace those components with competing implementations.
+
+The architecture stays opt-in. Tests must cover lifecycle, save validation,
+missing resources, viewport changes and shader pass budgets before a release.
 
 ## Checks
 
