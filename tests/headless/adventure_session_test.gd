@@ -20,6 +20,9 @@ func run() -> Dictionary:
 	session.pages = [first, second]
 	session._ready()
 	expect_equal(session.current_page, &"start", "First authored page is active.")
+	expect_equal(screen.focus_next(), &"door", "Initial focus selects the first hotspot.")
+	expect_equal(screen.activate_focused(), OK, "Focused hotspot can be activated.")
+	expect_equal(session.change_page(&"start"), OK, "Return to first page.")
 	expect_equal(session.activate_hotspot(&"door"), OK, "Navigate to linked page.")
 	expect_equal(session.current_page, &"hall", "Destination resolves from allowed pages.")
 	expect_equal(session.change_page(&"unknown"), ERR_DOES_NOT_EXIST,
@@ -37,9 +40,6 @@ func run() -> Dictionary:
 		"Invalid flag payload must be rejected before page mutation.")
 	expect_equal(session.capture_state(), before,
 		"Invalid restore preserves previously committed state.")
-	screen.size = Vector2(800, 600)
-	expect_equal(screen.focus_next(), &"door", "Initial focus selects the first hotspot.")
-	expect_equal(screen.activate_focused(), OK, "Focused hotspot can be activated.")
 	session.free()
 	screen.free()
 	return finish()
