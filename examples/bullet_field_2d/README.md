@@ -1,16 +1,17 @@
-# Lightweight bullet field lab
+# Continuous bullet field lab
 
-Open bullet_field_lab.tscn in Godot 4.7.2. Change target_bullet_count,
-emission_per_frame, projectile_speed, lifetime and projectile_radius to
-evaluate workload under the actual target renderer and hardware.
+Open `bullet_field_lab.tscn` in Godot 4.7.2. Change `target_bullet_count`,
+`emission_per_frame`, `projectile_speed`, `projectile_lifetime`, `pattern_mode`
+and `petals` before running the scene. The fixture composes BulletField2D with
+reserved storage, BulletEmitter2D and native BulletMultiMesh2D; fallback circle
+drawing is disabled. Capacity and per-physics-tick admission remain bounded.
 
-This fixture creates one NucleusBulletField2D and admits bounded radial
-bursts across frames. It logs active bullets and instantaneous FPS every two
-seconds. It does not create a DamageReceiver or game-specific bullet entity,
-does not certify latency or a minimum FPS, and does not test multiplayer.
+RADIAL, FAN, LINE, LOTUS and SPIRAL share the same simulation. Inspect their
+geometry at a low count first. The lab logs live count and instantaneous FPS;
+this is a visual profiling fixture, not a minimum-FPS certification. It does not
+apply damage or model multiplayer authority.
 
-Compare this workload to a Godot-native approach (for example, a
-MultiMeshInstance2D, GPU particles, or a smaller number of full scene-owned
-Area2D projectiles) before choosing a renderer for production. For collision
-with many targets, benchmark a spatial broad phase instead of calling the
-O(bullets) query once for each target.
+See [bullet pattern contracts](../../docs/components/bullet_hell_2d.md) for the
+formulae, cadence, lifecycle and bounds. Use BulletTargetBatch2D for indexed swept
+circle candidates and measure it with the intended target population. Use native
+physics and pooled actors when per-projectile bodies or complex behavior matter.

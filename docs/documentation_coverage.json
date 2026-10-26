@@ -51,7 +51,8 @@
     ],
     "components/gameplay/pooling": [
       "docs/components/gameplay_pooling_targeting.md",
-      "docs/components/runtime_optimization.md"
+      "docs/components/runtime_optimization.md",
+      "docs/components/bullet_hell_2d.md"
     ],
     "components/gameplay/resources": [
       "docs/components/gameplay_foundation.md"

@@ -1,6 +1,6 @@
 # Game Development Use Cases
 
-**76 game-development scenarios · five capability areas · one source of truth**
+**77 game-development scenarios · five capability areas · one source of truth**
 
 > [!TIP]
 > **Start with the feature you want.** Find its row, follow the existing
@@ -66,6 +66,7 @@
 | Ragdoll on death or impact | [Use humanoid ragdoll authoring helpers with native physics](../components/ragdoll_authoring_3d.md) | Rig, reactions and cinematic choices |
 | Compose a grounded or floating 2D character | [Use CharacterMotor2D with native motion_mode and shared intent sources](../components/2d_foundation.md) | Jump rules, sprites, combat and level design |
 | Animate four/eight-direction 2D sprites with temporary actions | [Select native AnimatedSprite2D clips with explicit profile and lifecycle](../components/presentation_2d.md) | Art, motion and aim sources, action semantics and terminal states |
+| Emit sustained circular, shotgun, line, lotus and spiral bullet patterns | [Compose bounded emission, retained packed storage and native MultiMesh rendering](../components/bullet_hell_2d.md) | Damage, teams, collision policy, cadence and target-device budgets |
 
 ## 🟪 UI
 

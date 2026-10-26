@@ -24,18 +24,20 @@ func rebuild_mesh() -> void:
 
 
 func _process(_delta: float) -> void:
-	sync_bullets()
+	if is_visible_in_tree():
+		sync_bullets()
 
 
 func sync_bullets() -> void:
-	if bullet_field == null or multimesh == null:
+	if multimesh == null:
+		return
+	if not is_instance_valid(bullet_field) or is_zero_approx(global_transform.determinant()):
+		multimesh.visible_instance_count = 0
 		return
 	var count := mini(bullet_field.active_count(), multimesh.instance_count)
+	var mapping := global_transform.affine_inverse() * bullet_field.global_transform
 	for i in range(count):
-		var bullet: Dictionary = bullet_field.get_bullet(i)
-		var source: Vector2 = bullet["position"]
-		var global_point := bullet_field.to_global(source)
-		var local_point := to_local(global_point)
+		var local_point := mapping * bullet_field.bullet_position_at(i)
 		multimesh.set_instance_transform_2d(i, Transform2D(0.0, local_point))
 	multimesh.visible_instance_count = count
 

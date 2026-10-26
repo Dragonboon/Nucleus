@@ -85,3 +85,9 @@ does not silently restore stale ownership. Detached endpoints freed without a
 tree-exit signal are pruned on registry/cache reads or selection refresh.
 Agent exit disconnects subscriptions; re-entry reconnects surviving candidates.
 Regression coverage: `tests/headless/target_lifecycle_test.gd`.
+
+## Sustained lightweight bullets
+
+See [2D bullet patterns](bullet_hell_2d.md) for resource-authored radial, fan, line,
+lotus and spiral geometry, bounded cadence, retained storage and MultiMesh wiring.
+Scene-based pooling remains the owner for reusable actors with native bodies.

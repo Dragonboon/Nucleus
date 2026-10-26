@@ -533,6 +533,13 @@
       "nucleus_role": "Compose native PO/MO loading and extraction with optional editor tools and live text bindings",
       "guide": "docs/components/localization_pipeline.md",
       "game_owns": "Translation content, source scope, fonts, language review and runtime arguments"
+    },
+    {
+      "domain": "Gameplay",
+      "need": "Emit sustained circular, shotgun, line, lotus and spiral bullet patterns",
+      "nucleus_role": "Compose bounded emission, retained packed storage and native MultiMesh rendering",
+      "guide": "docs/components/bullet_hell_2d.md",
+      "game_owns": "Damage, teams, collision policy, cadence and target-device budgets"
     }
   ]
 }

@@ -80,6 +80,11 @@ jobs:
             --path . \
             res://tests/headless/test_runner.tscn
 
+      - name: Run sustained bullet hell composition
+        run: |
+          python3 scripts/ci/run_godot_checked.py "${{ steps.godot.outputs.bin }}" \
+            --headless --path . res://tests/smoke/bullet_hell_smoke.tscn
+
       - name: Run 2D presentation composition smoke scene
         run: |
           python3 scripts/ci/run_godot_checked.py "${{ steps.godot.outputs.bin }}" \
