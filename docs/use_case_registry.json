@@ -207,6 +207,13 @@
     },
     {
       "domain": "UI",
+      "need": "Build image-driven point-and-click screens with resolution-independent hotspots",
+      "nucleus_role": "Compose image-screen interaction with native Control input",
+      "guide": "docs/components/image_screen_interaction.md",
+      "game_owns": "Artwork, room graph, puzzle rules, accessible focus UI and save flags"
+    },
+    {
+      "domain": "UI",
       "need": "Menus and keyboard/gamepad focus",
       "nucleus_role": "Use focus, navigation and modal ownership",
       "guide": "docs/components/ui_and_accessibility.md",
