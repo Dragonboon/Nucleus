@@ -49,6 +49,17 @@ func run() -> Dictionary:
 	screen.size = Vector2(600, 1000)
 	expect_equal(screen.image_rect(), Rect2(0, 200, 600, 600),
 		"Portrait viewport keeps image proportions.")
+	var mask := Image.create(4, 4, false, Image.FORMAT_RGBA8)
+	mask.fill(Color(1.0, 1.0, 1.0, 0.0))
+	mask.set_pixel(1, 1, Color.WHITE)
+	var masked := NucleusScreenHotspot.new()
+	masked.id = &"masked"
+	masked.bounds = Rect2(0.0, 0.0, 1.0, 1.0)
+	masked.alpha_mask = ImageTexture.create_from_image(mask)
+	expect_true(masked.contains_normalized(Vector2(0.375, 0.375)),
+		"Cached alpha image dimensions support opaque pixels.")
+	expect_false(masked.contains_normalized(Vector2(0.875, 0.875)),
+		"Transparent mask pixels cannot receive interactions.")
 	left.enabled = false
 	expect_equal(screen.activate(&"door"), ERR_DOES_NOT_EXIST,
 		"Disabled hotspot cannot be activated.")
