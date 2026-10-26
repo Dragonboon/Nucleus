@@ -41,7 +41,9 @@ func _exit_tree() -> void:
 
 
 func change_page(id: StringName) -> Error:
-	if not _page_index.has(id) or screen == null:
+	if screen == null:
+		return ERR_UNCONFIGURED
+	if not _page_index.has(id):
 		return ERR_DOES_NOT_EXIST
 	var page: NucleusAdventurePage = _page_index[id]
 	var page_image: Texture2D = page.image
@@ -82,7 +84,7 @@ func activate_hotspot(id: StringName) -> Error:
 		if entry != null and entry.id == id and entry.enabled:
 			selected = entry
 			break
-	if selected == null:
+	if selected == null or not selected.is_valid_hotspot():
 		return ERR_DOES_NOT_EXIST
 	if selected.action == null:
 		if selected.destination != &"":
@@ -113,6 +115,12 @@ func activate_hotspot(id: StringName) -> Error:
 	var next_id := action.next_screen
 	if next_id != &"" and not _page_index.has(next_id):
 		return ERR_DOES_NOT_EXIST
+	if next_id != &"" and shader_stack != null:
+		var target_page: NucleusAdventurePage = _page_index[next_id]
+		var validation := shader_stack.validate_configuration(
+			target_page.image, target_page.effect_passes)
+		if validation != OK:
+			return validation
 	_busy = true
 	if action.consume_item and inventory.remove_item(action.required_item) != 1:
 		_busy = false
@@ -180,11 +188,19 @@ func restore_state(snapshot: Dictionary) -> Error:
 	var destination := StringName(str(snapshot.get("page", "")))
 	if not _page_index.has(destination):
 		return ERR_DOES_NOT_EXIST
+	var restored_flags := (snapshot["flags"] as Dictionary).duplicate(true)
+	var restored_visited := (snapshot["visited"] as Dictionary).duplicate(true)
+	var restored_completed := (snapshot["completed"] as Dictionary).duplicate(true)
+	for data in [restored_flags, restored_visited, restored_completed]:
+		for key in data:
+			if not key is String or not data[key] is bool:
+				return ERR_INVALID_DATA
 	if change_page(destination) != OK:
 		return ERR_CANT_CREATE
-	flags = (snapshot["flags"] as Dictionary).duplicate(true)
-	visited = (snapshot["visited"] as Dictionary).duplicate(true)
-	completed = (snapshot["completed"] as Dictionary).duplicate(true)
+	flags = restored_flags
+	visited = restored_visited
+	visited[String(destination)] = true
+	completed = restored_completed
 	state_changed.emit()
 	return OK
 
