@@ -5,7 +5,7 @@ extends VBoxContainer
 
 const Manifest = preload("res://addons/nucleus/editor/package_manifest.gd")
 const Installer = preload("res://addons/nucleus/editor/package_installer.gd")
-const CATALOG_URL := "https://raw.githubusercontent.com/Dragonboon/Nucleus/main/package_catalog.json"
+const CATALOG_URL := "https://raw.githubusercontent.com/Dragonboon/Nucleus/feat/modular-addon-package-manager/package_catalog.json"
 const API_RELEASE_URL := "https://api.github.com/repos/Dragonboon/Nucleus/releases/latest"
 
 var _http: HTTPRequest
