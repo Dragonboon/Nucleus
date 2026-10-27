@@ -2,6 +2,8 @@
 extends EditorPlugin
 
 const Parser = preload("res://addons/nucleus_localization/message_parser.gd")
+const PanelScript = preload("res://addons/nucleus_localization/catalog_panel.gd")
+var _panel: VBoxContainer
 var _parser: EditorTranslationParserPlugin
 var _files: EditorFileDialog
 var _folder: EditorFileDialog
@@ -9,6 +11,10 @@ var _result: AcceptDialog
 
 
 func _enter_tree() -> void:
+	_panel = PanelScript.new()
+	_panel.register_requested.connect(_show_files)
+	_panel.sources_requested.connect(_show_folder)
+	add_control_to_bottom_panel(_panel, "Localization")
 	_parser = Parser.new()
 	add_translation_parser_plugin(_parser)
 	_files = EditorFileDialog.new()
@@ -28,6 +34,8 @@ func _enter_tree() -> void:
 
 
 func _exit_tree() -> void:
+	remove_control_from_bottom_panel(_panel)
+	_panel.queue_free()
 	remove_tool_menu_item("Nucleus: Register PO/MO translations")
 	remove_tool_menu_item("Nucleus: Add translation source folder")
 	remove_translation_parser_plugin(_parser)
@@ -48,6 +56,7 @@ func _register(paths: PackedStringArray) -> void:
 	_result.dialog_text = ("Translations registered in Project Settings."
 		if error == OK else "Registration failed: " + error_string(error))
 	_result.popup_centered()
+	_panel.refresh_files()
 
 
 func _sources(path: String) -> void:
@@ -56,3 +65,4 @@ func _sources(path: String) -> void:
 		+ "Template Generation, then Generate to create or update your POT."
 		if error == OK else "Source registration failed: " + error_string(error))
 	_result.popup_centered()
+	_panel.refresh_files()

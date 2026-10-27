@@ -5,6 +5,8 @@ import argparse
 import shutil
 import subprocess
 import tempfile
+import os
+import sys
 
 
 def main():
@@ -12,6 +14,7 @@ def main():
     parser.add_argument("godot", type=Path)
     args = parser.parse_args()
     engine = str(args.godot.resolve())
+    os.environ["NUCLEUS_TEST_PYTHON"] = sys.executable
     root = Path(__file__).resolve().parents[2]
     with tempfile.TemporaryDirectory(prefix="nucleus-localization-") as directory:
         project = Path(directory) / "project"

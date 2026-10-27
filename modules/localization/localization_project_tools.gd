@@ -69,3 +69,46 @@ static func _append_setting(key: String, paths: PackedStringArray, persist: bool
 	if error != OK:
 		ProjectSettings.set_setting(key, previous if existed else null)
 	return error
+
+
+## Explicit editor cleanup; never deletes source files or translated catalogs.
+static func remove_missing_sources(persist: bool = true) -> Error:
+	if not Engine.is_editor_hint():
+		return ERR_UNAVAILABLE
+	var existed := ProjectSettings.has_setting(SOURCES)
+	var previous: PackedStringArray = ProjectSettings.get_setting(SOURCES, PackedStringArray())
+	var existing := PackedStringArray()
+	for path in previous:
+		if FileAccess.file_exists(path):
+			existing.append(path)
+	ProjectSettings.set_setting(SOURCES, existing)
+	var error := ProjectSettings.save() if persist else OK
+	if error != OK:
+		ProjectSettings.set_setting(SOURCES, previous if existed else null)
+	return error
+
+
+## Inspect authored message conflicts without instantiating gameplay scenes.
+static func audit_sources() -> PackedStringArray:
+	var diagnostics := PackedStringArray()
+	if not Engine.is_editor_hint():
+		return diagnostics
+	var seen: Dictionary = {}
+	var paths: PackedStringArray = ProjectSettings.get_setting(SOURCES, PackedStringArray())
+	for path in paths:
+		if not FileAccess.file_exists(path):
+			diagnostics.append("Missing source: " + path)
+			continue
+		if path.get_extension() not in ["tres", "tscn"]:
+			continue
+		var resource := ResourceLoader.load(path, "", ResourceLoader.CACHE_MODE_IGNORE)
+		for message in NucleusTranslationTemplates.collect_resource(resource):
+			var key := JSON.stringify([String(message.context), message.source])
+			if message.source.is_empty():
+				diagnostics.append("Empty source message: " + path)
+			elif seen.has(key) and seen[key].plural != message.plural:
+				diagnostics.append("Conflicting plural for %s: %s and %s" % [
+					key, seen[key].path, path])
+			else:
+				seen[key] = {"plural": message.plural, "path": path}
+	return diagnostics

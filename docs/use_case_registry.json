@@ -538,7 +538,7 @@
       "domain": "Core",
       "need": "Import gettext translations and extract source templates from scenes and message Resources",
       "nucleus_role": "Compose native PO/MO loading and extraction with optional editor tools and live text bindings",
-      "guide": "docs/components/localization_pipeline.md",
+      "guide": "docs/guides/localization_workflow.md",
       "game_owns": "Translation content, source scope, fonts, language review and runtime arguments"
     },
     {

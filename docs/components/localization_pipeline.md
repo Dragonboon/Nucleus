@@ -5,6 +5,15 @@ rules and editor extraction remain authoritative. No new Autoload or translated
 string database is introduced. Runtime adapters work without the editor addon
 or GNU gettext installed.
 
+## Editor panel quickstart
+
+Since `0.38.0-dev.1`, the optional addon has a **Localization** bottom panel for
+registered catalogs, gettext creation/update/validation and source diagnostics.
+Start with the [end-to-end ability translation example](../guides/localization_workflow.md).
+Godot still owns full POT generation; the panel explains the native step instead
+of using private editor UI APIs. Python/gettext jobs are asynchronous, cancellable
+and use the existing conservative PO writer. No new runtime dependency is added.
+
 ## Ownership
 
 | Need | Godot owner | Nucleus adapter | Game owns |
@@ -189,3 +198,11 @@ game. Metadata and headless assertions cannot certify those visual properties.
 
 Native references: [gettext workflow](https://docs.godotengine.org/en/stable/tutorials/i18n/localization_using_gettext.html)
 and [translation parser plugin](https://docs.godotengine.org/en/stable/classes/class_editortranslationparserplugin.html).
+
+## Editor source maintenance
+
+`NucleusLocalizationProjectTools.audit_sources()` returns source-path diagnostics
+for missing files, empty Resource messages and conflicting plural definitions.
+It does not parse arbitrary code. `remove_missing_sources(persist=true)` explicitly
+prunes missing source registrations, preserves existing files and rolls back a
+failed settings save. Neither operation removes translated catalogs.
