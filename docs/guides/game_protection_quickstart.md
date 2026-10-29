@@ -18,7 +18,7 @@ A stolen game may be copied, renamed, resold, or repackaged with malware. The pr
 ## Basic release path
 
 1. **Publish an official identity.** Reserve your game's store name/page and publish a short development page linking the official developer or publisher. Record a public release date.
-2. **Track authorship and rights.** Keep dated source control, build records, author and third-party asset licenses, and explicit permission for each licensed asset. The MIT license of the Nucleus *template* does not confer ownership over a game's art or brand.
+2. **Track authorship and rights.** Keep dated source control, build records, author and third-party asset licenses, and explicit permission for each licensed asset. The MIT license of the Nucleus *addon* does not confer ownership over a game's art or brand.
 3. **Export release builds, not editable project folders.** Use Godot's normal export system. Do not distribute private keys, editor caches, repository internals, or license credentials.
 4. **Sign executables where appropriate.** On Windows, use Godot's native export code signing and a certificate that identifies the legitimate publisher; verify the **final** `.exe`. On macOS, plan Developer ID signing and notarization.
 5. **Keep hashes and provenance privately.** Record the source commit, game version, platform, build timestamp, SHA-256 of final distributed files, and official store URLs. A hash alone is not proof of authorship; preserve an independently verifiable release trail.
@@ -76,7 +76,7 @@ On macOS, follow the platform's Developer ID signing and notarization flow; an a
 
 ## Store and online features
 
-Use `modules/platform_services` as an optional lifecycle/capability boundary, then let the **game's adapter** integrate Steam or another store SDK. Do not add a Steam-only dependency to Core or gate the entire game behind `NucleusPlatformUser.user_id`.
+Use `addons/nucleus/modules/platform_services` as an optional lifecycle/capability boundary, then let the **game's adapter** integrate Steam or another store SDK. Do not add a Steam-only dependency to Core or gate the entire game behind `NucleusPlatformUser.user_id`.
 
 For online **privileged** operations (dedicated servers, purchases, competitive leaderboards, DLC entitlement), authenticate a platform-issued ticket on a **trusted server**, enforce its intended audience/app, and authorize the specific action. The client-supplied account ID is **not proof** of ownership. Decide offline policy explicitly; support local/solo play where possible.
 
@@ -86,10 +86,10 @@ Steam's own documentation explains that its basic DRM wrapper prevents only casu
 
 | Existing feature | Reuse | Do not confuse with |
 | --- | --- | --- |
-| `core/save/security/` | Encrypted/authenticated save data | Exported game-content protection |
-| `modules/content_packs/` | Public-key-verified official DLC/patch manifests | Encryption of the game's main PCK |
-| `modules/platform_services/` | Optional provider identity, capability discovery | Proof of store ownership without validated tickets |
-| `scripts/package_release.py` | Provenance/checksum manifest for **Nucleus template source ZIP** | Signing/verifying a commercial game's binary release |
+| `addons/nucleus/core/save/security/` | Encrypted/authenticated save data | Exported game-content protection |
+| `addons/nucleus/modules/content_packs/` | Public-key-verified official DLC/patch manifests | Encryption of the game's main PCK |
+| `addons/nucleus/modules/platform_services/` | Optional provider identity, capability discovery | Proof of store ownership without validated tickets |
+| `scripts/package_release.py` | Provenance/checksum manifest for **Nucleus addon source ZIP** | Signing/verifying a commercial game's binary release |
 
 ## Before launch
 

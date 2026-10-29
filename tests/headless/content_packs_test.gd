@@ -33,7 +33,7 @@ func _test_manifest_validation() -> void:
 		"Incompatible game versions should fail.",
 	)
 
-	manifest.resource_prefix = "res://core/"
+	manifest.resource_prefix = "res://addons/nucleus/core/"
 	expect_false(
 		manifest.validate(true).is_empty(),
 		"Additive packs must stay inside their declared content namespace.",

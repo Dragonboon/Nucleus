@@ -1,9 +1,9 @@
 extends "res://tests/headless/test_case.gd"
 
 const PROFILES: Array[Resource] = [
-	preload("res://modules/performance/profiles/handheld_battery.tres"),
-	preload("res://modules/performance/profiles/handheld_balanced.tres"),
-	preload("res://modules/performance/profiles/handheld_quality.tres"),
+	preload("res://addons/nucleus/modules/performance/profiles/handheld_battery.tres"),
+	preload("res://addons/nucleus/modules/performance/profiles/handheld_balanced.tres"),
+	preload("res://addons/nucleus/modules/performance/profiles/handheld_quality.tres"),
 ]
 
 func run() -> Dictionary:

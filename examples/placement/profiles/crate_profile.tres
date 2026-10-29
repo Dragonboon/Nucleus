@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="NucleusPlacementProfile3D" format=3 uid="uid://blo3rotk6dq50"]
 
-[ext_resource type="Script" uid="uid://b6u3ekuxsiurm" path="res://components/gameplay/movement/placement_3d/placement_profile_3d.gd" id="1_profile"]
+[ext_resource type="Script" uid="uid://b6u3ekuxsiurm" path="res://addons/nucleus/components/gameplay/movement/placement_3d/placement_profile_3d.gd" id="1_profile"]
 
 [sub_resource type="BoxShape3D" id="Clearance"]
 size = Vector3(0.98, 0.93, 0.98)

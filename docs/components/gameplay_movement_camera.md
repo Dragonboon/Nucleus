@@ -3,9 +3,9 @@
 ## Scope
 
 ```text
-components/gameplay/control
-components/gameplay/movement
-components/gameplay/camera
+addons/nucleus/components/gameplay/control
+addons/nucleus/components/gameplay/movement
+addons/nucleus/components/gameplay/camera
 ```
 
 Game-facing movement and camera behavior is scene-owned and split into small

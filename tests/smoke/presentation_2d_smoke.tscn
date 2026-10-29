@@ -1,11 +1,11 @@
 [gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://tests/smoke/presentation_2d_smoke.gd" id="1"]
-[ext_resource type="Script" path="res://components/gameplay/feedback/floating_text_presenter_2d.gd" id="2"]
-[ext_resource type="Script" path="res://components/gameplay/animation/directional_sprite_animator_2d.gd" id="3"]
-[ext_resource type="Script" path="res://components/gameplay/resources/value_pool.gd" id="4"]
-[ext_resource type="Script" path="res://components/gameplay/combat/damage_receiver.gd" id="5"]
-[ext_resource type="Script" path="res://components/gameplay/targeting/targetable.gd" id="6"]
+[ext_resource type="Script" path="res://addons/nucleus/components/gameplay/feedback/floating_text_presenter_2d.gd" id="2"]
+[ext_resource type="Script" path="res://addons/nucleus/components/gameplay/animation/directional_sprite_animator_2d.gd" id="3"]
+[ext_resource type="Script" path="res://addons/nucleus/components/gameplay/resources/value_pool.gd" id="4"]
+[ext_resource type="Script" path="res://addons/nucleus/components/gameplay/combat/damage_receiver.gd" id="5"]
+[ext_resource type="Script" path="res://addons/nucleus/components/gameplay/targeting/targetable.gd" id="6"]
 
 [node name="Presentation2DSmoke" type="Node2D"]
 script = ExtResource("1")

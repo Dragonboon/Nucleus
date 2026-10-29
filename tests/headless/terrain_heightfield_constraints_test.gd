@@ -1,6 +1,6 @@
 extends "res://tests/headless/test_case.gd"
 
-const TerrainSampler = preload("res://modules/terrain/terrain_height_sampler.gd")
+const TerrainSampler = preload("res://addons/nucleus/modules/terrain/terrain_height_sampler.gd")
 
 
 func run() -> Dictionary:

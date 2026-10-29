@@ -1,6 +1,6 @@
 # Terrain Heightfield Slope Constraints
 
-Target engine: Godot 4.7.2. Owner: `modules/terrain/terrain_heightmap_processor.gd`.
+Target engine: Godot 4.7.2. Owner: `addons/nucleus/modules/terrain/terrain_heightmap_processor.gd`.
 
 Nucleus extends its **existing** `NucleusTerrainHeightmapProcessor` rather than
 introducing another terrain system. It owns only the numeric slope constraint;

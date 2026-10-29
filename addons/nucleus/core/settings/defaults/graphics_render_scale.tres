@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="NucleusFloatSettingDefinition" format=3]
+
+[ext_resource type="Script" path="res://addons/nucleus/core/settings/definitions/float_setting_definition.gd" id="1_definition"]
+
+[resource]
+script = ExtResource("1_definition")
+section = &"graphics"
+key = &"render_scale"
+display_name = "3D Render Scale"
+description = "Scales the root viewport 3D render buffer before upscaling."
+default_value = 1.0
+has_range = true
+minimum_value = 0.25
+maximum_value = 2.0
+step = 0.05

@@ -1,8 +1,8 @@
 # Foundation Quickstart
 
-This is the shortest orientation for a new Nucleus project.
+This is the shortest orientation for a project with the Nucleus addon enabled.
 
-## 1. Know what the template owns
+## 1. Know what the addon owns
 
 The baseline Autoloads are:
 

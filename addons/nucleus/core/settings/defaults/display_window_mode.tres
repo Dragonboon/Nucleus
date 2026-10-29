@@ -1,0 +1,31 @@
+[gd_resource type="Resource" script_class="NucleusIntOptionSettingDefinition" format=3 uid="uid://denxso32umyb0"]
+
+[ext_resource type="Script" uid="uid://c86owq4iwbtu" path="res://addons/nucleus/core/settings/definitions/int_option_setting_definition.gd" id="1_definition"]
+[ext_resource type="Script" uid="uid://7rj6e1cvvbiq" path="res://addons/nucleus/core/settings/definitions/int_setting_option.gd" id="2_option"]
+
+[sub_resource type="Resource" id="Option_windowed"]
+script = ExtResource("2_option")
+label = "Windowed"
+
+[sub_resource type="Resource" id="Option_maximized"]
+script = ExtResource("2_option")
+label = "Maximized"
+value = 2
+
+[sub_resource type="Resource" id="Option_fullscreen"]
+script = ExtResource("2_option")
+label = "Fullscreen"
+value = 3
+
+[sub_resource type="Resource" id="Option_exclusive"]
+script = ExtResource("2_option")
+label = "Exclusive Fullscreen"
+value = 4
+
+[resource]
+script = ExtResource("1_definition")
+options = Array[ExtResource("2_option")]([SubResource("Option_windowed"), SubResource("Option_maximized"), SubResource("Option_fullscreen"), SubResource("Option_exclusive")])
+section = &"display"
+key = &"window_mode"
+display_name = "Window Mode"
+description = "Controls the main application window mode."

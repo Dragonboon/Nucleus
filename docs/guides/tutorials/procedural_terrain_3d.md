@@ -18,7 +18,7 @@ the terrain module.
 
 ## Profile and preview
 
-Duplicate `res://modules/terrain/presets/archipelago_island.tres` into game-owned
+Duplicate `res://addons/nucleus/modules/terrain/presets/archipelago_island.tres` into game-owned
 content and assign it to `Terrain.profile`. Tune noise, coastline falloff,
 shoreline perturbation and submerged floor while using a low preview resolution.
 

@@ -3,7 +3,7 @@
 ## Scope
 
 ```text
-components/world/streaming
+addons/nucleus/components/world/streaming
 ```
 
 `NucleusWorldStreamLifecycle` is a scene-owned admission controller for world

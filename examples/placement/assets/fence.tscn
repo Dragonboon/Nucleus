@@ -1,6 +1,6 @@
 [gd_scene load_steps=12 format=3]
 
-[ext_resource type="Script" path="res://components/gameplay/movement/placement_3d/placeable_3d.gd" id="1_placeable"]
+[ext_resource type="Script" path="res://addons/nucleus/components/gameplay/movement/placement_3d/placeable_3d.gd" id="1_placeable"]
 [ext_resource type="Resource" path="res://examples/placement/profiles/fence_profile.tres" id="2_profile"]
 
 [sub_resource type="StandardMaterial3D" id="Material_wood"]

@@ -2,7 +2,7 @@
 
 ## Status
 
-`modules/performance` is optional and is not loaded by default.
+`addons/nucleus/modules/performance` is optional and is not loaded by default.
 
 It is development tooling around Godot's native performance APIs. It does not
 replace the Godot Profiler, Network Profiler, Video RAM panel, external GPU
@@ -60,7 +60,7 @@ NucleusPerformancePanel
 The ready-to-instance development panel is:
 
 ```text
-res://modules/performance/performance_panel.tscn
+res://addons/nucleus/modules/performance/performance_panel.tscn
 ```
 
 ## Ownership

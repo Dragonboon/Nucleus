@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://d3c0uoe1tjdur"]
 
 [ext_resource type="Script" uid="uid://cscqkrmgpeqkk" path="res://examples/validation/smart_decal_3d.gd" id="1"]
-[ext_resource type="Script" uid="uid://ddvfg1dp16ohh" path="res://components/gameplay/decals/smart_decal_3d.gd" id="2"]
+[ext_resource type="Script" uid="uid://ddvfg1dp16ohh" path="res://addons/nucleus/components/gameplay/decals/smart_decal_3d.gd" id="2"]
 [ext_resource type="Texture2D" uid="uid://b2svyls1bcwhi" path="res://icon.svg" id="3"]
 
 [sub_resource type="Environment" id="Environment"]

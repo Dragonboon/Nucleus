@@ -75,5 +75,5 @@ reporting when the opt-out is enabled.
 5. Community data mods are a separate trust model; no Godot resource pack is
    mounted just because an ID appears in the comparison.
 
-This is intentionally a pure stateless API in optional `modules/content_packs`.
+This is intentionally a pure stateless API in optional `addons/nucleus/modules/content_packs`.
 It has no network calls, file writes, OS execution, Autoload, or SceneTree access.

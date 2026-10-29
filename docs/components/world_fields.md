@@ -1,6 +1,6 @@
 # World Scalar Fields 3D
 
-Target engine: Godot 4.7.2. Component: `components/world/fields/world_mask_3d.gd`.
+Target engine: Godot 4.7.2. Component: `addons/nucleus/components/world/fields/world_mask_3d.gd`.
 
 `NucleusWorldMask3D` is a **scene-owned** scalar field sampled in world space.
 It samples authored scalar data without depending on terrain generation,

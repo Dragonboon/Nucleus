@@ -3,8 +3,8 @@
 ## Scope
 
 ```text
-core/settings
-core/input
+addons/nucleus/core/settings
+addons/nucleus/core/input
 ```
 
 Settings and Input integrate closely but retain separate responsibilities:
@@ -73,7 +73,7 @@ SSAO, SSIL, glow, volumetric fog, SDFGI and tonemapping are properties of an
 Nucleus ships optional definitions under:
 
 ```text
-core/settings/optional/environment/
+addons/nucleus/core/settings/optional/environment/
 ```
 
 and a scene component:
@@ -286,7 +286,7 @@ capabilities remain composed helpers rather than a monolithic MobileManager.
 Core input emits device state. UI presentation remains scene-owned.
 
 `NucleusInputDeviceToastBinding` bridges gamepad connection/disconnection signals
-into `NucleusUIToastHost`. This keeps `core/input` independent from UI while
+into `NucleusUIToastHost`. This keeps `addons/nucleus/core/input` independent from UI while
 allowing a game to opt into standard controller feedback with one composed layer.
 
 ## Signals and data flow
@@ -331,7 +331,7 @@ preferences expose related Godot properties.
 ## Persistence boundary
 
 Settings persistence is configuration data. Save-game state belongs to
-`core/save`. Do not mix them merely because both write under `user://`.
+`addons/nucleus/core/save`. Do not mix them merely because both write under `user://`.
 
 ## Extension rule
 

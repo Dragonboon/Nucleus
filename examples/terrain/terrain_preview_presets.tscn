@@ -1,10 +1,10 @@
 [gd_scene load_steps=9 format=3]
 
-[ext_resource type="Script" path="res://modules/terrain/terrain_generator_3d.gd" id="1_generator"]
-[ext_resource type="Resource" path="res://modules/terrain/presets/gentle_hills.tres" id="2_hills"]
-[ext_resource type="Resource" path="res://modules/terrain/presets/lowlands.tres" id="3_lowlands"]
-[ext_resource type="Resource" path="res://modules/terrain/presets/rugged_mountains.tres" id="4_mountains"]
-[ext_resource type="Resource" path="res://modules/terrain/presets/archipelago_island.tres" id="5_island"]
+[ext_resource type="Script" path="res://addons/nucleus/modules/terrain/terrain_generator_3d.gd" id="1_generator"]
+[ext_resource type="Resource" path="res://addons/nucleus/modules/terrain/presets/gentle_hills.tres" id="2_hills"]
+[ext_resource type="Resource" path="res://addons/nucleus/modules/terrain/presets/lowlands.tres" id="3_lowlands"]
+[ext_resource type="Resource" path="res://addons/nucleus/modules/terrain/presets/rugged_mountains.tres" id="4_mountains"]
+[ext_resource type="Resource" path="res://addons/nucleus/modules/terrain/presets/archipelago_island.tres" id="5_island"]
 [ext_resource type="Resource" path="res://examples/terrain/materials/terrain_height_layers.tres" id="6_material"]
 [ext_resource type="Script" path="res://examples/terrain/terrain_example_runner.gd" id="7_runner"]
 

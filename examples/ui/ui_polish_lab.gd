@@ -5,17 +5,17 @@ extends Control
 ## parallel demo framework. Each page validates a small ownership boundary.
 
 const HIGH_CONTRAST_THEME: Theme = preload(
-	"res://components/ui/theme/nucleus_high_contrast_theme.tres"
+	"res://addons/nucleus/components/ui/theme/nucleus_high_contrast_theme.tres"
 )
 
 const TOAST_HOST_SCENE: PackedScene = preload(
-	"res://components/ui/toast/ui_toast_host.tscn"
+	"res://addons/nucleus/components/ui/toast/ui_toast_host.tscn"
 )
 const MODAL_HOST_SCENE: PackedScene = preload(
-	"res://components/ui/modal/ui_modal_host.tscn"
+	"res://addons/nucleus/components/ui/modal/ui_modal_host.tscn"
 )
 const SCREEN_EFFECTS_SCENE: PackedScene = preload(
-	"res://components/ui/effects/ui_screen_effects.tscn"
+	"res://addons/nucleus/components/ui/effects/ui_screen_effects.tscn"
 )
 
 var _page_controller: NucleusUIPageController

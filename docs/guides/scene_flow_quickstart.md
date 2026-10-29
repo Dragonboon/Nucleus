@@ -92,7 +92,7 @@ Additional uniforms can be supplied through `shader_parameters`.
 A tile dissolve example ships at:
 
 ```text
-res://core/scene_flow/scene_transition_tiles.gdshader
+res://addons/nucleus/core/scene_flow/scene_transition_tiles.gdshader
 ```
 
 ## Custom transition scene

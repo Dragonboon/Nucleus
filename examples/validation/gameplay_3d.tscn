@@ -1,9 +1,9 @@
 [gd_scene format=3 uid="uid://b2u6nf1eal7lt"]
 
-[ext_resource type="Script" uid="uid://ckn27qe2yffs3" path="res://components/gameplay/resources/value_pool.gd" id="1_pool"]
-[ext_resource type="Script" uid="uid://cev2ipo7i7e8" path="res://components/gameplay/resources/regenerator.gd" id="2_regen"]
-[ext_resource type="Script" uid="uid://cfiwx72gbqkg8" path="res://components/gameplay/targeting/targeting_agent.gd" id="3_agent"]
-[ext_resource type="Script" uid="uid://dpxeiljd6680g" path="res://components/gameplay/targeting/sensors/target_area_sensor_3d.gd" id="4_sensor"]
+[ext_resource type="Script" uid="uid://ckn27qe2yffs3" path="res://addons/nucleus/components/gameplay/resources/value_pool.gd" id="1_pool"]
+[ext_resource type="Script" uid="uid://cev2ipo7i7e8" path="res://addons/nucleus/components/gameplay/resources/regenerator.gd" id="2_regen"]
+[ext_resource type="Script" uid="uid://cfiwx72gbqkg8" path="res://addons/nucleus/components/gameplay/targeting/targeting_agent.gd" id="3_agent"]
+[ext_resource type="Script" uid="uid://dpxeiljd6680g" path="res://addons/nucleus/components/gameplay/targeting/sensors/target_area_sensor_3d.gd" id="4_sensor"]
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_validation"]
 radius = 8.0

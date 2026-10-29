@@ -132,11 +132,11 @@ actual loading screen.
 
 ## Godot 4.7 first-start audio warning
 
-The template keeps the AudioBusLayout itself as a normal `.tres` Resource, but
+The addon keeps the AudioBusLayout itself as a normal `.tres` Resource, but
 `project.godot` references it by:
 
 ```text
-res://default_bus_layout.tres
+res://addons/nucleus/core/audio/default_bus_layout.tres
 ```
 
 This avoids the intermittent Godot 4.7 early UID-cache warning for the default

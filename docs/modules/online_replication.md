@@ -3,7 +3,7 @@
 ## Status
 
 Online gameplay replication extends the existing optional
-`modules/networking` transport layer.
+`addons/nucleus/modules/networking` transport layer.
 
 Nucleus does **not** replace Godot's high-level multiplayer stack.
 

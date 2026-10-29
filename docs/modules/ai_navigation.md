@@ -1,6 +1,6 @@
 # Optional AI / Navigation Module
 
-`modules/ai` is optional and scene-owned. It separates **decision**, **behavior**,
+`addons/nucleus/modules/ai` is optional and scene-owned. It separates **decision**, **behavior**,
 **navigation intent**, **physical locomotion**, and **presentation**.
 
 ## Ownership

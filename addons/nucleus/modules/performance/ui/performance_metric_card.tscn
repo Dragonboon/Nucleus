@@ -1,0 +1,81 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://addons/nucleus/modules/performance/ui/performance_metric_card.gd" id="1_card"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxCard"]
+bg_color = Color(0.065, 0.078, 0.102, 0.96)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.16, 0.19, 0.24, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxBarBackground"]
+bg_color = Color(0.12, 0.14, 0.18, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[node name="PerformanceMetricCard" type="PanelContainer"]
+custom_minimum_size = Vector2(184, 116)
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxCard")
+script = ExtResource("1_card")
+
+[node name="Margin" type="MarginContainer" parent="."]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 9
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 9
+
+[node name="Content" type="VBoxContainer" parent="Margin"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Header" type="HBoxContainer" parent="Margin/Content"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="Margin/Content/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.63, 0.68, 0.75, 1)
+theme_override_font_sizes/font_size = 11
+text = "METRIC"
+
+[node name="Status" type="Label" parent="Margin/Content/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "OK"
+horizontal_alignment = 2
+
+[node name="Value" type="Label" parent="Margin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.95, 0.98, 1)
+theme_override_font_sizes/font_size = 24
+text = "--"
+
+[node name="Detail" type="Label" parent="Margin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.66, 0.73, 1)
+theme_override_font_sizes/font_size = 11
+text = "Waiting for sample"
+
+[node name="BudgetBar" type="ProgressBar" parent="Margin/Content"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 5)
+layout_mode = 2
+mouse_filter = 2
+max_value = 1.0
+step = 0.001
+show_percentage = false
+theme_override_styles/background = SubResource("StyleBoxBarBackground")

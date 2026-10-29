@@ -34,11 +34,11 @@ class ConsoleReportTests(unittest.TestCase):
     def test_static_scopes_allow_game_classes_and_report_counts(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
-            (root / "core").mkdir()
+            (root / "addons/nucleus/core").mkdir(parents=True)
             (root / "game").mkdir()
             suite_dir = root / "tests/headless"
             suite_dir.mkdir(parents=True)
-            (root / "core/example.gd").write_text("class_name NucleusExample\nextends Node\n", encoding="utf-8")
+            (root / "addons/nucleus/core/example.gd").write_text("class_name NucleusExample\nextends Node\n", encoding="utf-8")
             (root / "game/player.gd").write_text("class_name IslandsPlayer\nextends Node\n", encoding="utf-8")
             (suite_dir / "test_case.gd").write_text(
                 "extends Node\nfunc expect_true() -> void:\n\tpass\nfunc finish() -> Dictionary:\n\treturn {}\n", encoding="utf-8"
@@ -57,13 +57,13 @@ class ConsoleReportTests(unittest.TestCase):
             self.assertIn("PASS", message)
             self.assertNotIn("\x1b[", message)
 
-            (root / "core/example.gd").write_text("class_name MyCore\nextends Node\n", encoding="utf-8")
+            (root / "addons/nucleus/core/example.gd").write_text("class_name MyCore\nextends Node\n", encoding="utf-8")
             result, message = self.run_cli(static_checks, "--root", str(root), "--color", "never")
             self.assertEqual(result, 1)
             self.assertIn("public class_name must use Nucleus prefix", message)
             self.assertIn("FAIL", message)
 
-            (root / "core/example.gd").write_text("class_name NucleusExample\nextends Node\n", encoding="utf-8")
+            (root / "addons/nucleus/core/example.gd").write_text("class_name NucleusExample\nextends Node\n", encoding="utf-8")
             (root / "game/player.gd").write_text(
                 "class_name IslandsPlayer\nextends Node\nfunc _ready():\n\tInput.mouse_mode = Input.MOUSE_MODE_VISIBLE\n", encoding="utf-8"
             )
@@ -74,18 +74,18 @@ class ConsoleReportTests(unittest.TestCase):
     def test_documentation_coverage_and_missing_mapping(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
-            (root / "core/input").mkdir(parents=True)
+            (root / "addons/nucleus/core/input").mkdir(parents=True)
             (root / "docs").mkdir()
             (root / "docs/input.md").write_text("# Input\n", encoding="utf-8")
             manifest = root / "docs/documentation_coverage.json"
-            manifest.write_text(json.dumps({"coverage": {"core/input": ["docs/input.md"]}}), encoding="utf-8")
+            manifest.write_text(json.dumps({"coverage": {"addons/nucleus/core/input": ["docs/input.md"]}}), encoding="utf-8")
             code, message = self.run_cli(documentation_audit, "--root", str(root))
             self.assertEqual(code, 0, message)
             self.assertIn("1/1 (100%)", message)
-            (root / "core/save").mkdir()
+            (root / "addons/nucleus/core/save").mkdir()
             code, message = self.run_cli(documentation_audit, "--root", str(root))
             self.assertEqual(code, 1)
-            self.assertIn("unmapped subsystem: core/save", message)
+            self.assertIn("unmapped subsystem: addons/nucleus/core/save", message)
             self.assertIn("1/2 (50%)", message)
 
     def test_productization_checks_not_weakened(self):

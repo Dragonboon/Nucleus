@@ -2,9 +2,9 @@ extends Control
 ## Visual preview first; simulated hardware never authorizes writes implicitly.
 
 const PROFILES: Array[Resource] = [
-	preload("res://modules/performance/profiles/handheld_battery.tres"),
-	preload("res://modules/performance/profiles/handheld_balanced.tres"),
-	preload("res://modules/performance/profiles/handheld_quality.tres"),
+	preload("res://addons/nucleus/modules/performance/profiles/handheld_battery.tres"),
+	preload("res://addons/nucleus/modules/performance/profiles/handheld_balanced.tres"),
+	preload("res://addons/nucleus/modules/performance/profiles/handheld_quality.tres"),
 ]
 
 var _detection_choice: OptionButton

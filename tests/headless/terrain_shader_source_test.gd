@@ -1,7 +1,7 @@
 extends "res://tests/headless/test_case.gd"
 ## Regression for camera data passed into custom terrain shader helpers.
 
-const SHADER_PATH := "res://modules/terrain/shaders/layered_terrain.gdshader"
+const SHADER_PATH := "res://addons/nucleus/modules/terrain/shaders/layered_terrain.gdshader"
 
 
 func run() -> Dictionary:

@@ -3,8 +3,8 @@
 ## Scope
 
 ```text
-components/gameplay/pooling
-components/gameplay/targeting
+addons/nucleus/components/gameplay/pooling
+addons/nucleus/components/gameplay/targeting
 ```
 
 Both systems are scene-owned and source-aware. There is no global `PoolManager`

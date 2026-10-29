@@ -337,7 +337,7 @@ con F6 en Godot.
   no almacenan el fantasma. Los mundos están protegidos por `NucleusSave`; la
   validación y el catálogo de escenas siguen en el laboratorio.
 
-El módulo `modules/world_state` **no se utiliza** porque este laboratorio
+El módulo `addons/nucleus/modules/world_state` **no se utiliza** porque este laboratorio
 reconstruye un documento entero en una sola escena. Para un juego con regiones,
 objetos persistentes entre cargas y reaparición dinámica, `WorldStateService`
 es el consumidor adecuado y puede conectarse a `NucleusSaveSession`.

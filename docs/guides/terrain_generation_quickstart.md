@@ -1,6 +1,6 @@
 # Procedural Terrain Generation Quickstart
 
-Use `modules/terrain` when the project needs fast generated 3D heightfield
+Use `addons/nucleus/modules/terrain` when the project needs fast generated 3D heightfield
 terrain without adopting a manual terrain-painting workflow.
 
 Technical contracts:
@@ -32,10 +32,10 @@ The node is scene-owned. Do not add it as an Autoload.
 Create a `NucleusTerrainProfile`, or duplicate one of:
 
 ```text
-res://modules/terrain/presets/gentle_hills.tres
-res://modules/terrain/presets/lowlands.tres
-res://modules/terrain/presets/rugged_mountains.tres
-res://modules/terrain/presets/archipelago_island.tres
+res://addons/nucleus/modules/terrain/presets/gentle_hills.tres
+res://addons/nucleus/modules/terrain/presets/lowlands.tres
+res://addons/nucleus/modules/terrain/presets/rugged_mountains.tres
+res://addons/nucleus/modules/terrain/presets/archipelago_island.tres
 ```
 
 For a custom noise prototype:

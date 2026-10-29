@@ -20,7 +20,7 @@ func _test_default_bus_layout_bootstrap_path() -> void:
 	)
 	expect_equal(
 		bus_layout,
-		"res://default_bus_layout.tres",
+		"res://addons/nucleus/core/audio/default_bus_layout.tres",
 		"Default AudioBusLayout should avoid early project-setting UID lookup.",
 	)
 

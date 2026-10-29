@@ -8,14 +8,14 @@ For a first-use recipe for every optional module, see:
 
 ## Performance / Diagnostics
 
-Use `modules/performance` when the project needs continuous lightweight
+Use `addons/nucleus/modules/performance` when the project needs continuous lightweight
 performance visibility, configurable target budgets, trace markers, and
 human-readable routing into Godot's native profiling tools.
 
 Fastest setup:
 
 ```text
-res://modules/performance/performance_panel.tscn
+res://addons/nucleus/modules/performance/performance_panel.tscn
 ```
 
 The module reads native `Performance` monitors and can publish summary/custom
@@ -35,7 +35,7 @@ docs/modules/performance.md
 
 ## Procedural Terrain Generation
 
-Use `modules/terrain` when the project wants fast heightfield terrain generation
+Use `addons/nucleus/modules/terrain` when the project wants fast heightfield terrain generation
 from noise, heightmaps, or grayscale images without adopting manual terrain
 painting as the core workflow.
 
@@ -73,14 +73,14 @@ docs/modules/terrain_generation.md
 
 Use the EventBus only when you intentionally need mediator semantics.
 
-Add `modules/event_bus/event_bus.tscn` to the scope that should own it. Promote
+Add `addons/nucleus/modules/event_bus/event_bus.tscn` to the scope that should own it. Promote
 it to an Autoload only for genuine cross-scene events.
 
 Prefer a normal signal for direct/local relationships.
 
 ## Networking
 
-Add `modules/networking/network_handler.tscn` to the scope that should own peer
+Add `addons/nucleus/modules/networking/network_handler.tscn` to the scope that should own peer
 lifecycle, or configure it as an Autoload in a game that genuinely needs
 cross-scene connection lifetime.
 
@@ -99,7 +99,7 @@ lobbies, or matchmaking.
 
 ## Inventory / Equipment
 
-`modules/inventory` is data/runtime infrastructure and does not require an
+`addons/nucleus/modules/inventory` is data/runtime infrastructure and does not require an
 Autoload.
 
 Typical ownership:
@@ -121,7 +121,7 @@ docs/guides/inventory_equipment_quickstart.md
 
 ## Probability / Loot
 
-`modules/loot` uses Godot's native `RandomNumberGenerator` and adds reusable
+`addons/nucleus/modules/loot` uses Godot's native `RandomNumberGenerator` and adds reusable
 loot-table semantics.
 
 Typical ownership:
@@ -144,7 +144,7 @@ docs/guides/loot_quickstart.md
 
 ## Persistent World State
 
-`modules/world_state` gives authored/runtime world objects stable identity and
+`addons/nucleus/modules/world_state` gives authored/runtime world objects stable identity and
 explicit cross-scene state.
 
 If the game replaces whole level scenes, its `NucleusWorldStateService` must live
@@ -159,7 +159,7 @@ persistent GameSession
 or intentionally add:
 
 ```text
-modules/world_state/world_state.tscn
+addons/nucleus/modules/world_state/world_state.tscn
 ```
 
 as an opt-in Autoload.
@@ -174,7 +174,7 @@ docs/guides/persistent_world_quickstart.md
 
 ## AI / Navigation
 
-`modules/ai` composes Utility AI with Godot `NavigationAgent2D/3D`.
+`addons/nucleus/modules/ai` composes Utility AI with Godot `NavigationAgent2D/3D`.
 
 It intentionally reuses:
 
@@ -209,7 +209,7 @@ docs/guides/ai_navigation_quickstart.md
 
 ## Online Gameplay Replication
 
-`modules/networking/replication` complements Godot's native multiplayer
+`addons/nucleus/modules/networking/replication` complements Godot's native multiplayer
 replication instead of replacing it.
 
 Use:
@@ -238,7 +238,7 @@ docs/guides/online_replication_quickstart.md
 
 ## Platform Services
 
-`modules/platform_services` provides only:
+`addons/nucleus/modules/platform_services` provides only:
 
 ```text
 provider lifecycle
@@ -259,7 +259,7 @@ docs/guides/platform_services_quickstart.md
 
 ## Content Packs / DLC / community mods
 
-`modules/content_packs` separates trusted Godot resource packs from untrusted
+`addons/nucleus/modules/content_packs` separates trusted Godot resource packs from untrusted
 community data.
 
 Use signed resource packs for:
@@ -290,7 +290,7 @@ docs/modules/content_packs.md
 
 ## Mobile Foundation
 
-`modules/mobile` and `components/ui/touch` complete the missing mobile policy
+`addons/nucleus/modules/mobile` and `addons/nucleus/components/ui/touch` complete the missing mobile policy
 without creating a second gameplay input framework.
 
 Use:

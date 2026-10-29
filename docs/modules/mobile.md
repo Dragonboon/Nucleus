@@ -3,11 +3,11 @@
 ## Scope
 
 ```text
-modules/mobile
-components/ui/touch
-core/input/haptics.gd
-core/input/local
-core/platform/nucleus_platform.gd
+addons/nucleus/modules/mobile
+addons/nucleus/components/ui/touch
+addons/nucleus/core/input/haptics.gd
+addons/nucleus/core/input/local
+addons/nucleus/core/platform/nucleus_platform.gd
 ```
 
 Mobile Foundation does not create a separate mobile gameplay framework.

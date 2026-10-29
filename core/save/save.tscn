@@ -1,8 +1,0 @@
-[gd_scene format=3 uid="uid://burwrn87pbsff"]
-
-[ext_resource type="Script" uid="uid://botpqccbrsp3j" path="res://core/save/save_service.gd" id="1_service"]
-[ext_resource type="Resource" uid="uid://ce27cte53qkm6" path="res://core/save/defaults/default_save_profile.tres" id="2_profile"]
-
-[node name="NucleusSave" type="Node" unique_id=1211154875]
-script = ExtResource("1_service")
-profile = ExtResource("2_profile")

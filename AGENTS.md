@@ -17,7 +17,7 @@ solution. They also apply to experiments and throwaway prototypes.
 
 | Step | Required behavior |
 | --- | --- |
-| **Context** | Identify whether this checkout is Nucleus itself or a game derived from it; inspect the real HEAD, local changes, Godot engine pin, and requested scope. |
+| **Context** | Identify whether this checkout is the Nucleus addon development repository or a consuming game; inspect the real HEAD, local changes, Godot engine pin, and requested scope. |
 | **Role** | Act as a principal Godot/gameplay systems engineer: correctness, composability, stable APIs, security, accessibility, performance, and evidence matter more than speed of code generation. |
 | **Inspection** | Locate the native Godot facility, existing Nucleus owner, its signature, docs, callers and tests **before** proposing a new implementation. |
 | **Standards** | Exactly one owner for writable state; native Godot is authoritative; prefer scene-owned Nodes, Resources, signals, and explicit bindings. Nucleus remains game-agnostic. |
@@ -80,7 +80,7 @@ actually wired to that owner → relevant test → limitations**. Never claim
 - No new baseline Autoload for convenience. Optional modules must stay optional.
 - A game-specific problem is not permission to fork or silently alter the shared
   framework. Propose a backward-compatible general fix separately if justified.
-- A derivative's `AGENTS.md` should state its own gameplay requirements, but
+- A consuming game's `AGENTS.md` should state its own gameplay requirements, but
   should inherit this reuse/ownership policy. Repository instructions cannot
   guarantee agent compliance: tests and review gates must enforce outcomes.
 
@@ -101,6 +101,13 @@ GitHub `main`, the local checkout, an older conversation or a downloaded overlay
 all refer to the same revision. Check authorization before changing branches,
 files, remotes or publishing commits.
 
+## Addon distribution boundary
+
+Installable code and assets live under `addons/`. The root `project.godot`,
+`AGENTS.md`, docs, examples, tests, scripts, tools and labs are development-only.
+Do not require them from an addon. Do not instruct users to clone a game template.
+Preserve host project policy and test installation into an existing project.
+
 ## 1. Architecture invariants
 
 1. **One writable owner.** No competing transforms, animation state, camera
@@ -114,7 +121,7 @@ files, remotes or publishing commits.
 5. **Six baseline Autoloads only:** `NucleusApp`, `NucleusSettings`,
    `NucleusInput`, `NucleusAudio`, `NucleusSave`, `NucleusSceneFlow`.
 6. **Optional stays optional.** Core must not acquire implicit dependencies on
-   optional `modules/` from a demo, game or convenience fix.
+   optional `addons/nucleus/modules/` from a demo, game or convenience fix.
 7. **Stable identity and explicit failure.** Async, networking, save/load,
    scene lifetime and editor generation must support cancellation/retry/cleanup.
 8. **Intentional APIs.** Public framework `class_name` identifiers start with
@@ -129,15 +136,15 @@ files, remotes or publishing commits.
 
 | Need | Inspect first | Read alongside source |
 | --- | --- | --- |
-| Movement, facing, camera | `components/gameplay/movement/`, `control/`, `camera/` | `docs/components/gameplay_movement_camera.md`; `docs/guides/tutorials/third_person_3d.md` |
-| Animation, humanoids, ragdoll | `components/gameplay/animation/` | `docs/components/animation_integration.md`; `docs/components/ragdoll_authoring_3d.md` |
-| Input, preferences, UI | `core/input/`, `core/settings/`, `components/ui/` | `docs/guides/settings_input_quickstart.md`; `docs/guides/ui_quickstart.md` |
-| Interactions and actions | `components/gameplay/interaction/`, `actions/` | `docs/components/gameplay_foundation.md`; `docs/components/gameplay_actions_attributes_status.md` |
-| Audio, save, scenes | `core/audio/`, `core/save/`, `core/scene_flow/` | `docs/components/audio_save_scene_localization.md`; `docs/components/save_system.md` |
-| AI, navigation | `modules/ai/` | `docs/modules/ai_navigation.md` |
-| Terrain, streaming, oceans | `modules/terrain/`, `components/world/` | `docs/components/world_surfaces.md`; `docs/components/world_buoyancy.md` |
-| Networking, authority | `modules/networking/` | `docs/modules/networking.md`; `docs/modules/online_replication.md` |
-| Rendering and profiling | `components/world/rendering/`, `modules/performance/` | `docs/components/rendering_quality.md`; `docs/components/runtime_optimization.md` |
+| Movement, facing, camera | `addons/nucleus/components/gameplay/movement/`, `control/`, `camera/` | `docs/components/gameplay_movement_camera.md`; `docs/guides/tutorials/third_person_3d.md` |
+| Animation, humanoids, ragdoll | `addons/nucleus/components/gameplay/animation/` | `docs/components/animation_integration.md`; `docs/components/ragdoll_authoring_3d.md` |
+| Input, preferences, UI | `addons/nucleus/core/input/`, `addons/nucleus/core/settings/`, `addons/nucleus/components/ui/` | `docs/guides/settings_input_quickstart.md`; `docs/guides/ui_quickstart.md` |
+| Interactions and actions | `addons/nucleus/components/gameplay/interaction/`, `actions/` | `docs/components/gameplay_foundation.md`; `docs/components/gameplay_actions_attributes_status.md` |
+| Audio, save, scenes | `addons/nucleus/core/audio/`, `addons/nucleus/core/save/`, `addons/nucleus/core/scene_flow/` | `docs/components/audio_save_scene_localization.md`; `docs/components/save_system.md` |
+| AI, navigation | `addons/nucleus/modules/ai/` | `docs/modules/ai_navigation.md` |
+| Terrain, streaming, oceans | `addons/nucleus/modules/terrain/`, `addons/nucleus/components/world/` | `docs/components/world_surfaces.md`; `docs/components/world_buoyancy.md` |
+| Networking, authority | `addons/nucleus/modules/networking/` | `docs/modules/networking.md`; `docs/modules/online_replication.md` |
+| Rendering and profiling | `addons/nucleus/components/world/rendering/`, `addons/nucleus/modules/performance/` | `docs/components/rendering_quality.md`; `docs/components/runtime_optimization.md` |
 | New shared subsystem | `docs/architecture/component_selection.md` | `docs/documentation_coverage.json`; `docs/guides/use_case_catalog.md` |
 
 These paths are **discovery pointers, not proofs of an API**. Read actual
@@ -208,7 +215,7 @@ Calls controlled by `scripts/ci/static_checks.py` must go through their owner:
 | `ProjectSettings.load_resource_pack` | Verified `NucleusContentPackLoader` |
 
 **Derivative-project class names:** `static_checks.py` requires the `Nucleus`
-prefix in framework-owned `core/`, `components/` and `modules/` scripts. A
+prefix in framework-owned `addons/nucleus/core/`, `addons/nucleus/components/` and `addons/nucleus/modules/` scripts. A
 consuming game's `game/` classes retain its own naming policy. The protected
 engine-operation checks still apply; a game-specific prefix does not exempt
 code from existing input, settings or content-loading ownership rules.

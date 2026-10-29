@@ -1,0 +1,444 @@
+[gd_scene format=3 uid="uid://p01c8pwusg7w"]
+
+[ext_resource type="Script" uid="uid://dv3e5p4rbk16k" path="res://addons/nucleus/modules/performance/performance_panel.gd" id="1_panel"]
+[ext_resource type="Script" uid="uid://bsduhhxpvg3j0" path="res://addons/nucleus/modules/performance/performance_sampler.gd" id="2_sampler"]
+[ext_resource type="PackedScene" path="res://addons/nucleus/modules/performance/ui/performance_metric_card.tscn" id="3_card"]
+[ext_resource type="PackedScene" path="res://addons/nucleus/modules/performance/ui/performance_metric_row.tscn" id="4_row"]
+[ext_resource type="PackedScene" path="res://addons/nucleus/modules/performance/ui/performance_trend_graph.tscn" id="5_trend"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxPanel"]
+bg_color = Color(0.035, 0.045, 0.062, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.18, 0.22, 0.28, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+shadow_color = Color(0, 0, 0, 0.35)
+shadow_size = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxBadge"]
+content_margin_left = 8.0
+content_margin_top = 3.0
+content_margin_right = 8.0
+content_margin_bottom = 3.0
+bg_color = Color(0.07, 0.08, 0.095, 0.96)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.28, 0.32, 0.38, 0.8)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxSection"]
+bg_color = Color(0.052, 0.064, 0.084, 0.96)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.135, 0.165, 0.21, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[node name="PerformancePanel" type="PanelContainer" unique_id=1157656216]
+offset_left = 16.0
+offset_top = 16.0
+offset_right = 876.0
+offset_bottom = 752.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxPanel")
+script = ExtResource("1_panel")
+
+[node name="Sampler" type="Node" parent="." unique_id=818163162]
+script = ExtResource("2_sampler")
+
+[node name="Margin" type="MarginContainer" parent="." unique_id=1905272179]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 12
+
+[node name="Content" type="VBoxContainer" parent="Margin" unique_id=1752822140]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Header" type="HBoxContainer" parent="Margin/Content" unique_id=1549830423]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Heading" type="VBoxContainer" parent="Margin/Content/Header" unique_id=2020723536]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 1
+
+[node name="Title" type="Label" parent="Margin/Content/Header/Heading" unique_id=1650260151]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.94, 0.96, 0.99, 1)
+theme_override_font_sizes/font_size = 17
+text = "NUCLEUS PERFORMANCE"
+
+[node name="Target" type="Label" parent="Margin/Content/Header/Heading" unique_id=349553442]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.64, 0.71, 1)
+theme_override_font_sizes/font_size = 11
+text = "Target profile"
+
+[node name="GlobalStatusBadge" type="PanelContainer" parent="Margin/Content/Header" unique_id=1693598182]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_styles/panel = SubResource("StyleBoxBadge")
+
+[node name="GlobalStatus" type="Label" parent="Margin/Content/Header/GlobalStatusBadge" unique_id=1541806363]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.66, 0.73, 1)
+theme_override_font_sizes/font_size = 10
+text = "WAITING"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="SummaryGrid" type="GridContainer" parent="Margin/Content" unique_id=1893465518]
+layout_mode = 2
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 8
+columns = 4
+
+[node name="FpsCard" parent="Margin/Content/SummaryGrid" unique_id=323146040 instance=ExtResource("3_card")]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="FrameCard" parent="Margin/Content/SummaryGrid" unique_id=1978578112 instance=ExtResource("3_card")]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="PhysicsCard" parent="Margin/Content/SummaryGrid" unique_id=1976067745 instance=ExtResource("3_card")]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="NavigationCard" parent="Margin/Content/SummaryGrid" unique_id=2017908741 instance=ExtResource("3_card")]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="SubsystemGrid" type="GridContainer" parent="Margin/Content" unique_id=2072278451]
+layout_mode = 2
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 8
+columns = 2
+
+[node name="RenderingSection" type="PanelContainer" parent="Margin/Content/SubsystemGrid" unique_id=489406840]
+custom_minimum_size = Vector2(0, 158)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxSection")
+
+[node name="Margin" type="MarginContainer" parent="Margin/Content/SubsystemGrid/RenderingSection" unique_id=1868835760]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
+
+[node name="Content" type="VBoxContainer" parent="Margin/Content/SubsystemGrid/RenderingSection/Margin" unique_id=549892183]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="Title" type="Label" parent="Margin/Content/SubsystemGrid/RenderingSection/Margin/Content" unique_id=150151280]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.82, 0.88, 1)
+theme_override_font_sizes/font_size = 12
+text = "RENDERING"
+
+[node name="Separator" type="HSeparator" parent="Margin/Content/SubsystemGrid/RenderingSection/Margin/Content" unique_id=487366691]
+layout_mode = 2
+
+[node name="RenderDrawCalls" parent="Margin/Content/SubsystemGrid/RenderingSection/Margin/Content" unique_id=547612933 instance=ExtResource("4_row")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="RenderObjects" parent="Margin/Content/SubsystemGrid/RenderingSection/Margin/Content" unique_id=1858272859 instance=ExtResource("4_row")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="RenderPrimitives" parent="Margin/Content/SubsystemGrid/RenderingSection/Margin/Content" unique_id=1998998656 instance=ExtResource("4_row")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="RenderVideoMemory" parent="Margin/Content/SubsystemGrid/RenderingSection/Margin/Content" unique_id=1794202891 instance=ExtResource("4_row")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="RenderTextureMemory" parent="Margin/Content/SubsystemGrid/RenderingSection/Margin/Content" unique_id=1475633988 instance=ExtResource("4_row")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="RenderBufferMemory" parent="Margin/Content/SubsystemGrid/RenderingSection/Margin/Content" unique_id=1338672609 instance=ExtResource("4_row")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="SceneSection" type="PanelContainer" parent="Margin/Content/SubsystemGrid" unique_id=876787401]
+custom_minimum_size = Vector2(0, 158)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxSection")
+
+[node name="Margin" type="MarginContainer" parent="Margin/Content/SubsystemGrid/SceneSection" unique_id=680823361]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
+
+[node name="Content" type="VBoxContainer" parent="Margin/Content/SubsystemGrid/SceneSection/Margin" unique_id=718816505]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="Title" type="Label" parent="Margin/Content/SubsystemGrid/SceneSection/Margin/Content" unique_id=265524894]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.82, 0.88, 1)
+theme_override_font_sizes/font_size = 12
+text = "SCENE / MEMORY"
+
+[node name="Separator" type="HSeparator" parent="Margin/Content/SubsystemGrid/SceneSection/Margin/Content" unique_id=1987326026]
+layout_mode = 2
+
+[node name="SceneObjects" parent="Margin/Content/SubsystemGrid/SceneSection/Margin/Content" unique_id=1778644793 instance=ExtResource("4_row")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="SceneResources" parent="Margin/Content/SubsystemGrid/SceneSection/Margin/Content" unique_id=2095089967 instance=ExtResource("4_row")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="SceneNodes" parent="Margin/Content/SubsystemGrid/SceneSection/Margin/Content" unique_id=970765589 instance=ExtResource("4_row")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="SceneOrphans" parent="Margin/Content/SubsystemGrid/SceneSection/Margin/Content" unique_id=906675792 instance=ExtResource("4_row")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="SceneStaticMemory" parent="Margin/Content/SubsystemGrid/SceneSection/Margin/Content" unique_id=612201319 instance=ExtResource("4_row")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="PhysicsSection" type="PanelContainer" parent="Margin/Content/SubsystemGrid" unique_id=2044992366]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 158)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxSection")
+
+[node name="Margin" type="MarginContainer" parent="Margin/Content/SubsystemGrid/PhysicsSection" unique_id=524274570]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
+
+[node name="Content" type="VBoxContainer" parent="Margin/Content/SubsystemGrid/PhysicsSection/Margin" unique_id=817356202]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="Title" type="Label" parent="Margin/Content/SubsystemGrid/PhysicsSection/Margin/Content" unique_id=199667905]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.82, 0.88, 1)
+theme_override_font_sizes/font_size = 12
+text = "PHYSICS"
+
+[node name="Separator" type="HSeparator" parent="Margin/Content/SubsystemGrid/PhysicsSection/Margin/Content" unique_id=1017643155]
+layout_mode = 2
+
+[node name="Physics3DActive" parent="Margin/Content/SubsystemGrid/PhysicsSection/Margin/Content" unique_id=1979406355 instance=ExtResource("4_row")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="Physics3DPairs" parent="Margin/Content/SubsystemGrid/PhysicsSection/Margin/Content" unique_id=1807643135 instance=ExtResource("4_row")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="Physics3DIslands" parent="Margin/Content/SubsystemGrid/PhysicsSection/Margin/Content" unique_id=1347313846 instance=ExtResource("4_row")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="Physics2DActive" parent="Margin/Content/SubsystemGrid/PhysicsSection/Margin/Content" unique_id=1251259747 instance=ExtResource("4_row")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="Physics2DPairs" parent="Margin/Content/SubsystemGrid/PhysicsSection/Margin/Content" unique_id=1009609356 instance=ExtResource("4_row")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="Physics2DIslands" parent="Margin/Content/SubsystemGrid/PhysicsSection/Margin/Content" unique_id=1285531942 instance=ExtResource("4_row")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="NavigationSection" type="PanelContainer" parent="Margin/Content/SubsystemGrid" unique_id=1759061806]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 158)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxSection")
+
+[node name="Margin" type="MarginContainer" parent="Margin/Content/SubsystemGrid/NavigationSection" unique_id=840191663]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
+
+[node name="Content" type="VBoxContainer" parent="Margin/Content/SubsystemGrid/NavigationSection/Margin" unique_id=539677479]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="Title" type="Label" parent="Margin/Content/SubsystemGrid/NavigationSection/Margin/Content" unique_id=749489525]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.82, 0.88, 1)
+theme_override_font_sizes/font_size = 12
+text = "NAVIGATION"
+
+[node name="Separator" type="HSeparator" parent="Margin/Content/SubsystemGrid/NavigationSection/Margin/Content" unique_id=36988096]
+layout_mode = 2
+
+[node name="Navigation3DRegions" parent="Margin/Content/SubsystemGrid/NavigationSection/Margin/Content" unique_id=2124489644 instance=ExtResource("4_row")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="Navigation3DAgents" parent="Margin/Content/SubsystemGrid/NavigationSection/Margin/Content" unique_id=363879797 instance=ExtResource("4_row")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="Navigation3DObstacles" parent="Margin/Content/SubsystemGrid/NavigationSection/Margin/Content" unique_id=1260631003 instance=ExtResource("4_row")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="Navigation2DRegions" parent="Margin/Content/SubsystemGrid/NavigationSection/Margin/Content" unique_id=702267190 instance=ExtResource("4_row")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="Navigation2DAgents" parent="Margin/Content/SubsystemGrid/NavigationSection/Margin/Content" unique_id=482050986 instance=ExtResource("4_row")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="Navigation2DObstacles" parent="Margin/Content/SubsystemGrid/NavigationSection/Margin/Content" unique_id=257538582 instance=ExtResource("4_row")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="TrendSection" type="PanelContainer" parent="Margin/Content" unique_id=95009181]
+custom_minimum_size = Vector2(0, 132)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxSection")
+
+[node name="Margin" type="MarginContainer" parent="Margin/Content/TrendSection" unique_id=872368515]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
+
+[node name="Content" type="VBoxContainer" parent="Margin/Content/TrendSection/Margin" unique_id=1876039230]
+layout_mode = 2
+theme_override_constants/separation = 3
+
+[node name="Header" type="HBoxContainer" parent="Margin/Content/TrendSection/Margin/Content" unique_id=750442041]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="Margin/Content/TrendSection/Margin/Content/Header" unique_id=754084547]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.82, 0.88, 1)
+theme_override_font_sizes/font_size = 12
+text = "FRAME PACING HISTORY"
+
+[node name="TrendStats" type="Label" parent="Margin/Content/TrendSection/Margin/Content/Header" unique_id=1317267924]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.63, 0.68, 0.75, 1)
+theme_override_font_sizes/font_size = 10
+text = "P50 -- · P95 -- · MAX --"
+horizontal_alignment = 1
+
+[node name="TrendWindow" type="Label" parent="Margin/Content/TrendSection/Margin/Content/Header" unique_id=1371042815]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.54, 0.6, 0.67, 1)
+theme_override_font_sizes/font_size = 10
+text = "30 s"
+horizontal_alignment = 2
+
+[node name="Separator" type="HSeparator" parent="Margin/Content/TrendSection/Margin/Content" unique_id=77290809]
+layout_mode = 2
+
+[node name="TrendGraph" parent="Margin/Content/TrendSection/Margin/Content" unique_id=190800930 instance=ExtResource("5_trend")]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="TrendThresholds" type="Label" parent="Margin/Content/TrendSection/Margin/Content" unique_id=777697395]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.54, 0.6, 0.67, 1)
+theme_override_font_sizes/font_size = 9
+text = "target · warning · critical"
+horizontal_alignment = 1
+
+[node name="DiagnosticsSeparator" type="HSeparator" parent="Margin/Content" unique_id=1997469792]
+layout_mode = 2
+
+[node name="DiagnosticsHeader" type="HBoxContainer" parent="Margin/Content" unique_id=1707914088]
+layout_mode = 2
+
+[node name="DiagnosticsTitle" type="Label" parent="Margin/Content/DiagnosticsHeader" unique_id=678489902]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.78, 0.82, 0.88, 1)
+theme_override_font_sizes/font_size = 12
+text = "DIAGNOSTICS"
+
+[node name="DiagnosticsCount" type="Label" parent="Margin/Content/DiagnosticsHeader" unique_id=1210619171]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.54, 0.6, 0.67, 1)
+theme_override_font_sizes/font_size = 10
+text = "waiting"
+horizontal_alignment = 2
+
+[node name="DiagnosticsEmpty" type="Label" parent="Margin/Content" unique_id=1536285592]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.64, 0.71, 1)
+theme_override_font_sizes/font_size = 11
+text = "Waiting for first diagnostic pass..."
+
+[node name="DiagnosticsList" type="GridContainer" parent="Margin/Content" unique_id=601209474]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/h_separation = 5
+theme_override_constants/v_separation = 5
+columns = 2
+
+[node name="FooterSeparator" type="HSeparator" parent="Margin/Content" unique_id=2055137384]
+layout_mode = 2
+
+[node name="Hint" type="Label" parent="Margin/Content" unique_id=1037081515]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.48, 0.54, 0.61, 1)
+theme_override_font_sizes/font_size = 10
+text = "Use native Godot profilers for deep investigation."
+autowrap_mode = 2

@@ -1,13 +1,13 @@
 extends "res://tests/headless/test_case.gd"
 
 const MeshBuilder := preload(
-	"res://modules/terrain/terrain_mesh_builder.gd"
+	"res://addons/nucleus/modules/terrain/terrain_mesh_builder.gd"
 )
 const PatchBuilder := preload(
-	"res://modules/terrain/terrain_patch_builder.gd"
+	"res://addons/nucleus/modules/terrain/terrain_patch_builder.gd"
 )
 const TerrainStreamerScript := preload(
-	"res://modules/terrain/terrain_streamer_3d.gd"
+	"res://addons/nucleus/modules/terrain/terrain_streamer_3d.gd"
 )
 
 const EXAMPLE_SCENES: Array[String] = [

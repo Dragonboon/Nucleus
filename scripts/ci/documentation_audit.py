@@ -41,11 +41,11 @@ def main() -> int:
 		return report.finish([f"docs/documentation_coverage.json: unable to load ({exc})"])
 
 	discovered: set[str] = set()
-	discovered |= discover_directories(root, "core")
-	discovered |= discover_directories(root, "modules")
-	discovered |= discover_directories(root, "components/gameplay")
-	discovered |= discover_directories(root, "components/ui")
-	discovered |= discover_directories(root, "components/world")
+	discovered |= discover_directories(root, "addons/nucleus/core")
+	discovered |= discover_directories(root, "addons/nucleus/modules")
+	discovered |= discover_directories(root, "addons/nucleus/components/gameplay")
+	discovered |= discover_directories(root, "addons/nucleus/components/ui")
+	discovered |= discover_directories(root, "addons/nucleus/components/world")
 
 	errors: list[str] = []
 	mapped = set(coverage)

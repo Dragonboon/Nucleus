@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="NucleusBoolSettingDefinition" format=3]
+
+[ext_resource type="Script" path="res://addons/nucleus/core/settings/definitions/bool_setting_definition.gd" id="1_definition"]
+
+[resource]
+script = ExtResource("1_definition")
+section = &"environment"
+key = &"glow_enabled"
+display_name = "Glow"
+description = "Enables glow for the scene Environment."
+default_value = false

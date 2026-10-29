@@ -37,10 +37,10 @@ Do not add Terrain to Autoloads.
 Nucleus ships normal Resource presets:
 
 ```text
-res://modules/terrain/presets/gentle_hills.tres
-res://modules/terrain/presets/lowlands.tres
-res://modules/terrain/presets/rugged_mountains.tres
-res://modules/terrain/presets/archipelago_island.tres
+res://addons/nucleus/modules/terrain/presets/gentle_hills.tres
+res://addons/nucleus/modules/terrain/presets/lowlands.tres
+res://addons/nucleus/modules/terrain/presets/rugged_mountains.tres
+res://addons/nucleus/modules/terrain/presets/archipelago_island.tres
 ```
 
 Duplicate the closest preset into your game content folder. Do not edit the

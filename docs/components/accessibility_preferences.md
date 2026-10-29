@@ -6,12 +6,12 @@ This contract covers reusable preferences and helpers that improve comfort
 without moving game art direction or gameplay semantics into Nucleus.
 
 ```text
-core/accessibility/ui_accessibility_policy.gd
-core/input/input_accessibility_policy.gd
-core/input/input_activation_state.gd
-components/ui/accessibility/ui_accessibility_binding.gd
-components/gameplay/control/motion_input.gd
-components/gameplay/camera/look_rig_3d.gd
+addons/nucleus/core/accessibility/ui_accessibility_policy.gd
+addons/nucleus/core/input/input_accessibility_policy.gd
+addons/nucleus/core/input/input_activation_state.gd
+addons/nucleus/components/ui/accessibility/ui_accessibility_binding.gd
+addons/nucleus/components/gameplay/control/motion_input.gd
+addons/nucleus/components/gameplay/camera/look_rig_3d.gd
 ```
 
 Nucleus owns preference identity, persistence integration, neutral policy, and

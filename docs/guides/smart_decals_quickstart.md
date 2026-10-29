@@ -18,7 +18,7 @@ SmartDecal3D : Decal
 Attach:
 
 ```text
-components/gameplay/decals/smart_decal_3d.gd
+addons/nucleus/components/gameplay/decals/smart_decal_3d.gd
 ```
 
 Assign at least:

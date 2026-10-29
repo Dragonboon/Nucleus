@@ -1,6 +1,6 @@
 # Optional 3D Scatter Generation (Godot 4.7.x)
 
-`modules/scatter` fills the gap between world-space placement rules and low-cost
+`addons/nucleus/modules/scatter` fills the gap between world-space placement rules and low-cost
 native rendering. It is **optional**, scene-owned and game-agnostic.
 
 ## Source inspirations and what is deliberately excluded

@@ -3,9 +3,9 @@
 ## Scope
 
 ```text
-components/gameplay/actions
-components/gameplay/attributes
-components/gameplay/status
+addons/nucleus/components/gameplay/actions
+addons/nucleus/components/gameplay/attributes
+addons/nucleus/components/gameplay/status
 ```
 
 These systems form Nucleus's reusable gameplay transaction/modifier layer.

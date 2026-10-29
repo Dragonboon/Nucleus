@@ -1,6 +1,6 @@
 # Optional Development Tools Module
 
-`modules/development_tools` is optional, debug-oriented and scene-owned by
+`addons/nucleus/modules/development_tools` is optional, debug-oriented and scene-owned by
 default. It provides an explicit command registry plus a searchable command
 palette without turning text input into arbitrary code execution.
 

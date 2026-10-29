@@ -1,7 +1,7 @@
 # Spatial Rect Index 2D (P04)
 
 Target engine: Godot 4.7.2. Source:
-`core/utils/geometry/spatial_rect_index_2d.gd`.
+`addons/nucleus/core/utils/geometry/spatial_rect_index_2d.gd`.
 
 `NucleusSpatialRectIndex2D` is a generic, mutable, scene-independent **broad
 phase** for rectangular areas. It does not touch the physics server or receive

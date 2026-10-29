@@ -1,110 +1,76 @@
-# Installing Nucleus for a New Game
+# Installing the Nucleus Godot Addon
 
-Nucleus is designed to be the **starting project** for a game. It is not an addon
-that can be enabled from Project Settings, and it does not automatically merge
-itself into another `project.godot`.
+Nucleus installs into **new or existing Godot projects**. You do not clone a
+starter, replace `project.godot`, or create another game repository.
 
-## Requirements
+## Requirements and installation
 
-Use the engine line declared in [`../policies/godot_compatibility.md`](../policies/godot_compatibility.md).
-The current CI-gated reference is Godot `4.7.2-stable`.
+Use the engine declared in [Godot compatibility](../policies/godot_compatibility.md):
+Godot **4.7.2-stable** is the tested reference.
 
-## Recommended: versioned release or pinned source
+1. Download the versioned addon ZIP and verify its SHA-256 checksum.
+2. Extract it into the existing project root. It contains `addons/` directly.
+3. Open the project and enable **Nucleus** in **Project > Project Settings > Plugins**.
+4. The plugin registers the six existing core Autoloads in dependency order.
+5. Compose components and optional modules from `res://addons/nucleus/` in your scenes.
 
-For a release package:
+When using a source checkout, copy only `addons/nucleus/`. Localization authoring
+is integrated into the **Nucleus dock > Localization** tab; there is one plugin
+to enable. Python and GNU gettext are needed only for catalog creation/update.
 
-1. verify its SHA-256 checksum;
-2. extract `Nucleus-<version>.zip`;
-3. rename the project directory;
-4. initialize the game's own repository;
-5. open `project.godot` with the supported Godot version.
+Use **Nucleus dock > Manage** to preview and apply the **Full**, **2D only** or
+**3D only** profile, check stable `main`, download/verify an update and apply it.
+See [addon management](addon_management.md) for dependency checks and recovery.
 
-For a pinned checkout:
+The repository's `project.godot`, `AGENTS.md`, `docs/`, `examples/`, `tests/`,
+`scripts/`, `tools/` and any development labs are development material.
+They are not required by the addon and are excluded from the installation ZIP.
+The root project is a validation workspace, with authored sample inputs and buses.
 
-```bash
-git clone https://github.com/sempitern0/Nucleus.git MyGame
-cd MyGame
-git checkout <exact-tag-or-commit>
-rm -rf .git
-git init
+## Existing project ownership
+
+Installation leaves the host's main scene, InputMap, renderer, physics backend,
+theme, audio bus layout and translations intact. Bind exported action names to
+your InputMap; apply the supplied theme explicitly to selected UI if desired.
+Use your buses, or explicitly adopt the optional bus layout from
+`addons/nucleus/core/audio/default_bus_layout.tres`. Missing named buses use
+existing audio fallback behavior; they are not created by installation.
+
+The six services retain their API names: `NucleusApp`, `NucleusSettings`,
+`NucleusInput`, `NucleusAudio`, `NucleusSave`, `NucleusSceneFlow`. Existing matching
+entries are reused. Conflicting names abort activation before adding any entries;
+resolve them explicitly and enable again. Do not install two Nucleus versions:
+Godot's global `class_name` registry is shared across the project.
+
+Automatic display, locale and audio preference application is **off** in consuming
+projects. To delegate those responsibilities to the existing Nucleus appliers,
+add this project setting and restart the game:
+
+```ini
+[nucleus]
+integration/manage_project_preferences=true
 ```
 
-Record the source tag/commit in the game repository. Do not base a long-running
-production project on an unrecorded moving `main`.
+This applies the Nucleus catalog and persisted settings, including Master volume.
+Review defaults first. Explicit calls to Nucleus APIs still perform their documented
+operations. App lifecycle/logging, input rebinding persistence, save service and
+scene-flow APIs remain the established baseline; avoid competing owners in the game.
 
-## First project setup
+## Disable, upgrade and remove
 
-After opening the template:
+Disable Nucleus in Plugins before deleting its folder. Only Autoload entries
+created by the plugin and still pointing to their original paths are removed.
+Pre-existing matching entries and user replacements remain owned by the project.
+Closing the editor does not uninstall services. Stop a running game before disabling.
+The localization parser, panel and cancellable jobs follow the same plugin lifecycle.
 
-1. change `application/config/name`;
-2. replace the icon/presentation settings when appropriate;
-3. create the game's main scene;
-4. assign it as `run/main_scene`;
-5. review the default InputMap actions;
-6. keep the six baseline Autoloads until you intentionally redesign their documented responsibilities;
-7. keep `default_bus_layout.tres` unless the game's audio architecture replaces it deliberately.
+Pin a release or commit. Upgrade by replacing the addon directories, preserving
+`.uid` files; keep game content outside them. Before deleting or upgrading, inspect
+scene/resource references and follow [migration](addon_migration.md).
 
-The absence of a default main scene is intentional.
+## Asset Store / AssetLib availability
 
-## Validate the untouched baseline
-
-Run:
-
-```bash
-python3 scripts/ci/static_checks.py
-python3 scripts/ci/documentation_audit.py
-python3 scripts/ci/productization_audit.py
-
-godot --headless --path . --import
-godot --headless --path . res://tests/headless/test_runner.tscn
-godot --headless --path . res://tests/smoke/smoke_main.tscn
-```
-
-In the editor you can also open `tests/headless/test_runner.tscn` and run the
-current scene with **F6**. There is no separate editor-only test runner.
-
-See [`validation_ci_quickstart.md`](validation_ci_quickstart.md) for the complete gate.
-
-## Where game code should live
-
-A practical starting layout is:
-
-```text
-game/
-    actors/
-    levels/
-    systems/
-    ui/
-    data/
-assets/
-```
-
-Keep `core/`, generic `components/` and optional `modules/` focused on reusable
-infrastructure. Promote game behavior back into Nucleus only after repeated
-cross-project evidence.
-
-## Vendoring and upgrades
-
-A consuming game owns its copied Nucleus source. Selective modification is
-expected. Keep reusable changes focused, preserve tests for public behavior, and
-merge later Nucleus versions intentionally rather than expecting package-manager
-conflict resolution.
-
-## Existing Godot projects
-
-Integration into an established project is possible but is not a one-click path.
-At minimum reconcile:
-
-```text
-Autoload names and ownership
-InputMap actions
-audio bus layout
-project settings
-settings/save paths
-scene-flow assumptions
-class_name collisions
-existing architecture
-```
-
-Integrate only the Nucleus subsystems you actually need and follow their current
-technical contracts.
+See the root README for verified distribution links. No public listing ID has
+been recorded yet. Once approved, install from the editor catalog into the open
+project, verify Dragonboon/Nucleus as the source, then enable Nucleus in Plugins.
+See [publication](asset_store_publication.md) for release and submission details.

@@ -251,4 +251,4 @@ weights
 game-specific Resources
 ```
 
-This avoids baking one RPG progression model into a general template.
+This avoids baking one RPG progression model into a general addon.

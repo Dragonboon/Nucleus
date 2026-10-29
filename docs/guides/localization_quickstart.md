@@ -39,7 +39,7 @@ POT export and safe gettext updates, use the
 [localization pipeline](../components/localization_pipeline.md).
 `NucleusLocalizedMessage` adds context/plurals/arguments, and
 `NucleusLocalizedTextBinding` refreshes a Control automatically on locale changes.
-The template now ships twelve common UI messages in English and Spanish; game
+The addon ships twelve common UI messages in English and Spanish; game
 content and other languages still require their own translations.
 
 ## 1. Create translation resources

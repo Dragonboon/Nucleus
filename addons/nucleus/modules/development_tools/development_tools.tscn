@@ -1,0 +1,42 @@
+[gd_scene format=3 uid="uid://0vdqyg45juh4"]
+
+[ext_resource type="Script" uid="uid://clgmm5h0j6kj8" path="res://addons/nucleus/modules/development_tools/development_tools.gd" id="1_tools"]
+[ext_resource type="Script" uid="uid://06ku5seqsk5a" path="res://addons/nucleus/modules/development_tools/development_command_registry.gd" id="2_registry"]
+[ext_resource type="Script" uid="uid://domgm0p0gunjj" path="res://addons/nucleus/modules/development_tools/adapters/default_commands.gd" id="3_defaults"]
+[ext_resource type="Script" uid="uid://d26oo66lw57vx" path="res://addons/nucleus/modules/development_tools/adapters/scene_flow_commands.gd" id="4_scene"]
+[ext_resource type="PackedScene" path="res://addons/nucleus/modules/development_tools/ui/development_command_palette.tscn" id="5_palette"]
+[ext_resource type="Script" path="res://addons/nucleus/modules/development_tools/adapters/validation_commands.gd" id="6_validation"]
+[ext_resource type="Script" path="res://addons/nucleus/modules/development_tools/adapters/scene_object_commands.gd" id="7_scene_objects"]
+
+[node name="DevelopmentTools" type="Node" unique_id=1626943068]
+process_mode = 3
+script = ExtResource("1_tools")
+
+[node name="Registry" type="Node" parent="." unique_id=603697413]
+unique_name_in_owner = true
+process_mode = 3
+script = ExtResource("2_registry")
+
+[node name="DefaultCommands" type="Node" parent="." unique_id=1705321096]
+process_mode = 3
+script = ExtResource("3_defaults")
+
+[node name="SceneFlowCommands" type="Node" parent="." unique_id=1991421348]
+process_mode = 3
+script = ExtResource("4_scene")
+
+[node name="ValidationCommands" type="Node" parent="."]
+process_mode = 3
+script = ExtResource("6_validation")
+
+[node name="SceneObjectCommands" type="Node" parent="."]
+process_mode = 3
+script = ExtResource("7_scene_objects")
+
+[node name="Overlay" type="CanvasLayer" parent="." unique_id=2047082544]
+layer = 100
+
+[node name="Palette" parent="Overlay" unique_id=92643959 instance=ExtResource("5_palette")]
+unique_name_in_owner = true
+anchors_preset = 8
+registry_path = NodePath("../../Registry")

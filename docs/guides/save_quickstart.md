@@ -6,7 +6,7 @@ contract, see [Save System](../components/save_system.md).
 
 ## 1. Find the save directory
 
-The default Save Profile in `core/save/save.tscn` leaves `base_directory` empty,
+The default Save Profile in `addons/nucleus/core/save/save.tscn` leaves `base_directory` empty,
 so the application resolves the root as:
 
 ~~~gdscript
@@ -21,7 +21,7 @@ Use the runtime value when the project or profile changes:
 print(NucleusSave.profile.base_directory)
 ~~~
 
-To override it, edit `core/save/defaults/default_save_profile.tres` and set
+To override it, edit `addons/nucleus/core/save/defaults/default_save_profile.tres` and set
 `base_directory` to an absolute writable directory. Do so before shipping
 saves; changing locations later requires a game-owned migration.
 

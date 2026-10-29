@@ -44,8 +44,8 @@ res://content/frozen_north/
 Avoid base-project paths such as:
 
 ```text
-res://core/
-res://components/
+res://addons/nucleus/core/
+res://addons/nucleus/components/
 res://game/player.gd
 ```
 
@@ -101,7 +101,7 @@ verification.
 Instance:
 
 ```text
-res://modules/content_packs/content_pack_manager.tscn
+res://addons/nucleus/modules/content_packs/content_pack_manager.tscn
 ```
 
 Set a `NucleusContentPackPolicy`:

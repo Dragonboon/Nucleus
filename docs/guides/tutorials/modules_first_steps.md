@@ -10,7 +10,7 @@ The rule is:
 Core/components
     reusable baseline
 
-modules/*
+addons/nucleus/modules/*
     opt-in systems with a real project cost/benefit decision
 ```
 
@@ -26,7 +26,7 @@ Do not use it instead of a local signal.
 Instance:
 
 ```text
-res://modules/event_bus/event_bus.tscn
+res://addons/nucleus/modules/event_bus/event_bus.tscn
 ```
 
 inside the scene/session that should own it.
@@ -77,7 +77,7 @@ Network : NucleusNetworkHandler
 from:
 
 ```text
-res://modules/networking/network_handler.tscn
+res://addons/nucleus/modules/networking/network_handler.tscn
 ```
 
 For a native ENet host:

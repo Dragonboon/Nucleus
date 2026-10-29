@@ -48,7 +48,7 @@ once, saves its state, and stays open on reload." This is not a request for a
 | Question | Correct owner |
 | --- | --- |
 | Who simulates collision, animation, pathfinding and draw calls? | Godot native nodes/servers |
-| Who provides reusable state and lifecycle contracts? | Nucleus components/modules |
+| Who provides reusable state and lifecycle contracts? | Nucleus addons/nucleus/components/modules |
 | Who decides damage, hunger, quest progression, AI tactics or appearance? | The consuming game |
 | Who accepts multiplayer gameplay truth and visibility? | The authoritative game/server |
 | Who validates editor scene modifications? | The addon/editor operation, using native UndoRedo |

@@ -40,7 +40,7 @@ For the first transport test, `Players` and `MultiplayerSpawner` can remain
 unused. Instance the network handler from:
 
 ```text
-res://modules/networking/network_handler.tscn
+res://addons/nucleus/modules/networking/network_handler.tscn
 ```
 
 Keep it scene-owned unless you deliberately need one connection to survive full

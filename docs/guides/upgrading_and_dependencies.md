@@ -1,9 +1,9 @@
 # Selective integration and upgrades
 
-Nucleus is a source template. Optional modules are opt-in at runtime, not
+Nucleus is an installable Godot addon. See [addon migration](addon_migration.md). Optional modules are opt-in at runtime, not
 independent installable packages with automatic dependency resolution. Copying
 one script without its referenced classes can break Godot's global-class parse.
-Start with the pinned template; remove code only after checking references and
+Start with the pinned addon; remove code only after checking references and
 running import, audits and tests on that reduced project.
 
 ## Composition dependencies
@@ -11,7 +11,7 @@ running import, audits and tests on that reduced project.
 | Requirement | Bring together | Keep in the game |
 | --- | --- | --- |
 | Baseline | Six documented core Autoloads, settings catalog, audio buses | Main scene, branding, settings choices |
-| Biome classification | World biome Resources; current profiles reference `modules/terrain` and `modules/scatter` types | Climate authoring and content |
+| Biome classification | World biome Resources; current profiles reference `addons/nucleus/modules/terrain` and `addons/nucleus/modules/scatter` types | Climate authoring and content |
 | Procedural decoration | Surface sampler + Scatter profile/region + core MaterializationQueue | Desired regions and budgets |
 | Biome color map | BiomeSurfaceQuery + terrain integration map + a material consuming its texture | Shader/PBR art policy |
 | Persistent procedural objects | World State region/entity/adapters + SaveSession + baseline save service | Stable IDs, generator revision and schema |

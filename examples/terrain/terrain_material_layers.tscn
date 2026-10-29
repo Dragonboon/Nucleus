@@ -1,8 +1,8 @@
 [gd_scene load_steps=9 format=3]
 
-[ext_resource type="Script" path="res://modules/terrain/terrain_generator_3d.gd" id="1_generator"]
-[ext_resource type="Script" path="res://modules/terrain/terrain_profile.gd" id="2_profile"]
-[ext_resource type="Script" path="res://modules/terrain/terrain_layout.gd" id="3_layout"]
+[ext_resource type="Script" path="res://addons/nucleus/modules/terrain/terrain_generator_3d.gd" id="1_generator"]
+[ext_resource type="Script" path="res://addons/nucleus/modules/terrain/terrain_profile.gd" id="2_profile"]
+[ext_resource type="Script" path="res://addons/nucleus/modules/terrain/terrain_layout.gd" id="3_layout"]
 [ext_resource type="Resource" path="res://examples/terrain/materials/terrain_height_layers.tres" id="4_material"]
 [ext_resource type="Script" path="res://examples/terrain/terrain_example_runner.gd" id="5_runner"]
 

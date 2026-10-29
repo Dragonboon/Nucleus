@@ -180,7 +180,7 @@ tiled.shader_parameters[&"seed"] = 8.0
 The example shader lives at:
 
 ```text
-res://core/scene_flow/scene_transition_tiles.gdshader
+res://addons/nucleus/core/scene_flow/scene_transition_tiles.gdshader
 ```
 
 Treat it as a reference implementation. Duplicate it into game-owned presentation

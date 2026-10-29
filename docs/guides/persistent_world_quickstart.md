@@ -9,7 +9,7 @@ If your game uses full scene replacement through `NucleusSceneFlow` or
 `SceneTree.change_scene_*()`, add:
 
 ```text
-modules/world_state/world_state.tscn
+addons/nucleus/modules/world_state/world_state.tscn
 ```
 
 as an **optional** Autoload named, for example:

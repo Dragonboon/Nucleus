@@ -1,7 +1,0 @@
-[gd_resource type="Resource" script_class="NucleusSaveProfile" format=3 uid="uid://ce27cte53qkm6"]
-
-[ext_resource type="Script" uid="uid://cixj0x53l0r8n" path="res://core/save/migrations/save_migration.gd" id="1_p4mf2"]
-[ext_resource type="Script" uid="uid://ckg0h8humhl85" path="res://core/save/save_profile.gd" id="1_profile"]
-
-[resource]
-script = ExtResource("1_profile")

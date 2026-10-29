@@ -9,7 +9,7 @@ import tempfile
 import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
-BRIDGE = ROOT / "scripts/localization/editor_catalogs.py"
+BRIDGE = ROOT / "addons/nucleus/editor/localization/tools/editor_catalogs.py"
 
 
 @unittest.skipUnless(all(shutil.which(x) for x in ("msginit", "msgmerge", "msgfmt", "msgcmp")),
@@ -20,7 +20,7 @@ class EditorCatalogTests(unittest.TestCase):
         self.addCleanup(self.directory.cleanup)
         self.folder = Path(self.directory.name)
         self.po = self.folder / "es with spaces.po"
-        shutil.copy2(ROOT / "core/localization/translations/es.po", self.po)
+        shutil.copy2(ROOT / "addons/nucleus/core/localization/translations/es.po", self.po)
         self.pot = self.folder / "messages.pot"
         # A real gettext-generated template preserves native format/context metadata.
         subprocess.run(["msgattrib", "--clear-fuzzy", str(self.po), "-o", str(self.pot)], check=True)

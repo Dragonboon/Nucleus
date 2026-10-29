@@ -64,7 +64,7 @@ renderer and hardware tier.
 The following resources are shipped under:
 
 ```text
-core/settings/optional/environment/
+addons/nucleus/core/settings/optional/environment/
 ```
 
 They cover SSAO, SSIL, glow, volumetric fog, SDFGI and tonemapping. They are not

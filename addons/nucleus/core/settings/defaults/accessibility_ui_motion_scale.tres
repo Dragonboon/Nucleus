@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="NucleusFloatSettingDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://addons/nucleus/core/settings/definitions/float_setting_definition.gd" id="1_definition"]
+
+[resource]
+script = ExtResource("1_definition")
+section = &"accessibility"
+key = &"ui_motion_scale"
+display_name = "Interface Motion Speed"
+description = "Scales the duration of interface animations."
+default_value = 1.0
+has_range = true
+minimum_value = 0.0
+maximum_value = 2.0
+step = 0.1

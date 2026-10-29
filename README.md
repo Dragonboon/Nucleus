@@ -5,21 +5,21 @@
 <h1 align="center">Nucleus</h1>
 
 <p align="center">
-  A production-oriented Godot project foundation: small core services,
+  An installable Godot addon for existing and new projects: small core services,
   composable gameplay systems, optional production modules, and executable validation.
 </p>
 
 <p align="center">
-  <a href="https://github.com/sempitern0/Nucleus/actions/workflows/nucleus-ci.yml">
-    <img alt="Nucleus CI" src="https://github.com/sempitern0/Nucleus/actions/workflows/nucleus-ci.yml/badge.svg?branch=main">
+  <a href="https://github.com/Dragonboon/Nucleus/actions/workflows/nucleus-ci.yml">
+    <img alt="Nucleus CI" src="https://github.com/Dragonboon/Nucleus/actions/workflows/nucleus-ci.yml/badge.svg?branch=main">
   </a>
   <img alt="Godot 4.7.2" src="https://img.shields.io/badge/Godot-4.7.2-478CBF?logo=godot-engine&logoColor=white">
-  <img alt="Project template" src="https://img.shields.io/badge/type-project%20template-6D5DFB">
+  <img alt="Godot addon" src="https://img.shields.io/badge/type-Godot%20addon-6D5DFB">
   <img alt="Pre-1.0" src="https://img.shields.io/badge/status-pre--1.0-EA9A3A">
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/license-MIT-2EA44F"></a>
 </p>
 
-Nucleus is a reusable **Godot 4.7 project template** for starting production games
+Nucleus is a reusable **Godot 4.7 addon** for new and existing games
 with common infrastructure already separated into explicit ownership boundaries.
 It is not an addon framework and it does not replace Godot's scene tree, physics,
 rendering, animation, resources, multiplayer, navigation, or UI systems.
@@ -34,6 +34,31 @@ small Nucleus service/component contracts
 game-owned rules, content, art and product policy
 ```
 
+## Download and install
+
+**Current distribution:** the addon is prepared for store submission. No verified
+public Nucleus Asset Store/Asset Library listing is linked yet; do not confuse
+similarly named assets with this repository.
+
+Download a versioned ZIP and its checksum from
+[GitHub Releases](https://github.com/Dragonboon/Nucleus/releases), when published.
+Until a release is published, use the **Nucleus Release Package** workflow's
+versioned artifact, or copy `addons/nucleus/` from a pinned source checkout.
+Extract the addon ZIP into your existing project and enable **Nucleus** under
+**Project > Project Settings > Plugins**. Keep your existing `project.godot`.
+
+Once the official listing is approved, search **Nucleus** in the editor's
+**Asset Store / AssetLib** tab, verify the repository is **Dragonboon/Nucleus**,
+then download/install `addons/nucleus/` and enable the plugin. This is an addon
+for the open project, not a Project Manager template.
+
+The **Nucleus** dock integrates **Manage** and **Localization**. Manage previews
+physical **Full / 2D / 3D** profiles, protects host references, keeps rollback
+copies and stages verified updates from successful `main` CI commits.
+See [installation](docs/guides/installation.md),
+[addon management](docs/guides/addon_management.md) and
+[store publication](docs/guides/asset_store_publication.md).
+
 ## Integration readiness
 
 See the [maturity map](docs/architecture/maturity.md) for evidence and limits,
@@ -45,14 +70,14 @@ when adopting changes into an existing game.
 
 | Contract | Current state |
 | --- | --- |
-| Template version | [`VERSION`](VERSION) |
+| Addon version | [`VERSION`](VERSION) |
 | Reference engine | Godot `4.7.2-stable` |
 | API stability | Pre-1.0; intentional public changes may still occur |
 | Core validation | static audits + headless tests + smoke scenes |
 | Export validation | Linux, Windows and Web smoke exports |
 | License | [MIT](LICENSE) |
 
-The template intentionally ships without a game main scene. The consuming project
+The addon does not replace the game main scene. The consuming project
 owns its entry point and opts into only the systems it needs.
 
 ## Start here: choose your route
@@ -72,6 +97,9 @@ owns its entry point and opts into only the systems it needs.
 | Read exact APIs and limitations | [Documentation index](docs/README.md) |
 
 ### First five minutes
+
+The single **Nucleus** dock integrates localization, physical 2D/3D profiles and
+verified updates from stable main. See [addon management](docs/guides/addon_management.md).
 
 1. Read [Installation](docs/guides/installation.md).
 2. Open [Foundation Quickstart](docs/guides/foundation_quickstart.md).
@@ -212,7 +240,7 @@ Start with:
 
 ## Optional production modules
 
-Optional modules are present in the template but are not promoted to baseline
+Optional modules are included in the addon but are not promoted to baseline
 Autoloads simply for convenience.
 
 | Capability | Documentation |
@@ -251,7 +279,7 @@ use-case catalog
 guides/tutorials/ and composition recipes
     build one concrete integration
         ↓
-components/ or modules/
+addons/nucleus/components/ or addons/nucleus/modules/
     public contract, limits and extension rules
 ```
 
@@ -277,7 +305,7 @@ godot --headless --path . res://tests/headless/test_runner.tscn
 godot --headless --path . res://tests/smoke/smoke_main.tscn
 ```
 
-Run the resource-loading smoke scene when `core/loading` changes. See
+Run the resource-loading smoke scene when `addons/nucleus/core/loading` changes. See
 [Validation and CI](docs/guides/validation_ci_quickstart.md) for the complete gate.
 
 ## Compatibility and API policy
@@ -300,5 +328,5 @@ and executable evidence for reusable behavior.
 ## License
 
 Nucleus is available under the [MIT License](LICENSE). A game built from the
-template may use its own license while retaining the required notice for reused
+addon may use its own license while retaining the required notice for reused
 Nucleus code.

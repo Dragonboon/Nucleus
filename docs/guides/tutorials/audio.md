@@ -73,7 +73,7 @@ AudioOptions : VBoxContainer
 Assign the existing setting Resource:
 
 ```text
-res://core/settings/defaults/audio_master_volume.tres
+res://addons/nucleus/core/settings/defaults/audio_master_volume.tres
 ```
 
 The binding synchronizes:

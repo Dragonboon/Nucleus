@@ -1,9 +1,9 @@
 # Documentation Model
 
 Nucleus documentation is part of the product surface. Repository docs should
-help someone use, integrate, validate, release, or maintain the current template.
+help someone use, integrate, validate, release, or maintain the current addon.
 Historical planning and iteration journals live in project-management/Git
-history rather than in the source template.
+history rather than in the addon source.
 
 ## Problem-first discovery
 
@@ -37,7 +37,7 @@ Audience:
 ```text
 game developers using Nucleus
 future project collaborators
-developers evaluating the template
+developers evaluating the addon
 coding agents operating within an actual game project
 ```
 

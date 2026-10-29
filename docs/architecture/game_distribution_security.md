@@ -8,9 +8,9 @@ Reference inspection: `sempitern0/Nucleus`, `main` at commit `0f0295895bd3d452cc
 
 - Six Core Autoloads with intentionally bounded responsibilities.
 - `NucleusSaveSecurity` / `NucleusSaveIntegrity` for save encryption and integrity.
-- A public-key verification boundary for official `modules/content_packs` content.
-- An optional `modules/platform_services` adapter contract; no built-in Steam SDK or ownership verifier.
-- Reproducible source-template package hashes and Linux/Windows/Web *smoke* exports; no game-release signing/encryption pipeline.
+- A public-key verification boundary for official `addons/nucleus/modules/content_packs` content.
+- An optional `addons/nucleus/modules/platform_services` adapter contract; no built-in Steam SDK or ownership verifier.
+- Reproducible addon package hashes and Linux/Windows/Web *smoke* exports; no game-release signing/encryption pipeline.
 - No checked-in production game's `export_presets.cfg`; CI generates smoke presets in an isolated temporary copy.
 
 **Do not modify `NucleusSave` to protect PCK exports.** Save security solves a different trust problem. **Do not add another default Autoload, generic DRM manager, or shared encryption secret.**
@@ -26,7 +26,7 @@ Reference inspection: `sempitern0/Nucleus`, `main` at commit `0f0295895bd3d452cc
 | Fake platform user ID and unpaid privileged service | Store ticket validation on a trusted backend, explicit authorization | Compromised endpoints and account abuse still require server defenses |
 | Stolen textures/audio and ownership dispute | Licenses, original files and commits, optional watermarking, takedown playbook | Watermarks can be removed or transform-sensitive |
 
-**Non-goals:** anti-cheat, kernel-level anti-tamper, copy-proof asset encryption, always-online-by-default, automatic legal ownership proof, guaranteed detection of counterfeit store listings, platform-specific SDK code in Core, and restrictions on legitimate MIT reuse of the Nucleus template.
+**Non-goals:** anti-cheat, kernel-level anti-tamper, copy-proof asset encryption, always-online-by-default, automatic legal ownership proof, guaranteed detection of counterfeit store listings, platform-specific SDK code in Core, and restrictions on legitimate MIT reuse of the Nucleus addon.
 
 ## Architecture
 
@@ -64,7 +64,7 @@ Game-owned integrations (when needed)
 | --- | --- | --- | --- |
 | 0. Documentation | Quickstart, architecture, reupload playbook | Nucleus `docs/` | A new user can select a protection strategy without reading Godot internals |
 | 1. Optional preflight | `scripts/ci/audit_game_exports.py` + isolated Python tests | Nucleus developer tooling | No secrets read/disclosed; expected findings on sample presets; no change to baseline CI |
-| 2. Secure release recipes | Example workflow for *consuming game* (not Nucleus template) | Individual game repository | Windows signed build verifies; a custom-template PCK build starts and opens encrypted resources |
+| 2. Secure release recipes | Example workflow for *consuming game* (not Nucleus addon) | Individual game repository | Windows signed build verifies; a custom-template PCK build starts and opens encrypted resources |
 | 3. Platform extension | Game-owned Steam/other SDK adapter, optional backend | Individual game repository | Fake client identity/ticket denied server-side; legitimate offline play policy exercised |
 | 4. Forensic extras | Optional image/audio watermarking and independent provenance signatures | Per-game build pipeline | Detection precision tested on resized/reencoded assets; evidence is not public-secret dependent |
 
@@ -83,7 +83,7 @@ Warning: format/option support for Web/mobile differs; review the actual target'
 
 ## CI contract
 
-Nucleus ships a **source project template**. Its present headless test runner and Linux/Windows/Web smoke exports must remain available on GitHub-hosted test infrastructure **without signing identities or secret encryption keys**. Do not retrofit a security-enabled production export into those smoke tests or break public PR CI.
+Nucleus ships a **Godot addon**. Its present headless test runner and Linux/Windows/Web smoke exports must remain available on GitHub-hosted test infrastructure **without signing identities or secret encryption keys**. Do not retrofit a security-enabled production export into those smoke tests or break public PR CI.
 
 The opt-in script should be used from an actual game's release workflow, for example:
 

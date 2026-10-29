@@ -20,8 +20,8 @@ authority for cooldowns, loot, trades, inventory, or combat.
 Add the two GDScript classes:
 
 ```text
-modules/networking/clock/network_clock_sync_profile.gd
-modules/networking/clock/network_clock_sync.gd
+addons/nucleus/modules/networking/clock/network_clock_sync_profile.gd
+addons/nucleus/modules/networking/clock/network_clock_sync.gd
 ```
 
 They do not need a `.tscn`, Autoload, C# runtime, or SpacetimeDB. Instantiate one

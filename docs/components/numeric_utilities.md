@@ -2,11 +2,11 @@
 
 ## Scope and ownership
 
-Two **stateless**, game-agnostic helpers live under `core/utils/`:
+Two **stateless**, game-agnostic helpers live under `addons/nucleus/core/utils/`:
 
-- `NucleusBoundedIntMath` (`core/utils/math/bounded_int_math.gd`) performs saturating
+- `NucleusBoundedIntMath` (`addons/nucleus/core/utils/math/bounded_int_math.gd`) performs saturating
   signed 64-bit arithmetic.
-- `NucleusNumberFormatter` (`core/utils/format/number_formatter.gd`) presents
+- `NucleusNumberFormatter` (`addons/nucleus/core/utils/format/number_formatter.gd`) presents
   signed 64-bit quantities as grouped or abbreviated decimal text.
 
 Both extend `RefCounted` and expose static methods. No Node, Autoload, settings

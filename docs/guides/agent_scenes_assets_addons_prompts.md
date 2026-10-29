@@ -2,7 +2,7 @@
 
 Use the [task preamble](agent_prompt_playbook.md#task-preamble) and
 [AGENTS.md](../../AGENTS.md). **Inventory before generating.** The Nucleus
-template has examples under `examples/` but does not promise that a derived
+development repository has examples under `examples/`; installed addons do not include them. A consuming
 game has an `assets/` or `addons/` directory. Paths and licenses must
 be observed in the current project, not invented.
 
