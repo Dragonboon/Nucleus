@@ -28,6 +28,7 @@ func run() -> Dictionary:
 	second.image = picture
 	session.pages = [first, second]
 	session._ready()
+	expect_composition_signal(screen.hotspot_activated, session._on_hotspot)
 	expect_equal(session.current_page, &"start", "First authored page is active.")
 	expect_equal(screen.focus_next(), &"door", "Initial focus selects the first hotspot.")
 	expect_equal(screen.activate_focused(), OK, "Focused hotspot can be activated.")

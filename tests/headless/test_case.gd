@@ -77,3 +77,24 @@ func finish() -> Dictionary:
 		"checks": _checks,
 		"failures": _failures,
 	}
+
+
+## Caller declares candidates explicitly; this does not infer arbitrary state writers.
+func expect_single_binding(candidates: Array[Node], property: StringName, target: Node) -> void:
+	var matches := 0
+	for candidate in candidates:
+		if is_instance_valid(candidate) and property in candidate:
+			if candidate.get(property) == target:
+				matches += 1
+	expect_equal(matches, 1, "Exactly one declared component must bind %s." % property)
+
+
+func expect_composition_binding(component: Node, property: StringName, target: Node) -> void:
+	var valid := is_instance_valid(component) and is_instance_valid(target)
+	expect_true(valid and property in component and component.get(property) == target,
+		"Composition binding %s must reference its actual target." % property)
+
+
+func expect_composition_signal(source: Signal, callback: Callable) -> void:
+	expect_true(not source.is_null() and callback.is_valid() and source.is_connected(callback),
+		"Composition callback must be connected to its actual signal owner.")
