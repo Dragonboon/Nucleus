@@ -63,5 +63,31 @@ func run() -> Dictionary:
 	left.enabled = false
 	expect_equal(screen.activate(&"door"), ERR_DOES_NOT_EXIST,
 		"Disabled hotspot cannot be activated.")
+	var tap := screen.image_local_point(Vector2(0.3, 0.3))
+	screen._begin_press(tap)
+	screen.interaction_enabled = false
+	screen.interaction_enabled = true
+	screen._finish_press(tap)
+	expect_equal(fired.size(), 1, "Disable/re-enable cannot revive a pending press.")
+	screen._begin_press(tap)
+	screen._update_press(screen.image_local_point(Vector2(0.8, 0.8)))
+	screen._finish_press(tap)
+	expect_equal(fired.size(), 1, "Dragging away and returning is not a tap.")
+	screen._begin_press(tap, 7)
+	screen._finish_press(tap, 8)
+	expect_equal(fired.size(), 1, "Another finger cannot finish an owned touch.")
+	screen._finish_press(tap, 7)
+	expect_equal(fired.size(), 2, "Touch ownership is not restricted to index zero.")
+	screen._begin_press(tap)
+	screen.hotspots = [top]
+	screen._finish_press(tap)
+	expect_equal(fired.size(), 2, "Replacing dynamic hotspots cancels old presses.")
+	expect_equal(screen.hotspot_at(Vector2(NAN, 0.3)), null,
+		"Nonfinite pointer coordinates cannot hit a region.")
+	masked.bounds.position.x = NAN
+	expect_false(masked.is_valid_hotspot(), "Nonfinite geometry is rejected.")
+	masked.bounds.position.x = 0.0
+	masked.polygon = PackedVector2Array([Vector2.ZERO, Vector2(INF, 0), Vector2.ONE])
+	expect_false(masked.is_valid_hotspot(), "Nonfinite polygons are rejected.")
 	screen.free()
 	return finish()

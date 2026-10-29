@@ -6,6 +6,8 @@ signal message_requested(key: StringName)
 signal action_rejected(reason: StringName)
 signal state_changed
 signal page_changed(id: StringName)
+## Disable automatic activation to let a game resolve selected tools or dynamic aliases.
+signal hotspot_requested(id: StringName, destination: StringName)
 
 @export var screen: NucleusImageScreen
 ## Optional adapter: avoids a compile-time dependency on addons/nucleus/modules/inventory.
@@ -15,6 +17,7 @@ signal page_changed(id: StringName)
 @export var participant_id: StringName = &"adventure"
 @export var pages: Array[NucleusAdventurePage] = []
 @export var initial_page: StringName
+@export var auto_activate_hotspots := true
 @export var combinations: Array[NucleusScreenCombination] = []
 
 var current_page: StringName
@@ -23,16 +26,22 @@ var visited: Dictionary = {}
 var completed: Dictionary = {}
 var _page_index: Dictionary = {}
 var _busy := false
+var _changing_page := false
+var _initialized := false
+
+
+func _enter_tree() -> void:
+	if _initialized:
+		_bind_runtime()
 
 
 func _ready() -> void:
+	_page_index.clear()
 	for page in pages:
 		if page != null and page.is_valid_page() and not _page_index.has(page.id):
 			_page_index[page.id] = page
-	if screen != null:
-		screen.hotspot_activated.connect(_on_hotspot)
-	if save_session != null and participant_id != &"":
-		save_session.register_participant(participant_id, capture_state, restore_state)
+	_initialized = true
+	_bind_runtime()
 	if current_page == &"":
 		var first_page := initial_page
 		if first_page == &"" and not _page_index.is_empty():
@@ -41,13 +50,28 @@ func _ready() -> void:
 			change_page(first_page)
 
 
+func _bind_runtime() -> void:
+	if is_instance_valid(screen) and not screen.hotspot_activated.is_connected(_on_hotspot):
+		screen.hotspot_activated.connect(_on_hotspot)
+	if is_instance_valid(save_session) and participant_id != &"":
+		save_session.register_participant(participant_id, capture_state, restore_state)
+
+
 func _exit_tree() -> void:
+	if is_instance_valid(screen) and screen.hotspot_activated.is_connected(_on_hotspot):
+		screen.hotspot_activated.disconnect(_on_hotspot)
 	if save_session != null and is_instance_valid(save_session):
 		save_session.unregister_participant(participant_id)
 
 
 func change_page(id: StringName) -> Error:
-	if screen == null:
+	if _busy or _changing_page:
+		return ERR_BUSY
+	return _change_page(id)
+
+
+func _change_page(id: StringName) -> Error:
+	if not is_instance_valid(screen):
 		return ERR_UNCONFIGURED
 	if not _page_index.has(id):
 		return ERR_DOES_NOT_EXIST
@@ -60,18 +84,23 @@ func change_page(id: StringName) -> Error:
 			page.image, page.effect_passes)
 		if preflight != OK:
 			return preflight
+		_changing_page = true
 		if shader_stack.configure(page.image, page.effect_passes) != OK:
+			_changing_page = false
 			return ERR_CANT_CREATE
 		# Backbuffer effects are drawn over the screen, not baked into its texture.
 		if shader_stack.backend == NucleusScreenShaderStack.Backend.VIEWPORT_CHAIN:
 			page_image = shader_stack.output_texture()
-	var result := screen.set_screen(page.id, page_image, page.hotspots)
+	_changing_page = true
+	var result := screen.set_screen(page.id, page_image, page.screen_hotspots())
 	if result != OK:
+		_changing_page = false
 		return result
 	current_page = id
 	visited[String(id)] = true
 	page_changed.emit(id)
 	state_changed.emit()
+	_changing_page = false
 	return OK
 
 
@@ -87,9 +116,9 @@ func set_flag(id: StringName, value: bool = true) -> void:
 
 
 func activate_hotspot(id: StringName) -> Error:
-	if _busy or screen == null or current_page == &"":
+	if _busy or _changing_page or not is_instance_valid(screen) or current_page == &"":
 		return ERR_BUSY
-	var selected: NucleusScreenHotspot
+	var selected: NucleusScreenHotspot = null
 	for entry in screen.hotspots:
 		if entry != null and entry.id == id and entry.enabled:
 			selected = entry
@@ -125,8 +154,12 @@ func activate_hotspot(id: StringName) -> Error:
 	):
 		return ERR_UNAVAILABLE
 	var next_id := action.next_screen
-	if next_id != &"" and not _page_index.has(next_id):
-		return ERR_DOES_NOT_EXIST
+	if next_id != &"":
+		if not _page_index.has(next_id):
+			return ERR_DOES_NOT_EXIST
+		var destination_page: NucleusAdventurePage = _page_index[next_id]
+		if not destination_page.is_valid_page():
+			return ERR_INVALID_DATA
 	if next_id != &"" and shader_stack != null:
 		var target_page: NucleusAdventurePage = _page_index[next_id]
 		var validation := shader_stack.validate_configuration(
@@ -151,7 +184,7 @@ func activate_hotspot(id: StringName) -> Error:
 		completed[completed_key] = true
 	var result := OK
 	if next_id != &"":
-		result = change_page(next_id)
+		result = _change_page(next_id)
 	else:
 		state_changed.emit()
 	_busy = false
@@ -163,7 +196,7 @@ func activate_hotspot(id: StringName) -> Error:
 func combine_items(first: StringName, second: StringName) -> Error:
 	if not _inventory_ready() or first == &"" or second == &"":
 		return ERR_UNCONFIGURED
-	if _busy:
+	if _busy or _changing_page:
 		return ERR_BUSY
 	for recipe in combinations:
 		if recipe == null or not recipe.is_valid_recipe() or not recipe.matches(first, second):
@@ -249,6 +282,8 @@ func capture_state() -> Dictionary:
 
 
 func restore_state(snapshot: Dictionary) -> Error:
+	if _busy or _changing_page:
+		return ERR_BUSY
 	if snapshot.get("version", -1) != 1:
 		return ERR_FILE_UNRECOGNIZED
 	for key in ["flags", "visited", "completed"]:
@@ -278,5 +313,75 @@ func restore_state(snapshot: Dictionary) -> Error:
 	return restore_error
 
 
-func _on_hotspot(id: StringName, _destination: StringName) -> void:
-	activate_hotspot(id)
+func _on_hotspot(id: StringName, destination: StringName) -> void:
+	if auto_activate_hotspots:
+		activate_hotspot(id)
+	else:
+		hotspot_requested.emit(id, destination)
+
+
+func go_back() -> Error:
+	if not _page_index.has(current_page):
+		return ERR_UNCONFIGURED
+	var page: NucleusAdventurePage = _page_index[current_page]
+	if page.back_page == &"":
+		return ERR_DOES_NOT_EXIST
+	return change_page(page.back_page)
+
+
+## Structural authoring diagnostics. Conditions and puzzle solvability remain game-owned.
+## Optional return checking is for consumers that require every view to reach the entry.
+func validate_configuration(require_return_paths: bool = false) -> PackedStringArray:
+	var issues := PackedStringArray()
+	var index := {}
+	for page in pages:
+		if page == null or not page.is_valid_page():
+			issues.append("Invalid adventure page.")
+			continue
+		if index.has(page.id):
+			issues.append("Duplicate page: %s" % page.id)
+			continue
+		index[page.id] = page
+	if index.is_empty():
+		issues.append("No valid adventure pages.")
+		return issues
+	var entry := initial_page if initial_page != &"" else StringName(index.keys()[0])
+	if not index.has(entry):
+		issues.append("Missing initial page: %s" % entry)
+		return issues
+	var links := {}
+	for id: StringName in index:
+		var page: NucleusAdventurePage = index[id]
+		var destinations: Array[StringName] = [page.back_page, page.left_page, page.right_page]
+		for hotspot in page.hotspots:
+			destinations.append(hotspot.action.next_screen if hotspot.action != null
+				else hotspot.destination)
+		links[id] = []
+		for destination in destinations:
+			if destination == &"":
+				continue
+			if not index.has(destination):
+				issues.append("Page %s has missing destination: %s" % [id, destination])
+			else:
+				links[id].append(destination)
+	var reachable := _reachable_pages(entry, links)
+	for id: StringName in index:
+		if not reachable.has(id):
+			issues.append("Unreachable page: %s" % id)
+		if require_return_paths and not _reachable_pages(id, links).has(entry):
+			issues.append("Page has no return path to entry: %s" % id)
+	return issues
+
+
+func _reachable_pages(entry: StringName, links: Dictionary) -> Dictionary:
+	var reached := {}
+	var pending: Array[StringName] = [entry]
+	while not pending.is_empty():
+		var current := pending.pop_back() as StringName
+		if reached.has(current):
+			continue
+		reached[current] = true
+		for destination: StringName in links.get(current, []):
+			if not reached.has(destination):
+				pending.append(destination)
+	return reached

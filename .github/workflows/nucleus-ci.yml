@@ -138,6 +138,11 @@ jobs:
             --path . \
             res://tests/smoke/resource_loading_smoke.tscn
 
+      - name: Point-click GUI composition and input smoke
+        run: |
+          python3 scripts/ci/run_godot_checked.py "${{ steps.godot.outputs.bin }}" \
+            --headless --path . res://tests/smoke/point_click_smoke.tscn
+
       - name: Run localhost ENet replication smoke scene
         run: |
           python3 scripts/ci/run_godot_checked.py "${{ steps.godot.outputs.bin }}" \

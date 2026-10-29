@@ -18,7 +18,13 @@ var _cached_image: Image
 
 
 func is_valid_hotspot() -> bool:
-	return not id.is_empty() and bounds.has_area() and (
+	for vertex in polygon:
+		if not vertex.is_finite() or vertex.x < 0 or vertex.y < 0 or vertex.x > 1 or vertex.y > 1:
+			return false
+	return not id.is_empty() and bounds.position.is_finite() and bounds.size.is_finite() and (
+		bounds.has_area() and is_finite(alpha_threshold)
+		and alpha_threshold >= 0.0 and alpha_threshold <= 1.0
+	) and (
 		bounds.position.x >= 0.0 and bounds.position.y >= 0.0
 		and bounds.end.x <= 1.0 and bounds.end.y <= 1.0
 		and (polygon.is_empty() or polygon.size() >= 3)
@@ -27,7 +33,9 @@ func is_valid_hotspot() -> bool:
 
 
 func contains_normalized(point: Vector2) -> bool:
-	if not enabled or not is_valid_hotspot() or not bounds.has_point(point):
+	if not point.is_finite() or not enabled or not is_valid_hotspot():
+		return false
+	if not bounds.has_point(point):
 		return false
 	if polygon.size() >= 3 and not Geometry2D.is_point_in_polygon(point, polygon):
 		return false
