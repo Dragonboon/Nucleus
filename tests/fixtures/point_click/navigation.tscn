@@ -1,0 +1,63 @@
+[gd_scene load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://addons/nucleus/components/ui/interaction/nucleus_image_screen.gd" id="1_screen"]
+[ext_resource type="Script" path="res://addons/nucleus/components/ui/interaction/nucleus_adventure_session.gd" id="2_session"]
+
+[ext_resource type="Script" path="res://addons/nucleus/components/ui/interaction/nucleus_screen_hotspot.gd" id="3_hotspot"]
+[ext_resource type="Script" path="res://addons/nucleus/components/ui/interaction/nucleus_adventure_page.gd" id="4_page"]
+
+[sub_resource type="GradientTexture2D" id="Texture"]
+width = 800
+height = 600
+
+[sub_resource type="Resource" id="Door"]
+script = ExtResource("3_hotspot")
+id = &"inspect"
+bounds = Rect2(0.2, 0.2, 0.4, 0.4)
+destination = &"detail"
+
+[sub_resource type="Resource" id="Room"]
+script = ExtResource("4_page")
+id = &"room"
+image = SubResource("Texture")
+hotspots = [SubResource("Door")]
+left_page = &"detail"
+right_page = &"detail"
+navigation_edge_fraction = Vector2(0.07, 0.065)
+
+[sub_resource type="Resource" id="Detail"]
+script = ExtResource("4_page")
+id = &"detail"
+image = SubResource("Texture")
+back_page = &"room"
+navigation_edge_fraction = Vector2(0.07, 0.065)
+
+[node name="NavigationFixture" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+
+[node name="Screen" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1_screen")
+
+[node name="Session" type="Node" parent="." node_paths=PackedStringArray("screen")]
+script = ExtResource("2_session")
+screen = NodePath("../Screen")
+pages = [SubResource("Room"), SubResource("Detail")]
+initial_page = &"room"
+
+[node name="HUD" type="CanvasLayer" parent="."]
+layer = 10
+
+[node name="Modal" type="ColorRect" parent="HUD"]
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.1, 0.1, 0.1, 0.9)

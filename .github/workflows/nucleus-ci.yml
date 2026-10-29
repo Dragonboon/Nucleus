@@ -23,11 +23,25 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v5
 
+      - name: Development discovery and public-declaration checks
+        run: |
+          python3 tools/development/nucleus_dev.py api --check
+          python3 -m unittest discover -s scripts/ci -p test_nucleus_dev.py
+
       - name: Static repository checks
         run: |
           python3 scripts/ci/static_checks.py
           python3 scripts/ci/build_addon_manifest.py --check
           python3 -m unittest discover -s scripts/ci -p test_run_godot_checked.py
+
+      - name: Compare declared public API with PR base
+        if: github.event_name == 'pull_request'
+        env:
+          API_BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          git fetch --no-tags origin "$API_BASE"
+          python3 tools/development/nucleus_dev.py api-diff --base "$API_BASE" \
+            --decision docs/policies/api_change_decision.md
 
       - name: Documentation coverage audit
         run: python3 scripts/ci/documentation_audit.py
@@ -137,6 +151,11 @@ jobs:
             --headless \
             --path . \
             res://tests/smoke/resource_loading_smoke.tscn
+
+      - name: Point-click GUI composition and input smoke
+        run: |
+          python3 scripts/ci/run_godot_checked.py "${{ steps.godot.outputs.bin }}" \
+            --headless --path . res://tests/smoke/point_click_smoke.tscn
 
       - name: Run localhost ENet replication smoke scene
         run: |

@@ -27,6 +27,8 @@ func run() -> Dictionary:
 	_test_signal_disconnect_on_scene_release()
 	_test_input_timing_reuses_performance_profiler()
 	_test_animated_value_snap_and_interruption()
+	_test_binding_diagnostics()
+	_test_independent_image_consumers()
 	return finish()
 
 
@@ -82,6 +84,9 @@ func _test_signal_disconnect_on_scene_release() -> void:
 	binding.progress_target = bar
 	root.add_child(bar)
 	root.add_child(binding)
+	expect_composition_binding(binding, &"progress_target", bar)
+	var binding_candidates: Array[Node] = [binding]
+	expect_single_binding(binding_candidates, &"progress_target", bar)
 
 	if not attach_test_node(root):
 		expect_true(false, "Signal-lifetime fixture needs a SceneTree.")
@@ -153,3 +158,66 @@ func _test_animated_value_snap_and_interruption() -> void:
 	expect_equal(completed, [24.0, 5.0],
 		"Interrupting the tween does not emit its old completion.")
 	free_test_node(root)
+
+
+class BindingOwner extends Node:
+	var target: Node
+
+
+func _test_binding_diagnostics() -> void:
+	var target := Node.new()
+	var first := BindingOwner.new()
+	var second := BindingOwner.new()
+	first.target = target
+	var candidates: Array[Node] = [first, second]
+	expect_composition_binding(first, &"target", target)
+	expect_single_binding(candidates, &"target", target)
+	var probe: Variant = load("res://tests/headless/test_case.gd").new()
+	probe.expect_composition_binding(second, &"target", target)
+	second.target = target
+	probe.expect_single_binding(candidates, &"target", target)
+	probe.expect_composition_binding(first, &"missing", target)
+	expect_equal(probe.finish()["failures"].size(), 3,
+		"Missing, unbound and duplicate declared owners produce diagnostics.")
+	first.free()
+	second.free()
+	target.free()
+
+
+func _test_independent_image_consumers() -> void:
+	# A one-way catalog and a returnable inspection use the same optional adapter.
+	for returnable in [false, true]:
+		var root := Node.new()
+		var screen := NucleusImageScreen.new()
+		var session := NucleusAdventureSession.new()
+		var first := NucleusAdventurePage.new()
+		var second := NucleusAdventurePage.new()
+		first.id = &"index"
+		second.id = &"detail"
+		var image := ImageTexture.create_from_image(
+			Image.create(4, 4, false, Image.FORMAT_RGBA8))
+		first.image = image
+		second.image = image
+		var link := NucleusScreenHotspot.new()
+		link.id = &"open"
+		link.destination = second.id
+		first.hotspots = [link]
+		if returnable:
+			second.back_page = first.id
+			second.navigation_edge_fraction = Vector2(0.07, 0.065)
+		session.pages = [first, second]
+		session.screen = screen
+		root.add_child(screen)
+		root.add_child(session)
+		if not attach_test_node(root):
+			expect_true(false, "Consumer composition requires SceneTree attachment.")
+			root.free()
+			continue
+		expect_composition_binding(session, &"screen", screen)
+		expect_true(session.validate_configuration(returnable).is_empty(),
+			"Independent consumer policy is admitted without mandatory inventory or effects.")
+		screen.activate(&"open")
+		expect_equal(session.current_page, second.id, "Both consumers use the same activation owner.")
+		expect_equal(session.go_back(), OK if returnable else ERR_DOES_NOT_EXIST,
+			"Returnability is consumer policy, not an implicit framework default.")
+		root.free()

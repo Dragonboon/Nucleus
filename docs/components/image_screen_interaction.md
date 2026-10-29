@@ -140,3 +140,148 @@ missing resources, viewport changes and shader pass budgets before a release.
 Also test an actual composed adventure scene on mouse, touch and gamepad
 at portrait, 16:9 and ultrawide resolutions. Headless tests do not prove
 visual filter order, clipping, first-frame readiness or GPU memory budgets.
+
+## Reliable navigation authoring (0.40)
+
+The Internet-Cabin development branch exposed failures shared by image adventures:
+small return targets, stale presses after modal/page changes, transformed images,
+touch cancellation and keyboard-only focus routing. The shared fixes live in the
+existing owners; no game content, two-slot inventory policy, cursor artwork,
+mandatory HUD, breathing animation or VHS preset is installed by Nucleus.
+
+| Responsibility | Owner |
+| --- | --- |
+| GUI dispatch, canvas transforms, input mapping | Godot `Control`, `Viewport`, `InputMap` |
+| Image mapping, target selection, gesture lifetime and focus | `NucleusImageScreen` |
+| Authored links and optional edge regions | `NucleusAdventurePage` |
+| Page/flag progress and action execution | `NucleusAdventureSession` |
+| Modal order, item selection, conditional hotspot lists, hints, art and cursors | Consuming game |
+| Display cutouts and safe layout | Compose `NucleusUISafeArea`; do not invent a second mapper |
+
+### Explicit return paths and optional edges
+
+A page can declare `back_page`, `left_page` and `right_page`. These contain real
+page IDs, not paths or aliases. `session.go_back()` follows the current page's
+explicit `back_page`; it never guesses from visitation history. The same view
+therefore has a stable return target when revisited or loaded from a save.
+
+Edges are **off by default**, preserving existing authored layouts. Set
+`navigation_edge_fraction = Vector2(0.07, 0.065)` to opt into side bands of 7% of
+the image width and a bottom return band of 6.5% of its height. Only nonempty
+links generate regions. Side regions exclude the bottom band when back is present.
+These values are examples; tune usable touch targets for your artwork and devices.
+An image that becomes very small in portrait may require a larger band or native
+UI Buttons inside a safe-area container. Do not stretch art to make it fit.
+
+```gdscript
+var detail := NucleusAdventurePage.new()
+detail.id = &"detail"
+detail.image = detail_texture
+detail.back_page = &"room"
+detail.navigation_edge_fraction = Vector2(0.07, 0.065)
+session.pages = [room_page, detail] # Bind before entering the SceneTree.
+```
+
+`page.screen_hotspots()` returns a fresh array including generated regions without
+modifying the shared authored array. Defaults: `side_navigation_priority = -100`
+lets ordinary object hotspots win over side navigation;
+`back_navigation_priority = 100` makes a reserved return strip easy to reach.
+Higher-priority authored regions can still override it, so reserve the strip or
+choose priorities deliberately. IDs beginning `nucleus:nav:` are reserved when
+edge generation is enabled. Generated entries use the same hit test and activation
+path as authored hotspots. They remain active when game-owned arrows are hidden.
+No arrows, key bindings for Backspace/TAB or history policy are added implicitly.
+
+### Validate the graph before playtesting
+
+```gdscript
+var issues := session.validate_configuration(true)
+for issue in issues:
+    push_error(issue)
+```
+
+This method works before `_ready()`, using the authored `pages` array. It reports
+invalid/duplicate pages, a missing initial page, unknown destinations and pages
+unreachable from the entry. Passing `true` additionally requires every page to
+have a structural path back to the entry; leave it false for valid one-way
+sequences or terminal pages. Hotspot actions use `next_screen`; plain hotspots use
+`destination`. Declared side/back links are also included, even with edge generation
+off, because the game can expose them as Buttons.
+
+These are structural diagnostics, not a solver: flags, item requirements,
+one-shot actions, conditional visibility and game-resolved aliases need gameplay
+acceptance. They are not an automatic startup rejection or a guarantee that a
+puzzle is solvable. A callback cannot re-enter `change_page` or `restore_state`
+while another page change/action is committing (`ERR_BUSY`). Invalid target-page
+content is rejected before flags/items for that navigation action are modified.
+Inventory adapters must still honor their own mutation contract; this does not
+introduce a transaction spanning arbitrary external adapters.
+
+### Route through game policy without subclassing
+
+Leave `auto_activate_hotspots = true` for direct session activation. If a game
+needs selected-item checks, dynamic links, conditional interactions or an inspection
+panel, set it to false and connect `hotspot_requested(id, destination)`:
+
+```gdscript
+func _on_hotspot_requested(id: StringName, _destination: StringName) -> void:
+    if can_use_selected_tool(id): # Game-owned policy, with localized hints on denial.
+        var result := session.activate_hotspot(id)
+        if result != OK:
+            show_action_error(result)
+```
+
+No action runs automatically in this mode. Call the existing `activate_hotspot`
+only after policy accepts, or `change_page` with a resolved real page ID. Do not
+connect both an independent activation handler and automatic session activation.
+Existing `_on_hotspot` subclasses continue to work, but new games do not need to
+subclass merely to intercept a request.
+
+### Coordinates, touch, modals and conditional content
+
+- `_gui_input` positions are already local to the image Control. Feed viewport
+  positions from a separate game/tool handler through
+  `screen.normalized_viewport_point(position)`, which uses Godot's inverse canvas
+  transform and rejects a singular transform. `image_local_point(normalized)` is
+  the inverse mapping for local overlays. Reuse these for hover/cursors and item
+  rendering instead of maintaining independent pixel formulas.
+- Keep art, world items and hotspots under the same transform when zooming or
+  breathing. Keep HUD, prompts and native hardware cursors outside the shader
+  chain. Pixel-displacing shaders still require game-owned hit-alignment policy.
+- The first pointer to start owns the gesture, regardless of touch index. Another
+  finger cannot release it. OS-canceled touch and emulated duplicate events do not
+  activate. Moving beyond tap slop cancels even if the pointer comes back.
+- Disable `screen.interaction_enabled` before opening a modal, enable it on close,
+  and give the modal a native GUI barrier (`MOUSE_FILTER_STOP`) and appropriate
+  focus. Disabling, hiding, resizing, leaving the tree or losing application/focus
+  cancels pending presses; reopening cannot resurrect them. Disabling interaction
+  remains the game-owned gate, not a competing pause service.
+- Assign a new `screen.hotspots` array when conditional visibility changes. This
+  cancels stale presses and clears focus. Hidden objects must be removed or
+  disabled for both pointer and keyboard/gamepad paths. Do not merely hide a marker
+  or mutate a shared Resource as per-player state.
+- Direction/accept actions work for keyboard and joypad through the focused
+  Control. A real input event is handled by one owner; UI modals keep their own
+  focus. Use `description_key` for a game-owned accessible label. Minimum target
+  sizes, contrast, text scaling and focus visibility still require device testing.
+
+### Compatibility and reproducible acceptance
+
+Existing links, normalized rectangles/polygons, `preserve_aspect`, signals, action
+rules and version-1 adventure saves retain their meaning. New edge links/regions
+and manual interaction routing are optional. The only stricter data validation
+rejects nonfinite/out-of-image polygon values and invalid alpha thresholds.
+Regenerate malformed authored data instead of relying on undefined hit tests.
+
+Run `res://tests/smoke/point_click_smoke.tscn` through the checked-engine runner.
+Its real scene wires one screen and one session, then sends viewport mouse, touch
+and joypad events at 640×480, 1280×720, 2560×1080, 720×1280, 480×320 and 3840×2160.
+It checks return bands, letterboxing, zoom/translation alignment, cancellation,
+secondary fingers, emulated duplicates and a modal barrier. Headless suites also
+exercise graph diagnostics, manual routing, invalid destination content and reentry.
+These checks are input/layout evidence, not physical mobile/gamepad, GPU/shader,
+4K performance or release-export certification. Run a real-device playthrough and
+check all authored object masks and return routes before shipping.
+
+Source case study: Internet-Cabin `feat/visual-continuity-cabin-frames`, reviewed at
+`ec9676f4949982db5c1e2ec075e693706c9e71d8`; its content and UI choices stay game-owned.

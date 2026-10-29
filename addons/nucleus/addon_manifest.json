@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "version": "0.39.0-dev.2",
+  "version": "0.40.0-dev.1",
   "godot": "4.7",
   "repository": "Dragonboon/Nucleus",
   "files": {
@@ -17,7 +17,7 @@
       "dependencies": []
     },
     "VERSION": {
-      "sha256": "6c3c741d47e3b7388701d86c9dde6d1b65fd1db6ade771b981b50c69caa61a76",
+      "sha256": "ea8d74e9cdfd603550241722aa7d503b6f47305f89c858329d9d4a424aa32664",
       "size": 13,
       "dimension": "shared",
       "dependencies": []
@@ -3724,8 +3724,8 @@
       ]
     },
     "components/ui/interaction/nucleus_adventure_page.gd": {
-      "sha256": "694d43346c0790803de0185f78e467200bd83a93d7351afe2fb28bac5992689c",
-      "size": 552,
+      "sha256": "217771daaf9f2da527d68de1e5138bbacb13f9544209e37802b4f142d10a79f3",
+      "size": 2516,
       "dimension": "shared",
       "dependencies": [
         "components/ui/effects/nucleus_screen_effect_pass.gd",
@@ -3742,8 +3742,8 @@
       ]
     },
     "components/ui/interaction/nucleus_adventure_session.gd": {
-      "sha256": "8062b3849d7285284a50ab0dd2032137c9ca01d70e96c62147b364b5e18985b5",
-      "size": 9313,
+      "sha256": "881b32b3fcd953b46c048a891eae7f08ca3f8454cfafbecd2411626f9ae79f0a",
+      "size": 12877,
       "dimension": "shared",
       "dependencies": [
         "components/ui/effects/nucleus_screen_shader_stack.gd",
@@ -3764,8 +3764,8 @@
       ]
     },
     "components/ui/interaction/nucleus_image_screen.gd": {
-      "sha256": "e2083a6add5d00108ddc6299f003d17c8baba0d327883a31ad36541fe76fa538",
-      "size": 6403,
+      "sha256": "0621c2db421a0c976817496e20f26f2d791fa917af0f0277f92e3c5915359127",
+      "size": 9168,
       "dimension": "shared",
       "dependencies": [
         "components/ui/interaction/nucleus_image_screen.gd.uid",
@@ -3813,8 +3813,8 @@
       ]
     },
     "components/ui/interaction/nucleus_screen_hotspot.gd": {
-      "sha256": "cee5e168fe3e861462dce649add1a8b47f486be49be9fb3fe5a114c2ad01f5ee",
-      "size": 1598,
+      "sha256": "39500b863966c1e7306947dd6282db5290bac0ed25184a0a6b1e7bdb5943ba54",
+      "size": 1927,
       "dimension": "shared",
       "dependencies": [
         "components/ui/interaction/nucleus_screen_action.gd",
@@ -10957,7 +10957,7 @@
       ]
     },
     "plugin.cfg": {
-      "sha256": "8f2b34a13cb10e7c8ab487bf2be38b262a7688e0e720c6c608296fc2783298d5",
+      "sha256": "82e4845ed61fa33bdce73b6e0d56be209339c83f63532cd21ae92174c99e63d3",
       "size": 167,
       "dimension": "shared",
       "dependencies": []

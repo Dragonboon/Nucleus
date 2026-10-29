@@ -12,10 +12,28 @@ func _ready() -> void:
 
 
 func _run_all() -> void:
-	var result: Dictionary = _execute_suites()
+	var selected: Array[Script] = []
+	var requested := PackedStringArray()
+	for argument in OS.get_cmdline_user_args():
+		if argument.begins_with("--nucleus-suites="):
+			requested = argument.trim_prefix("--nucleus-suites=").split(",", false)
+			if requested.is_empty():
+				push_error("Empty Nucleus suite selection.")
+				get_tree().quit(2)
+				return
+	var filtered := not requested.is_empty()
+	for suite_script: Script in TEST_MANIFEST.SUITES:
+		if not filtered or suite_script.resource_path.get_file() in requested:
+			selected.append(suite_script)
+			requested.erase(suite_script.resource_path.get_file())
+	if not requested.is_empty():
+		push_error("Unknown Nucleus suite selection: %s" % requested)
+		get_tree().quit(2)
+		return
+	var result: Dictionary = _execute_suites(selected)
 	var failures: PackedStringArray = result["failures"]
 	var total_checks: int = result["checks"]
-	var suite_count: int = TEST_MANIFEST.SUITES.size()
+	var suite_count: int = selected.size()
 	var exit_code := 0
 
 	if failures.is_empty():
@@ -37,14 +55,14 @@ func _run_all() -> void:
 	get_tree().quit(exit_code)
 
 
-func _execute_suites() -> Dictionary:
+func _execute_suites(selected: Array[Script]) -> Dictionary:
 	# Presentation assertions use a deterministic source locale on every developer OS.
 	var previous_locale := TranslationServer.get_locale()
 	TranslationServer.set_locale("en")
 	var total_checks: int = 0
 	var failures := PackedStringArray()
 
-	for suite_script: Script in TEST_MANIFEST.SUITES:
+	for suite_script: Script in selected:
 		var suite: Variant = suite_script.new()
 		var result: Dictionary = suite.run()
 		total_checks += int(result.get("checks", 0))
