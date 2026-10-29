@@ -73,6 +73,9 @@ owns its entry point and opts into only the systems it needs.
 
 ### First five minutes
 
+The single **Nucleus** dock integrates localization, physical 2D/3D profiles and
+verified updates from stable main. See [addon management](docs/guides/addon_management.md).
+
 1. Read [Installation](docs/guides/installation.md).
 2. Open [Foundation Quickstart](docs/guides/foundation_quickstart.md).
 3. Create your game's main scene under a game-owned directory.

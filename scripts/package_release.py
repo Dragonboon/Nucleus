@@ -56,13 +56,15 @@ def validate_version(version: str) -> None:
 def validate_repository() -> None:
 	checks = (
 		"scripts/ci/static_checks.py",
+		"scripts/ci/build_addon_manifest.py",
 		"scripts/ci/documentation_audit.py",
 		"scripts/ci/productization_audit.py",
 	)
 
 	for relative in checks:
 		subprocess.run(
-			[sys.executable, str(REPOSITORY_ROOT / relative)],
+			[sys.executable, str(REPOSITORY_ROOT / relative)]
+			+ (["--check"] if relative.endswith("build_addon_manifest.py") else []),
 			cwd=REPOSITORY_ROOT,
 			check=True,
 		)
@@ -82,7 +84,7 @@ def tracked_files() -> list[Path]:
 		relative = Path(os.fsdecode(encoded))
 
 		if (len(relative.parts) < 3 or relative.parts[0] != "addons"
-				or relative.parts[1] not in {"nucleus", "nucleus_localization"}):
+				or relative.parts[1] != "nucleus"):
 			continue
 
 		if any(part in EXCLUDED_PARTS for part in relative.parts):

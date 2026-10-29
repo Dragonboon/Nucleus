@@ -16,7 +16,9 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Static repository checks
-        run: python3 scripts/ci/static_checks.py
+        run: |
+          python3 scripts/ci/static_checks.py
+          python3 scripts/ci/build_addon_manifest.py --check
 
       - name: Documentation coverage audit
         run: python3 scripts/ci/documentation_audit.py

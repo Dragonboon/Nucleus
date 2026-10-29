@@ -18,20 +18,20 @@ def main():
     root = Path(__file__).resolve().parents[2]
     with tempfile.TemporaryDirectory(prefix="nucleus-localization-") as directory:
         project = Path(directory) / "project"
-        shutil.copytree(root, project, ignore=shutil.ignore_patterns(".git", ".godot", ".ci", "build"))
+        shutil.copytree(root, project, ignore=shutil.ignore_patterns(".git", ".godot", ".ci", "build", "dist", ".nucleus"))
         subprocess.run(["msgfmt", str(root / "tests/fixtures/localization/es.po"),
                         "-o", str(project / "tests/fixtures/localization/es.mo")], check=True)
         settings = project / "project.godot"
-        settings.write_text(settings.read_text() + '\n[editor_plugins]\n\nenabled=PackedStringArray("res://addons/nucleus_localization/plugin.cfg")\n')
+        settings.write_text(settings.read_text() + '\n[editor_plugins]\n\nenabled=PackedStringArray("res://addons/nucleus/plugin.cfg")\n')
         checked = str(root / "scripts/ci/run_godot_checked.py")
         subprocess.run(["python3", checked, engine, "--headless", "--path", str(project), "--import"],
                        check=True, timeout=120)
         settings.write_text(settings.read_text().replace(
-            '"res://addons/nucleus_localization/plugin.cfg")',
-            '"res://addons/nucleus_localization/plugin.cfg", "res://tests/tools/plugin.cfg")'))
+            '"res://addons/nucleus/plugin.cfg")',
+            '"res://addons/nucleus/plugin.cfg", "res://tests/tools/plugin.cfg")'))
         subprocess.run(["python3", checked, engine, "--headless", "--editor", "--path", str(project)],
                        check=True, timeout=120)
-        manager = str(root / "addons/nucleus_localization/tools/catalogs.py")
+        manager = str(root / "addons/nucleus/editor/localization/tools/catalogs.py")
         template = str(project / "messages.pot")
         output = str(project / "es.po")
         subprocess.run(["python3", manager, "init", template, output, "--locale", "es"], check=True)

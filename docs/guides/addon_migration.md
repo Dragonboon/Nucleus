@@ -32,3 +32,15 @@ A consuming game's private scripts/resources require their own migration;
 Godot UID remapping alone does not update arbitrary strings. Old path shims are
 not included because duplicate global classes and two framework roots make
 installation and upgrades ambiguous.
+
+## Unified dock (0.39.0-dev.2)
+
+Localization is now internal to `addons/nucleus/editor/localization/`. The main
+plugin owns its parser, dock tab, dialogs and teardown. If an older installation
+still enables `nucleus_localization`, Nucleus disables that legacy entry on load.
+Remove the old `addons/nucleus_localization/` directory after disabling it; the
+addon does not delete a separately installed folder automatically. Existing
+Python/POT preferences retain their editor metadata keys.
+
+Copy only the main addon folder for fresh installations. Dimensional profiles
+and main updates are described in [addon management](addon_management.md).

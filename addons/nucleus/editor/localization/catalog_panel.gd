@@ -6,7 +6,7 @@ signal register_requested
 signal sources_requested
 
 const TOOLS = preload("res://addons/nucleus/modules/localization/localization_project_tools.gd")
-const BRIDGE := "res://addons/nucleus_localization/tools/editor_catalogs.py"
+const BRIDGE := "res://addons/nucleus/editor/localization/tools/editor_catalogs.py"
 
 var _catalogs: Tree
 var _sources: ItemList

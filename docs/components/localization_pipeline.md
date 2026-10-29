@@ -7,7 +7,7 @@ or GNU gettext installed.
 
 ## Editor panel quickstart
 
-Since `0.38.0-dev.1`, the optional addon has a **Localization** bottom panel for
+Since `0.39.0-dev.2`, the single Nucleus addon embeds a **Localization** dock tab for
 registered catalogs, gettext creation/update/validation and source diagnostics.
 Start with the [end-to-end ability translation example](../guides/localization_workflow.md).
 Godot still owns full POT generation; the panel explains the native step instead
@@ -98,8 +98,8 @@ Automatic. Unknown metadata uses Godot's locale name instead of inheriting Engli
 
 ## Import and extract using the editor
 
-1. Enable **Nucleus Localization** in Project Settings > Plugins. The addon is
-   shipped disabled and adds no runtime dependency.
+1. Enable **Nucleus** in Project Settings > Plugins. Open the **Localization**
+   tab in its dock. Authoring tools add no runtime dependency.
 2. Place translator-supplied `.po`/`.mo` files under `res://` (Godot's normal file
    import). Use **Project > Tools > Nucleus: Register PO/MO translations** to
    register several files at once. Godot parses them; their Language header is
@@ -158,9 +158,9 @@ are emitted. No existing translated PO file is rewritten by this API.
 Install GNU gettext for these optional development commands:
 
 ```bash
-python3 addons/nucleus_localization/tools/catalogs.py init locale/messages.pot locale/es.po --locale es
-python3 addons/nucleus_localization/tools/catalogs.py update locale/messages.pot locale/es.po
-python3 addons/nucleus_localization/tools/catalogs.py check locale/en.po locale/es.po
+python3 addons/nucleus/editor/localization/tools/catalogs.py init locale/messages.pot locale/es.po --locale es
+python3 addons/nucleus/editor/localization/tools/catalogs.py update locale/messages.pot locale/es.po
+python3 addons/nucleus/editor/localization/tools/catalogs.py check locale/en.po locale/es.po
 ```
 
 The wrapper invokes msginit/msgmerge/msgfmt, not a homemade PO parser. Creation

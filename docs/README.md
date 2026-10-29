@@ -187,3 +187,5 @@ python3 scripts/ci/productization_audit.py
 - [Maturity and evidence](architecture/maturity.md)
 - [Composed acceptance scenes](guides/composition_acceptance.md)
 - [Dependencies and selective upgrades](guides/upgrading_and_dependencies.md)
+
+- [Addon profiles, stable-main updates and recovery](guides/addon_management.md)

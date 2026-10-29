@@ -37,7 +37,7 @@ func _run() -> void:
 	_check(config.load("res://project.godot") == OK, "Native settings saved.")
 	_check(config.get_value("internationalization", "locale/translations") == registered,
 		"Saved translation settings match.")
-	var parser_script := load("res://addons/nucleus_localization/message_parser.gd") as Script
+	var parser_script := load("res://addons/nucleus/editor/localization/message_parser.gd") as Script
 	var parser: EditorTranslationParserPlugin = parser_script.new()
 	var entries: Array[PackedStringArray] = parser._parse_file(
 		"res://addons/nucleus/core/localization/defaults/common_messages.tres")
@@ -83,7 +83,7 @@ func _check_panel() -> void:
 		if script != null and script.resource_path.ends_with("/catalog_panel.gd"):
 			panel = node as Control
 			break
-	_check(panel != null, "Enabled addon owns the real bottom panel.")
+	_check(panel != null, "Enabled addon owns the integrated localization dock tab.")
 	if panel == null:
 		return
 	panel.refresh_files()

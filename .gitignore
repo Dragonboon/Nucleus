@@ -513,3 +513,6 @@ fabric.properties
 .ci/
 build/
 dist/
+
+# Nucleus editor backups, verified source caches and local profile state
+.nucleus/

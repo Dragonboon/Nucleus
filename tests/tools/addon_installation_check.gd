@@ -19,12 +19,15 @@ func _run() -> void:
 	if phase == 0:
 		EditorInterface.set_plugin_enabled("nucleus", true)
 		_check_services()
-		EditorInterface.set_plugin_enabled("nucleus_localization", true)
+		var dock: Node = EditorInterface.get_base_control().find_child("Nucleus", true, false)
+		_check(dock != null and dock._tabs.get_tab_count() == 2,
+			"Single Nucleus dock contains management and localization.")
+		_check(dock != null and not dock._updater.busy,
+			"Opening the dock performs no background update requests.")
 		_check(ProjectSettings.get_setting(PluginScript.OWNED_SETTING, {}).size() == 6,
 			"Activation owns six new services.")
 		ProjectSettings.set_setting("probe/phase", 1)
 	else:
-		EditorInterface.set_plugin_enabled("nucleus_localization", false)
 		_check_services()
 		EditorInterface.set_plugin_enabled("nucleus", false)
 		for service: String in PluginScript.AUTOLOADS:

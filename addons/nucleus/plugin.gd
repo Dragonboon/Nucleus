@@ -12,6 +12,86 @@ const AUTOLOADS: Dictionary = {
 }
 const OWNED_SETTING: String = "nucleus/editor/owned_autoloads"
 
+const Dock = preload("res://addons/nucleus/editor/package_dock.gd")
+const CatalogPanel = preload("res://addons/nucleus/editor/localization/catalog_panel.gd")
+const MessageParser = preload("res://addons/nucleus/editor/localization/message_parser.gd")
+
+var _dock: Control
+var _catalog: VBoxContainer
+var _parser: EditorTranslationParserPlugin
+var _files: EditorFileDialog
+var _folder: EditorFileDialog
+var _result: AcceptDialog
+
+
+func _enter_tree() -> void:
+	_dock = Dock.new()
+	_dock.name = "Nucleus"
+	add_control_to_dock(DOCK_SLOT_RIGHT_UL, _dock)
+	_catalog = CatalogPanel.new()
+	_catalog.register_requested.connect(_show_translation_files)
+	_catalog.sources_requested.connect(_show_translation_folder)
+	_dock.add_localization(_catalog)
+	_parser = MessageParser.new()
+	add_translation_parser_plugin(_parser)
+	_files = EditorFileDialog.new()
+	_files.file_mode = EditorFileDialog.FILE_MODE_OPEN_FILES
+	_files.access = EditorFileDialog.ACCESS_RESOURCES
+	_files.filters = PackedStringArray(["*.po,*.mo ; Gettext translations"])
+	_files.files_selected.connect(_register_translations)
+	_folder = EditorFileDialog.new()
+	_folder.file_mode = EditorFileDialog.FILE_MODE_OPEN_DIR
+	_folder.access = EditorFileDialog.ACCESS_RESOURCES
+	_folder.dir_selected.connect(_register_translation_sources)
+	_result = AcceptDialog.new()
+	for dialog: Window in [_files, _folder, _result]:
+		EditorInterface.get_base_control().add_child(dialog)
+	add_tool_menu_item("Nucleus: Register PO/MO translations", _show_translation_files)
+	add_tool_menu_item("Nucleus: Add translation source folder", _show_translation_folder)
+	call_deferred("_retire_legacy_localization")
+
+
+func _exit_tree() -> void:
+	if is_instance_valid(_dock):
+		remove_control_from_docks(_dock)
+		_dock.queue_free()
+	if _parser != null:
+		remove_translation_parser_plugin(_parser)
+	remove_tool_menu_item("Nucleus: Register PO/MO translations")
+	remove_tool_menu_item("Nucleus: Add translation source folder")
+	for dialog: Window in [_files, _folder, _result]:
+		if is_instance_valid(dialog):
+			dialog.queue_free()
+
+
+func _retire_legacy_localization() -> void:
+	if EditorInterface.is_plugin_enabled("nucleus_localization"):
+		EditorInterface.set_plugin_enabled("nucleus_localization", false)
+
+
+func _show_translation_files() -> void:
+	_files.popup_centered_ratio(0.6)
+
+
+func _show_translation_folder() -> void:
+	_folder.popup_centered_ratio(0.6)
+
+
+func _register_translations(paths: PackedStringArray) -> void:
+	var error: Error = NucleusLocalizationProjectTools.register_translations(paths)
+	_result.dialog_text = "Translations registered." if error == OK else error_string(error)
+	_result.popup_centered()
+	_catalog.refresh_files()
+
+
+func _register_translation_sources(path: String) -> void:
+	var error: Error = NucleusLocalizationProjectTools.add_source_folder(path)
+	_result.dialog_text = "Sources registered. Generate the POT in Project Settings > Localization."
+	if error != OK:
+		_result.dialog_text = error_string(error)
+	_result.popup_centered()
+	_catalog.refresh_files()
+
 
 func _enable_plugin() -> void:
 	# Check the entire set before writing anything: no partially installed core.

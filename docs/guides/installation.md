@@ -14,10 +14,13 @@ Godot **4.7.2-stable** is the tested reference.
 4. The plugin registers the six existing core Autoloads in dependency order.
 5. Compose components and optional modules from `res://addons/nucleus/` in your scenes.
 
-When using a source checkout, copy only `addons/nucleus/`. The sibling
-`addons/nucleus_localization/` is an optional editor plugin, shipped in the ZIP;
-copy it too if using the localization catalog panel. It needs Nucleus installed.
-Python and GNU gettext are needed only for its catalog creation/update tools.
+When using a source checkout, copy only `addons/nucleus/`. Localization authoring
+is integrated into the **Nucleus dock > Localization** tab; there is one plugin
+to enable. Python and GNU gettext are needed only for catalog creation/update.
+
+Use **Nucleus dock > Manage** to preview and apply the **Full**, **2D only** or
+**3D only** profile, check stable `main`, download/verify an update and apply it.
+See [addon management](addon_management.md) for dependency checks and recovery.
 
 The repository's `project.godot`, `AGENTS.md`, `docs/`, `examples/`, `tests/`,
 `scripts/`, `tools/` and any development labs are development material.
@@ -59,7 +62,7 @@ Disable Nucleus in Plugins before deleting its folder. Only Autoload entries
 created by the plugin and still pointing to their original paths are removed.
 Pre-existing matching entries and user replacements remain owned by the project.
 Closing the editor does not uninstall services. Stop a running game before disabling.
-Disable the optional localization plugin before removing it too.
+The localization parser, panel and cancellable jobs follow the same plugin lifecycle.
 
 Pin a release or commit. Upgrade by replacing the addon directories, preserving
 `.uid` files; keep game content outside them. Before deleting or upgrading, inspect

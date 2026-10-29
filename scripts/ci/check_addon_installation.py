@@ -20,7 +20,7 @@ def main() -> None:
         host = Path(folder)
         with zipfile.ZipFile(args.archive) as archive:
             paths = archive.namelist()
-            assert all(p.startswith(("addons/nucleus/", "addons/nucleus_localization/"))
+            assert all(p.startswith("addons/nucleus/")
                        for p in paths), "Development files leaked into installation archive"
             assert not any(x in p.split("/") for p in paths
                            for x in (".godot", "__pycache__", "examples", "tests", "labs"))

@@ -2,13 +2,13 @@
 
 ## What you gain
 
-Enable **Project Settings > Plugins > Nucleus Localization**, then open the
-**Localization** bottom panel. It lists the project's registered PO/MO files,
+Enable **Project Settings > Plugins > Nucleus**, then open the
+**Nucleus dock > Localization** tab. It lists the project's registered PO/MO files,
 their locale and source files. You can create language catalogs, merge new
 messages into existing translations and inspect translation status without
 running terminal commands.
 
-The addon is optional editor tooling. Godot loads and resolves translations at
+The dock provides editor authoring tools. Godot loads and resolves translations at
 runtime; disabling the addon does not disable translation in your game.
 For a small static UI, native `tr()` and Godot's localization settings are enough.
 The addon is most useful when content lives in Resources or there are several

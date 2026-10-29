@@ -9,7 +9,7 @@ import tempfile
 import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
-BRIDGE = ROOT / "addons/nucleus_localization/tools/editor_catalogs.py"
+BRIDGE = ROOT / "addons/nucleus/editor/localization/tools/editor_catalogs.py"
 
 
 @unittest.skipUnless(all(shutil.which(x) for x in ("msginit", "msgmerge", "msgfmt", "msgcmp")),
