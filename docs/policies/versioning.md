@@ -2,7 +2,7 @@
 
 ## Scope
 
-Nucleus versions the reusable **template**, not the game created from it.
+Nucleus versions the reusable **addon**, not the game created from it.
 
 The source of truth is the root `VERSION` file. Do not couple that version to a
 consuming game's `application/config/version` or release number.
@@ -82,6 +82,6 @@ Before tagging a release:
 6. prepare concise GitHub Release notes from the merged work when useful;
 7. tag the exact packaged commit.
 
-Historical iteration logs are not part of the source template. Git history,
+Historical iteration logs are not part of the addon source. Git history,
 pull requests, tags, and release notes provide project history; repository docs
 remain focused on using and maintaining the current Nucleus contract.

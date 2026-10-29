@@ -39,7 +39,7 @@ roads, harbors, buildings and authored no-foliage spaces.
 For Nautica, the game's biome/spawn system decides which profiles belong to an
 island and which height/slope ranges count as vegetation. Supply that choice to
 Nucleus; do not hard-code grass, biome IDs, coast bands, player cameras, or
-network ownership into `modules/scatter`.
+network ownership into `addons/nucleus/modules/scatter`.
 
 ## Suggested profiling
 

@@ -1,8 +1,10 @@
 extends "res://tests/headless/test_case.gd"
 
-const BASE: Theme = preload("res://components/ui/theme/nucleus_base_theme.tres")
-const HIGH: Theme = preload("res://components/ui/theme/nucleus_high_contrast_theme.tres")
-const BASE_PATH: String = "res://components/ui/theme/nucleus_base_theme.tres"
+const BASE: Theme = preload("res://addons/nucleus/components/ui/theme/nucleus_base_theme.tres")
+const HIGH: Theme = preload(
+	"res://addons/nucleus/components/ui/theme/nucleus_high_contrast_theme.tres"
+)
+const BASE_PATH: String = "res://addons/nucleus/components/ui/theme/nucleus_base_theme.tres"
 
 
 func run() -> Dictionary:

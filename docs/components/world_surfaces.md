@@ -1,6 +1,6 @@
 # World Surfaces Contract
 
-`components/world/surfaces` exposes two separate contracts:
+`addons/nucleus/components/world/surfaces` exposes two separate contracts:
 
 ```text
 semantic classification

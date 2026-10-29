@@ -1,0 +1,40 @@
+[gd_resource type="Resource" script_class="NucleusTerrainProfile" format=3 uid="uid://c1wcr3qu12khd"]
+
+[ext_resource type="Script" uid="uid://wkn61u55vxtr" path="res://addons/nucleus/modules/terrain/terrain_profile.gd" id="1_profile"]
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_floor"]
+seed = 6025
+frequency = 0.009
+fractal_octaves = 3
+fractal_gain = 0.52
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_land"]
+seed = 6023
+frequency = 0.006
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_shore"]
+seed = 6024
+frequency = 0.018
+fractal_octaves = 3
+fractal_gain = 0.46
+
+[resource]
+script = ExtResource("1_profile")
+size = Vector2(320, 320)
+resolution = 64
+base_height = -3.0
+height_scale = 68.0
+noise = SubResource("FastNoiseLite_land")
+shape_mode = 1
+island_inner_radius = 0.48
+island_falloff = 0.38
+island_power = 1.7
+edge_floor_height = -28.0
+shoreline_noise = SubResource("FastNoiseLite_shore")
+shoreline_noise_strength = 0.13
+edge_floor_noise = SubResource("FastNoiseLite_floor")
+edge_floor_noise_strength = 7.0
+lod_distance_step = 135.0
+collision_resolution = 32
+collision_holes_below_height = true
+collision_hole_height = -2.0

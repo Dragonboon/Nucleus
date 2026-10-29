@@ -1,7 +1,7 @@
 [gd_scene load_steps=9 format=3]
 
-[ext_resource type="Script" path="res://modules/terrain/terrain_generator_3d.gd" id="1_generator"]
-[ext_resource type="Resource" path="res://modules/terrain/presets/rugged_mountains.tres" id="2_profile"]
+[ext_resource type="Script" path="res://addons/nucleus/modules/terrain/terrain_generator_3d.gd" id="1_generator"]
+[ext_resource type="Resource" path="res://addons/nucleus/modules/terrain/presets/rugged_mountains.tres" id="2_profile"]
 [ext_resource type="Resource" path="res://examples/terrain/materials/terrain_height_layers.tres" id="3_material"]
 [ext_resource type="Script" path="res://examples/terrain/terrain_example_runner.gd" id="4_runner"]
 [ext_resource type="Script" path="res://examples/terrain/terrain_debug_lab.gd" id="5_debug"]

@@ -2,7 +2,7 @@
 
 ## Status
 
-`modules/event_bus` is optional and is not loaded by default.
+`addons/nucleus/modules/event_bus` is optional and is not loaded by default.
 
 Prefer local Godot signals when producer and consumer have a natural ownership
 relationship.

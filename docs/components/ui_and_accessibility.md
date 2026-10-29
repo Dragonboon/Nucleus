@@ -3,25 +3,25 @@
 ## Scope
 
 ```text
-components/ui/accessibility
-components/ui/data
-components/ui/effects
-components/ui/feedback
-components/ui/focus
-components/ui/gameplay
-components/ui/input
-components/ui/interaction
-components/ui/layout
-components/ui/localization
-components/ui/modal
-components/ui/motion
-components/ui/navigation
-components/ui/presentation
-components/ui/text
-components/ui/toast
-components/ui/tooltip
-components/ui/virtualization
-core/accessibility
+addons/nucleus/components/ui/accessibility
+addons/nucleus/components/ui/data
+addons/nucleus/components/ui/effects
+addons/nucleus/components/ui/feedback
+addons/nucleus/components/ui/focus
+addons/nucleus/components/ui/gameplay
+addons/nucleus/components/ui/input
+addons/nucleus/components/ui/interaction
+addons/nucleus/components/ui/layout
+addons/nucleus/components/ui/localization
+addons/nucleus/components/ui/modal
+addons/nucleus/components/ui/motion
+addons/nucleus/components/ui/navigation
+addons/nucleus/components/ui/presentation
+addons/nucleus/components/ui/text
+addons/nucleus/components/ui/toast
+addons/nucleus/components/ui/tooltip
+addons/nucleus/components/ui/virtualization
+addons/nucleus/core/accessibility
 ```
 
 Nucleus UI is composition around Godot `Control` nodes. It is not a replacement

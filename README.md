@@ -14,12 +14,12 @@
     <img alt="Nucleus CI" src="https://github.com/sempitern0/Nucleus/actions/workflows/nucleus-ci.yml/badge.svg?branch=main">
   </a>
   <img alt="Godot 4.7.2" src="https://img.shields.io/badge/Godot-4.7.2-478CBF?logo=godot-engine&logoColor=white">
-  <img alt="Project template" src="https://img.shields.io/badge/type-project%20template-6D5DFB">
+  <img alt="Godot addon" src="https://img.shields.io/badge/type-Godot%20addon-6D5DFB">
   <img alt="Pre-1.0" src="https://img.shields.io/badge/status-pre--1.0-EA9A3A">
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/license-MIT-2EA44F"></a>
 </p>
 
-Nucleus is a reusable **Godot 4.7 project template** for starting production games
+Nucleus is a reusable **Godot 4.7 addon** for new and existing games
 with common infrastructure already separated into explicit ownership boundaries.
 It is not an addon framework and it does not replace Godot's scene tree, physics,
 rendering, animation, resources, multiplayer, navigation, or UI systems.
@@ -45,14 +45,14 @@ when adopting changes into an existing game.
 
 | Contract | Current state |
 | --- | --- |
-| Template version | [`VERSION`](VERSION) |
+| Addon version | [`VERSION`](VERSION) |
 | Reference engine | Godot `4.7.2-stable` |
 | API stability | Pre-1.0; intentional public changes may still occur |
 | Core validation | static audits + headless tests + smoke scenes |
 | Export validation | Linux, Windows and Web smoke exports |
 | License | [MIT](LICENSE) |
 
-The template intentionally ships without a game main scene. The consuming project
+The addon does not replace the game main scene. The consuming project
 owns its entry point and opts into only the systems it needs.
 
 ## Start here: choose your route
@@ -212,7 +212,7 @@ Start with:
 
 ## Optional production modules
 
-Optional modules are present in the template but are not promoted to baseline
+Optional modules are included in the addon but are not promoted to baseline
 Autoloads simply for convenience.
 
 | Capability | Documentation |
@@ -251,7 +251,7 @@ use-case catalog
 guides/tutorials/ and composition recipes
     build one concrete integration
         ↓
-components/ or modules/
+addons/nucleus/components/ or addons/nucleus/modules/
     public contract, limits and extension rules
 ```
 
@@ -277,7 +277,7 @@ godot --headless --path . res://tests/headless/test_runner.tscn
 godot --headless --path . res://tests/smoke/smoke_main.tscn
 ```
 
-Run the resource-loading smoke scene when `core/loading` changes. See
+Run the resource-loading smoke scene when `addons/nucleus/core/loading` changes. See
 [Validation and CI](docs/guides/validation_ci_quickstart.md) for the complete gate.
 
 ## Compatibility and API policy
@@ -300,5 +300,5 @@ and executable evidence for reusable behavior.
 ## License
 
 Nucleus is available under the [MIT License](LICENSE). A game built from the
-template may use its own license while retaining the required notice for reused
+addon may use its own license while retaining the required notice for reused
 Nucleus code.

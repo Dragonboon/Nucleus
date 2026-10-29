@@ -1,7 +1,7 @@
 extends "res://tests/headless/test_case.gd"
 
 const BuoyancyMath := preload(
-	"res://components/world/buoyancy/buoyancy_math.gd"
+	"res://addons/nucleus/components/world/buoyancy/buoyancy_math.gd"
 )
 
 

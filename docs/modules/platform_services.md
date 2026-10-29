@@ -2,7 +2,7 @@
 
 ## Goal
 
-`modules/platform_services` defines the smallest useful provider boundary for a
+`addons/nucleus/modules/platform_services` defines the smallest useful provider boundary for a
 game that may run:
 
 ```text

@@ -32,7 +32,7 @@ server peer with peer ID `1`.
 Instance:
 
 ```text
-res://modules/networking/network_handler.tscn
+res://addons/nucleus/modules/networking/network_handler.tscn
 ```
 
 A normal scene-owned setup is:

@@ -8,7 +8,7 @@ one-off keybinds or console-like helpers.
 Instance:
 
 ```text
-res://modules/development_tools/development_tools.tscn
+res://addons/nucleus/modules/development_tools/development_tools.tscn
 ```
 
 in a development shell or the current world scene. It provides a command registry,

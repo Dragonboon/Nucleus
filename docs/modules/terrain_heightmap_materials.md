@@ -2,7 +2,7 @@
 
 Target engine: Godot 4.7.x.
 
-This contract extends `modules/terrain` with reusable policies proven by a real
+This contract extends `addons/nucleus/modules/terrain` with reusable policies proven by a real
 heightmap-driven world consumer:
 
 ```text

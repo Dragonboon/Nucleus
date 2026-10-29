@@ -6,11 +6,11 @@ The replacement is scene-owned and compatible with Godot 4.7.2.
 
 ## Files
 
-- `components/gameplay/turns/turn_participant.gd` — a stable-id turn seat and
+- `addons/nucleus/components/gameplay/turns/turn_participant.gd` — a stable-id turn seat and
   optional actor reference; one session at a time; manual end, skip and blocks.
-- `components/gameplay/turns/turn_session.gd` — deterministic scheduler, events,
+- `addons/nucleus/components/gameplay/turns/turn_session.gd` — deterministic scheduler, events,
   turn limits, round boundaries, clock, pause and cleanup.
-- `components/gameplay/turns/turn_counter.gd` — independent discrete event
+- `addons/nucleus/components/gameplay/turns/turn_counter.gd` — independent discrete event
   counter for status rounds, action counts, objectives or cooldowns.
 
 No references to damage, RPGs, multiplayer, user interface or Autoloads.

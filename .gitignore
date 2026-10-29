@@ -509,3 +509,7 @@ fabric.properties
 # Android studio 3.1+ serialized cache file
 .idea/caches/build_file_checksums.ser
 # End of https://www.toptal.com/developers/gitignore/api/visualstudio,csharp,godot,visualstudiocode,rider
+# Local validation tools and build artifacts
+.ci/
+build/
+dist/

@@ -69,10 +69,16 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y gettext
           python3 -m unittest discover -s scripts/localization -p "test_*.py"
-          python3 scripts/localization/catalogs.py check core/localization/translations/*.po
+          python3 addons/nucleus_localization/tools/catalogs.py check addons/nucleus/core/localization/translations/*.po
           python3 scripts/ci/check_localization_pipeline.py "${{ steps.godot.outputs.bin }}"
           python3 scripts/ci/run_godot_checked.py "${{ steps.godot.outputs.bin }}" \
             --headless --path . res://tests/smoke/localization_smoke.tscn
+
+      - name: Validate packaged addon in an existing host project
+        run: |
+          python3 scripts/package_release.py --skip-validation
+          python3 scripts/ci/check_addon_installation.py "${{ steps.godot.outputs.bin }}" \
+            "dist/releases/Nucleus-$(cat VERSION).zip"
 
       - name: Run native headless test scene
         run: |

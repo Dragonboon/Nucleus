@@ -31,12 +31,12 @@ def main():
             '"res://addons/nucleus_localization/plugin.cfg", "res://tests/tools/plugin.cfg")'))
         subprocess.run(["python3", checked, engine, "--headless", "--editor", "--path", str(project)],
                        check=True, timeout=120)
-        manager = str(root / "scripts/localization/catalogs.py")
+        manager = str(root / "addons/nucleus_localization/tools/catalogs.py")
         template = str(project / "messages.pot")
         output = str(project / "es.po")
         subprocess.run(["python3", manager, "init", template, output, "--locale", "es"], check=True)
         # Start from real translated content; update must preserve translations and back up bytes.
-        shutil.copy2(root / "core/localization/translations/es.po", output)
+        shutil.copy2(root / "addons/nucleus/core/localization/translations/es.po", output)
         before = Path(output).read_bytes()
         subprocess.run(["python3", manager, "update", template, output], check=True)
         assert Path(output + ".bak").read_bytes() == before

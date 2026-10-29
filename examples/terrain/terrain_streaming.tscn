@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://delgr8ncu68q6"]
 
-[ext_resource type="Script" uid="uid://yq1mayx18tox" path="res://modules/terrain/terrain_streamer_3d.gd" id="1_streamer"]
-[ext_resource type="Resource" uid="uid://b5bv37kqo2ocv" path="res://modules/terrain/presets/gentle_hills.tres" id="2_profile"]
+[ext_resource type="Script" uid="uid://yq1mayx18tox" path="res://addons/nucleus/modules/terrain/terrain_streamer_3d.gd" id="1_streamer"]
+[ext_resource type="Resource" uid="uid://b5bv37kqo2ocv" path="res://addons/nucleus/modules/terrain/presets/gentle_hills.tres" id="2_profile"]
 [ext_resource type="Resource" uid="uid://cogfhynj2h8ag" path="res://examples/terrain/materials/terrain_height_layers.tres" id="3_material"]
 [ext_resource type="Script" uid="uid://butavck2s7ory" path="res://examples/terrain/terrain_streaming_target.gd" id="4_target"]
 [ext_resource type="Script" uid="uid://rwvllpx187ps" path="res://examples/terrain/terrain_streaming_hud.gd" id="5_hud"]

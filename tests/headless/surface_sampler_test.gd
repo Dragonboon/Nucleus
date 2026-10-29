@@ -1,7 +1,7 @@
 extends "res://tests/headless/test_case.gd"
 
 const TerrainHeightSampler := preload(
-	"res://modules/terrain/terrain_height_sampler.gd"
+	"res://addons/nucleus/modules/terrain/terrain_height_sampler.gd"
 )
 
 

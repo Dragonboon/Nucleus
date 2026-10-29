@@ -32,7 +32,7 @@ content, not a replacement translation service.
 
 ## Built-in translations
 
-`core/localization/translations/en.po` and `es.po` provide 12 common UI strings,
+`addons/nucleus/core/localization/translations/en.po` and `es.po` provide 12 common UI strings,
 including Automatic, Language, controller connection notices, OK and Cancel.
 `defaults/common_messages.tres` is their source inventory for dynamically read
 framework defaults. Catalog coverage and placeholder syntax are tested.
@@ -158,9 +158,9 @@ are emitted. No existing translated PO file is rewritten by this API.
 Install GNU gettext for these optional development commands:
 
 ```bash
-python3 scripts/localization/catalogs.py init locale/messages.pot locale/es.po --locale es
-python3 scripts/localization/catalogs.py update locale/messages.pot locale/es.po
-python3 scripts/localization/catalogs.py check locale/en.po locale/es.po
+python3 addons/nucleus_localization/tools/catalogs.py init locale/messages.pot locale/es.po --locale es
+python3 addons/nucleus_localization/tools/catalogs.py update locale/messages.pot locale/es.po
+python3 addons/nucleus_localization/tools/catalogs.py check locale/en.po locale/es.po
 ```
 
 The wrapper invokes msginit/msgmerge/msgfmt, not a homemade PO parser. Creation

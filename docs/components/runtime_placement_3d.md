@@ -47,7 +47,7 @@ catalog inside the PackedScenes it contains.
 
 ## Purpose and ownership
 
-`components/gameplay/movement/placement_3d` provides an optional scene-owned
+`addons/nucleus/components/gameplay/movement/placement_3d` provides an optional scene-owned
 runtime placement interaction: spatial admission, editable previews, and bounded straight or curved chains of independently editable instances and
 multi-object editing.
 
@@ -457,7 +457,7 @@ The example uses the existing `NucleusSave` service for versioned slots, backup
 rotation, integrity and codec selection. The example-owned
 `placement_world_document.gd` still validates the **application payload**
 (`id`, `kind`, rigid `transform`) and stages reconstruction atomically. This is
-not the same as `modules/world_state`: there is no persistent region or runtime
+not the same as `addons/nucleus/modules/world_state`: there is no persistent region or runtime
 spawning service in the lab. A real multi-scene game may use `WorldStateService`
 with `SaveSession`, and must recheck final placement on its authority.
 

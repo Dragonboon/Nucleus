@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="NucleusIntSettingDefinition" format=3 uid="uid://cyg3gwi24d7ix"]
+
+[ext_resource type="Script" uid="uid://dwuoveoxufyx" path="res://addons/nucleus/core/settings/definitions/int_setting_definition.gd" id="1_definition"]
+
+[resource]
+script = ExtResource("1_definition")
+has_range = true
+maximum_value = 360
+section = &"graphics"
+key = &"max_fps"
+display_name = "Maximum FPS"
+description = "Caps rendered frames per second. Zero means uncapped."

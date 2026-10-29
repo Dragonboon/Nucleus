@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="NucleusPlacementProfile3D" format=3 uid="uid://dxoyhdirrf6pp"]
 
-[ext_resource type="Script" uid="uid://b6u3ekuxsiurm" path="res://components/gameplay/movement/placement_3d/placement_profile_3d.gd" id="1_profile"]
+[ext_resource type="Script" uid="uid://b6u3ekuxsiurm" path="res://addons/nucleus/components/gameplay/movement/placement_3d/placement_profile_3d.gd" id="1_profile"]
 
 [sub_resource type="CylinderShape3D" id="Clearance"]
 height = 2.05

@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Build a reproducible, Git-tracked Nucleus source-template release package."""
+"""Build a reproducible, Git-tracked Nucleus Godot addon release package."""
 
 from __future__ import annotations
 
 import argparse
+import configparser
 import hashlib
 import json
 import os
@@ -80,6 +81,10 @@ def tracked_files() -> list[Path]:
 
 		relative = Path(os.fsdecode(encoded))
 
+		if (len(relative.parts) < 3 or relative.parts[0] != "addons"
+				or relative.parts[1] not in {"nucleus", "nucleus_localization"}):
+			continue
+
 		if any(part in EXCLUDED_PARTS for part in relative.parts):
 			continue
 
@@ -151,6 +156,16 @@ def create_package(
 		encoding="utf-8"
 	).strip()
 	validate_version(version)
+	addon = REPOSITORY_ROOT / "addons/nucleus"
+	metadata = configparser.ConfigParser()
+	metadata.read(addon / "plugin.cfg", encoding="utf-8")
+	plugin_version = metadata.get("plugin", "version").strip('"')
+	if (addon / "VERSION").read_text(encoding="utf-8").strip() != version or (
+		plugin_version != version
+	):
+		raise SystemExit("Root VERSION, addon VERSION and plugin.cfg must match.")
+	if (addon / "LICENSE").read_bytes() != (REPOSITORY_ROOT / "LICENSE").read_bytes():
+		raise SystemExit("The addon must ship the repository's complete LICENSE.")
 
 	try:
 		commit = run_git("rev-parse", "HEAD").strip()
@@ -188,7 +203,7 @@ def create_package(
 	output_dir.mkdir(parents=True, exist_ok=True)
 	package_name = f"Nucleus-{version}.zip"
 	package_path = output_dir / package_name
-	prefix = f"Nucleus-{version}"
+	prefix = "addons/nucleus"
 
 	with zipfile.ZipFile(
 		package_path,
@@ -200,7 +215,7 @@ def create_package(
 			source = REPOSITORY_ROOT / relative
 			data = source.read_bytes()
 			info = zip_info(
-				f"{prefix}/{relative.as_posix()}",
+				relative.as_posix(),
 				source,
 			)
 			archive.writestr(info, data)

@@ -35,7 +35,7 @@ func _build_fixture(with_script: bool = false) -> PackedScene:
 	root.add_child(collider)
 	collider.owner = root
 	if with_script:
-		root.set_script(preload("res://components/world/fields/world_mask_3d.gd"))
+		root.set_script(preload("res://addons/nucleus/components/world/fields/world_mask_3d.gd"))
 	var scene := PackedScene.new()
 	var error := scene.pack(root)
 	expect_equal(error, OK, "Fixture can be packed without entering SceneTree.")

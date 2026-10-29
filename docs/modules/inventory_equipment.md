@@ -1,6 +1,6 @@
 # Optional Inventory and Equipment Module
 
-`modules/inventory` is optional and scene-owned. It separates immutable item
+`addons/nucleus/modules/inventory` is optional and scene-owned. It separates immutable item
 definitions from mutable runtime stacks and keeps inventory/equipment ownership
 local to the actor/container that owns it.
 

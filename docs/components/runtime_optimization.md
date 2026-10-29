@@ -6,15 +6,15 @@ This is the canonical Nucleus contract for general runtime-efficiency tools
 outside terrain and world streaming.
 
 ```text
-components/gameplay/timing
-components/gameplay/lifecycle
-components/gameplay/pooling
-modules/ai integration
-modules/performance audits
-core/loading warmup
-core/audio one-shot budgeting
-components/ui/data refresh coalescing
-core/save capture budgeting
+addons/nucleus/components/gameplay/timing
+addons/nucleus/components/gameplay/lifecycle
+addons/nucleus/components/gameplay/pooling
+addons/nucleus/modules/ai integration
+addons/nucleus/modules/performance audits
+addons/nucleus/core/loading warmup
+addons/nucleus/core/audio one-shot budgeting
+addons/nucleus/components/ui/data refresh coalescing
+addons/nucleus/core/save capture budgeting
 ```
 
 No `OptimizationManager` or optimization Autoload exists. Godot remains

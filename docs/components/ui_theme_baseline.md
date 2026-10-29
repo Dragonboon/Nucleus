@@ -1,7 +1,7 @@
 # Accessible Native UI Theme Baseline
 
 > [!IMPORTANT]
-> The project already uses `res://components/ui/theme/nucleus_base_theme.tres`
+> The project already uses `res://addons/nucleus/components/ui/theme/nucleus_base_theme.tres`
 > at startup through **Project Settings > GUI > Theme > Custom**. You do not
 > need to assign a Theme to every screen. Any screen may override it locally.
 
@@ -15,8 +15,8 @@ UI singleton. It uses built-in `StyleBoxFlat` and the engine fallback font.
 
 | Resource | Behavior |
 | --- | --- |
-| `components/ui/theme/nucleus_base_theme.tres` | Enabled as the project default. |
-| `components/ui/theme/nucleus_high_contrast_theme.tres` | Optional local or game-wide replacement. |
+| `addons/nucleus/components/ui/theme/nucleus_base_theme.tres` | Enabled as the project default. |
+| `addons/nucleus/components/ui/theme/nucleus_high_contrast_theme.tres` | Optional local or game-wide replacement. |
 | `examples/ui/ui_polish_lab.tscn` | Unified theme, accessibility and interaction acceptance. |
 | `tests/headless/ui_default_theme_test.gd` | Startup setting, state/contrast and Theme-contract regression. |
 
@@ -57,7 +57,7 @@ UI singleton. It uses built-in `StyleBoxFlat` and the engine fallback font.
 
 ## Editing the Theme
 
-1. Open `components/ui/theme/nucleus_base_theme.tres` in the Godot Inspector or
+1. Open `addons/nucleus/components/ui/theme/nucleus_base_theme.tres` in the Godot Inspector or
    Theme Editor. Adjust StyleBoxes, fonts, colors and control-specific constants.
 2. Keep the project theme path in **Project Settings > GUI > Theme > Custom**.
 3. For a game's identity, **Duplicate** the resource before editing, save it in
@@ -82,8 +82,8 @@ The high-contrast resource shipped by Nucleus is a neutral starting option.
 For one game's screen, an opt-in local hookup looks like this:
 
 ```gdscript
-const BASE: Theme = preload("res://components/ui/theme/nucleus_base_theme.tres")
-const HIGH: Theme = preload("res://components/ui/theme/nucleus_high_contrast_theme.tres")
+const BASE: Theme = preload("res://addons/nucleus/components/ui/theme/nucleus_base_theme.tres")
+const HIGH: Theme = preload("res://addons/nucleus/components/ui/theme/nucleus_high_contrast_theme.tres")
 
 @onready var screen: Control = $Screen
 var ui_scale: float = 1.0

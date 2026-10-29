@@ -8,7 +8,7 @@ permissions:
 
 jobs:
   package:
-    name: Build versioned source package
+    name: Build versioned addon package
     runs-on: ubuntu-24.04
 
     steps:

@@ -5,11 +5,11 @@
 This document covers:
 
 ```text
-core/application
-core/platform
-core/window
-core/diagnostics
-core/utils
+addons/nucleus/core/application
+addons/nucleus/core/platform
+addons/nucleus/core/window
+addons/nucleus/core/diagnostics
+addons/nucleus/core/utils
 ```
 
 These systems provide process-wide infrastructure and small stateless helpers.

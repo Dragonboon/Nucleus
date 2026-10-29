@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="NucleusHandheldTuningProfile" format=3]
+
+[ext_resource type="Script" path="res://addons/nucleus/modules/performance/handheld_tuning_profile.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+profile_id = &"balanced"
+display_name = "Balanced"
+description = "A 60 FPS cap and moderate render resolution reduction; not a guarantee."
+max_fps = 60
+render_scale = 0.9

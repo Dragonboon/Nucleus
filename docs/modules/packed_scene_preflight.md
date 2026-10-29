@@ -1,7 +1,7 @@
 # PackedScene Preflight (P05)
 
 Target engine: Godot 4.7.2. Source:
-`modules/development_tools/validation/packed_scene_preflight.gd`.
+`addons/nucleus/modules/development_tools/validation/packed_scene_preflight.gd`.
 
 `NucleusPackedScenePreflight.inspect()` reads a `PackedScene`'s stored
 `SceneState` without calling `instantiate()` or entering the SceneTree.

@@ -1,6 +1,6 @@
 # Spatial Interest Management — Optional Networking Mechanism
 
-Target: Godot 4.7.2-stable / GDScript. Module: `modules/networking/interest`.
+Target: Godot 4.7.2-stable / GDScript. Module: `addons/nucleus/modules/networking/interest`.
 
 > [!CAUTION]
 > **Server authority is mandatory.** Nearby candidates are not a

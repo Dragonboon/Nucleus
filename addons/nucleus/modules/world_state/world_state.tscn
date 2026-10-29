@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://3l3oge12vhro"]
+
+[ext_resource type="Script" uid="uid://cotynfmi1lrdt" path="res://addons/nucleus/modules/world_state/world_state_service.gd" id="1"]
+
+[node name="WorldState" type="Node" unique_id=758934802]
+script = ExtResource("1")

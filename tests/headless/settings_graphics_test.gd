@@ -1,17 +1,17 @@
 extends "res://tests/headless/test_case.gd"
 
 const DEFAULT_CATALOG := preload(
-	"res://core/settings/defaults/default_settings_catalog.tres"
+	"res://addons/nucleus/core/settings/defaults/default_settings_catalog.tres"
 )
 const OPTIONAL_ENVIRONMENT_DEFINITIONS: Array[Resource] = [
-	preload("res://core/settings/optional/environment/environment_ssao_enabled.tres"),
-	preload("res://core/settings/optional/environment/environment_ssil_enabled.tres"),
-	preload("res://core/settings/optional/environment/environment_glow_enabled.tres"),
+	preload("res://addons/nucleus/core/settings/optional/environment/environment_ssao_enabled.tres"),
+	preload("res://addons/nucleus/core/settings/optional/environment/environment_ssil_enabled.tres"),
+	preload("res://addons/nucleus/core/settings/optional/environment/environment_glow_enabled.tres"),
 	preload(
-		"res://core/settings/optional/environment/environment_volumetric_fog_enabled.tres"
+		"res://addons/nucleus/core/settings/optional/environment/environment_volumetric_fog_enabled.tres"
 	),
-	preload("res://core/settings/optional/environment/environment_sdfgi_enabled.tres"),
-	preload("res://core/settings/optional/environment/environment_tonemap_mode.tres"),
+	preload("res://addons/nucleus/core/settings/optional/environment/environment_sdfgi_enabled.tres"),
+	preload("res://addons/nucleus/core/settings/optional/environment/environment_tonemap_mode.tres"),
 ]
 
 

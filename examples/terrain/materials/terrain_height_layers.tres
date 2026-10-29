@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="NucleusTerrainMaterialProfile" format=3 uid="uid://cogfhynj2h8ag"]
 
-[ext_resource type="Script" uid="uid://bnaa1dp2d60q5" path="res://modules/terrain/terrain_material_profile.gd" id="1_material"]
-[ext_resource type="Script" uid="uid://bf5ecnojq5hrm" path="res://modules/terrain/terrain_texture_layer.gd" id="2_layer"]
+[ext_resource type="Script" uid="uid://bnaa1dp2d60q5" path="res://addons/nucleus/modules/terrain/terrain_material_profile.gd" id="1_material"]
+[ext_resource type="Script" uid="uid://bf5ecnojq5hrm" path="res://addons/nucleus/modules/terrain/terrain_texture_layer.gd" id="2_layer"]
 [ext_resource type="Texture2D" uid="uid://dnwuloq358kcn" path="res://examples/terrain/textures/sand.svg" id="3_sand"]
 [ext_resource type="Texture2D" uid="uid://614xm3dbi7rw" path="res://examples/terrain/textures/grass.svg" id="4_grass"]
 [ext_resource type="Texture2D" uid="uid://byi050o0vwnuj" path="res://examples/terrain/textures/rock.svg" id="5_rock"]

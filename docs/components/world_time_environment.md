@@ -5,8 +5,8 @@ Target engine: Godot 4.7.x.
 ## Scope
 
 ```text
-components/world/time
-components/world/environment
+addons/nucleus/components/world/time
+addons/nucleus/components/world/environment
 ```
 
 These components provide a scene-owned simulation clock, coarse day-period

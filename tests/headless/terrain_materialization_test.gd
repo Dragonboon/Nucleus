@@ -1,7 +1,7 @@
 extends "res://tests/headless/test_case.gd"
 
 const PatchBuilder := preload(
-	"res://modules/terrain/terrain_patch_builder.gd"
+	"res://addons/nucleus/modules/terrain/terrain_patch_builder.gd"
 )
 
 

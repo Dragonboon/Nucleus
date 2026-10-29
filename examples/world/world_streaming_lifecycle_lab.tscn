@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://examples/world/world_streaming_lifecycle_lab.gd" id="1_lab"]
-[ext_resource type="Script" path="res://components/world/streaming/world_stream_lifecycle.gd" id="2_stream"]
+[ext_resource type="Script" path="res://addons/nucleus/components/world/streaming/world_stream_lifecycle.gd" id="2_stream"]
 
 [node name="WorldStreamingLifecycleLab" type="Control"]
 layout_mode = 3

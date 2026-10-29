@@ -2,7 +2,7 @@
 
 ## Status
 
-`modules/terrain` is optional and is not loaded by default.
+`addons/nucleus/modules/terrain` is optional and is not loaded by default.
 
 It is designed for projects that want to generate heightfield terrain quickly
 from reusable data rather than make manual sculpting/painting the primary

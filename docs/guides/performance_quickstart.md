@@ -8,7 +8,7 @@ universal draw-call/FPS rule.
 Instance:
 
 ```text
-res://modules/performance/performance_panel.tscn
+res://addons/nucleus/modules/performance/performance_panel.tscn
 ```
 
 under a development scene. The embedded sampler defaults to low-frequency

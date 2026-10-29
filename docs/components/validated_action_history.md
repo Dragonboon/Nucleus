@@ -1,7 +1,7 @@
 # Validated Runtime Action History (P03)
 
 Target engine: Godot 4.7.2. Source:
-`components/gameplay/state/validated_action_history.gd`.
+`addons/nucleus/components/gameplay/state/validated_action_history.gd`.
 
 `NucleusValidatedActionHistory` is a small `RefCounted` history for **data-only**
 state snapshots when gameplay restoration may fail validation. It owns no Node,

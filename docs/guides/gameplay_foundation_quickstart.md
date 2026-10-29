@@ -56,7 +56,7 @@ adapter consume FSM state rather than calling animations from every state.
 
 ## Interaction
 
-Use the existing interaction components/contracts for nearby interactables and
+Use the existing interaction addons/nucleus/components/contracts for nearby interactables and
 keep communication local where possible.
 
 ## Movement

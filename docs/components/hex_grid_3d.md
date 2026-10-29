@@ -4,7 +4,7 @@
 
 ## Why this is in Nucleus
 
-The existing `NucleusPlacementSession3D` handles physical admission, terrain support, preview, editing, and chains. It does not represent an **axial hexagonal topology**, exact corner connectivity, or a ghost hex grid. Those concepts are useful to independent games (board games, modular world builders and strategy/survival systems), so they are a small optional component under `components/world/hex_grid`.
+The existing `NucleusPlacementSession3D` handles physical admission, terrain support, preview, editing, and chains. It does not represent an **axial hexagonal topology**, exact corner connectivity, or a ghost hex grid. Those concepts are useful to independent games (board games, modular world builders and strategy/survival systems), so they are a small optional component under `addons/nucleus/components/world/hex_grid`.
 
 | Ownership | Responsibility |
 |---|---|

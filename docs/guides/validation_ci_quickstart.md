@@ -64,7 +64,7 @@ Threaded resource-loading smoke:
 godot --headless --path . res://tests/smoke/resource_loading_smoke.tscn
 ```
 
-Run the loading smoke whenever `core/loading`, warmup/loading integration or its
+Run the loading smoke whenever `addons/nucleus/core/loading`, warmup/loading integration or its
 public presentation bindings change.
 
 Movement and networking composition checks:
@@ -140,3 +140,17 @@ when validating automation. The wrapper preserves nonzero exits and also fails
 on script/parse/compile errors that Godot can otherwise log and continue past.
 See [composed acceptance](composition_acceptance.md) for world persistence,
 boat transfer, multi-client readiness/reconnect and measured adaptive work.
+
+## Packaged addon installation gate
+
+The addon is also tested in an independent existing project, using only the ZIP.
+This covers native editor activation, runtime services, preserved host preferences,
+editor restart, safe removal, adopted Autoloads, user replacements and conflicts.
+The conflict fixture intentionally emits an Autoload conflict diagnostic.
+
+```bash
+python3 scripts/package_release.py
+python3 scripts/ci/check_addon_installation.py /path/to/godot dist/releases/Nucleus-<version>.zip
+```
+
+For an uncommitted local experiment use `--allow-dirty` when packaging.

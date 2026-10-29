@@ -48,7 +48,7 @@ discovery routes for machine-assisted tools. It does not execute code.
 ## Project-wide UI Theme
 
 > [!TIP]
-> Nucleus starts with a native, neutral [Theme baseline](components/ui_theme_baseline.md)
+> Nucleus starts with a native, neutral [Theme baseline](addons/nucleus/components/ui_theme_baseline.md)
 > selected in `project.godot`. Use the [Theme Quickstart](guides/ui_theme_quickstart.md)
 > to preview focus, text contrast, states and the optional high-contrast variant.
 > The game's own look and accessibility layout decisions remain configurable.
@@ -60,19 +60,19 @@ discovery routes for machine-assisted tools. It does not execute code.
 | Settings, input, rebinding and device hot-swap | [`guides/settings_input_quickstart.md`](guides/settings_input_quickstart.md) |
 | UI, focus, accessibility and presentation | [`guides/ui_quickstart.md`](guides/ui_quickstart.md) |
 | Audio, save and localization | [`guides/runtime_services_quickstart.md`](guides/runtime_services_quickstart.md) |
-| Save directories, formats, security, backups and migrations | [`components/save_system.md`](components/save_system.md) |
-| Continue/resume newest save | [`components/save_resume.md`](components/save_resume.md) |
-| Image-driven adventures, point-and-click and shader passes | [`components/image_screen_interaction.md`](components/image_screen_interaction.md) |
+| Save directories, formats, security, backups and migrations | [`addons/nucleus/components/save_system.md`](addons/nucleus/components/save_system.md) |
+| Continue/resume newest save | [`addons/nucleus/components/save_resume.md`](addons/nucleus/components/save_resume.md) |
+| Image-driven adventures, point-and-click and shader passes | [`addons/nucleus/components/image_screen_interaction.md`](addons/nucleus/components/image_screen_interaction.md) |
 | Scene transitions and recovery | [`guides/scene_flow_quickstart.md`](guides/scene_flow_quickstart.md) |
 | Resource batches / loading presentation | [`guides/resource_loading_quickstart.md`](guides/resource_loading_quickstart.md) |
 | Build a turn-based game: first steps | [`guides/turns_composition_quickstart.md`](guides/turns_composition_quickstart.md) |
 | Build 2D AI enemies | [`guides/tutorials/ai_character_2d.md`](guides/tutorials/ai_character_2d.md) |
-| Generic turn sessions (Turnity migration) | [`components/turn_sessions.md`](components/turn_sessions.md) |
-| RPG-neutral encounter, abilities and progression | [`components/rpg_composition.md`](components/rpg_composition.md) |
+| Generic turn sessions (Turnity migration) | [`addons/nucleus/components/turn_sessions.md`](addons/nucleus/components/turn_sessions.md) |
+| RPG-neutral encounter, abilities and progression | [`addons/nucleus/components/rpg_composition.md`](addons/nucleus/components/rpg_composition.md) |
 | Gameplay foundation | [`guides/gameplay_foundation_quickstart.md`](guides/gameplay_foundation_quickstart.md) |
-| Safe spawn / teleport / exit placement | [`components/safe_placement_queries.md`](components/safe_placement_queries.md) |
-| Reusable grounded or floating 2D movement | [2D foundation](components/2d_foundation.md) |
-| In-game 3D placement and editing | [Runtime placement](components/runtime_placement_3d.md) |
+| Safe spawn / teleport / exit placement | [`addons/nucleus/components/safe_placement_queries.md`](addons/nucleus/components/safe_placement_queries.md) |
+| Reusable grounded or floating 2D movement | [2D foundation](addons/nucleus/components/2d_foundation.md) |
+| In-game 3D placement and editing | [Runtime placement](addons/nucleus/components/runtime_placement_3d.md) |
 | Actions, attributes and status effects | [`guides/actions_attributes_status_quickstart.md`](guides/actions_attributes_status_quickstart.md) |
 | Pooling and targeting | [`guides/pooling_targeting_quickstart.md`](guides/pooling_targeting_quickstart.md) |
 | Humanoid ragdoll authoring | [`guides/ragdoll_authoring_quickstart.md`](guides/ragdoll_authoring_quickstart.md) |
@@ -85,7 +85,7 @@ Use these in order:
 2. [`guides/tutorials/performance_profiling.md`](guides/tutorials/performance_profiling.md) — reproduce and diagnose a real workload.
 3. [`guides/runtime_optimization_quickstart.md`](guides/runtime_optimization_quickstart.md) — choose a bounded runtime intervention.
 4. [`guides/tutorials/runtime_optimization.md`](guides/tutorials/runtime_optimization.md) — compose scheduler, gates, prewarm, audits and warmup.
-5. [`components/runtime_optimization.md`](components/runtime_optimization.md) — canonical public contract.
+5. [`addons/nucleus/components/runtime_optimization.md`](addons/nucleus/components/runtime_optimization.md) — canonical public contract.
 
 Terrain/world streaming have their own performance rules; the runtime optimization
 contract above covers general systems outside those domains.
@@ -94,42 +94,42 @@ contract above covers general systems outside those domains.
 
 Accessibility is split deliberately:
 
-- [`components/ui_and_accessibility.md`](components/ui_and_accessibility.md) — UI behavior, focus, motion and presentation boundaries.
-- [`components/accessibility_preferences.md`](components/accessibility_preferences.md) — persisted UI scale/contrast intent, sensitivity, deadzones and hold/toggle behavior.
+- [`addons/nucleus/components/ui_and_accessibility.md`](addons/nucleus/components/ui_and_accessibility.md) — UI behavior, focus, motion and presentation boundaries.
+- [`addons/nucleus/components/accessibility_preferences.md`](addons/nucleus/components/accessibility_preferences.md) — persisted UI scale/contrast intent, sensitivity, deadzones and hold/toggle behavior.
 - [`guides/settings_input_quickstart.md`](guides/settings_input_quickstart.md) — source-aware input and controller hot-swap.
 
 ## Optional modules
 
 | Module | Contract |
 | --- | --- |
-| Performance | [`modules/performance.md`](modules/performance.md) |
-| Development tools | [`modules/development_tools.md`](modules/development_tools.md) |
-| EventBus | [`modules/event_bus.md`](modules/event_bus.md) |
-| Networking | [`modules/networking.md`](modules/networking.md) |
-| Online replication | [`modules/online_replication.md`](modules/online_replication.md) |
-| Inventory / equipment | [`modules/inventory_equipment.md`](modules/inventory_equipment.md) |
-| Probability / loot | [`modules/probability_loot.md`](modules/probability_loot.md) |
-| Persistent world state | [`modules/persistent_world_state.md`](modules/persistent_world_state.md) |
-| AI / navigation | [`modules/ai_navigation.md`](modules/ai_navigation.md) |
-| Platform services | [`modules/platform_services.md`](modules/platform_services.md) |
-| Content packs | [`modules/content_packs.md`](modules/content_packs.md) |
-| Mobile | [`modules/mobile.md`](modules/mobile.md) |
-| Terrain | [`modules/terrain_generation.md`](modules/terrain_generation.md) |
+| Performance | [`addons/nucleus/modules/performance.md`](addons/nucleus/modules/performance.md) |
+| Development tools | [`addons/nucleus/modules/development_tools.md`](addons/nucleus/modules/development_tools.md) |
+| EventBus | [`addons/nucleus/modules/event_bus.md`](addons/nucleus/modules/event_bus.md) |
+| Networking | [`addons/nucleus/modules/networking.md`](addons/nucleus/modules/networking.md) |
+| Online replication | [`addons/nucleus/modules/online_replication.md`](addons/nucleus/modules/online_replication.md) |
+| Inventory / equipment | [`addons/nucleus/modules/inventory_equipment.md`](addons/nucleus/modules/inventory_equipment.md) |
+| Probability / loot | [`addons/nucleus/modules/probability_loot.md`](addons/nucleus/modules/probability_loot.md) |
+| Persistent world state | [`addons/nucleus/modules/persistent_world_state.md`](addons/nucleus/modules/persistent_world_state.md) |
+| AI / navigation | [`addons/nucleus/modules/ai_navigation.md`](addons/nucleus/modules/ai_navigation.md) |
+| Platform services | [`addons/nucleus/modules/platform_services.md`](addons/nucleus/modules/platform_services.md) |
+| Content packs | [`addons/nucleus/modules/content_packs.md`](addons/nucleus/modules/content_packs.md) |
+| Mobile | [`addons/nucleus/modules/mobile.md`](addons/nucleus/modules/mobile.md) |
+| Terrain | [`addons/nucleus/modules/terrain_generation.md`](addons/nucleus/modules/terrain_generation.md) |
 
 ## World and presentation contracts
 
 | What you need | Existing contract |
 | --- | --- |
-| A clock, daylight or environment cycle | [World time](components/world_time_environment.md), [celestial quickstart](guides/celestial_environment_quickstart.md) |
+| A clock, daylight or environment cycle | [World time](addons/nucleus/components/world_time_environment.md), [celestial quickstart](guides/celestial_environment_quickstart.md) |
 | Rendering and lighting budgets | [Rendering quickstart](guides/rendering_quality_quickstart.md), [lighting quickstart](guides/lighting_shadows_quickstart.md) |
-| Sample terrain/water or attach buoyancy | [Surfaces](components/world_surfaces.md), [buoyancy](components/world_buoyancy.md) |
-| Hex coordinates, neighbors or a board | [Shared topology and 2D](components/hex_grid_2d.md), [3D layers](components/hex_grid_3d.md) |
-| Decals, spatial fields or world feedback | [Decals](components/world_decals.md), [fields](components/world_fields.md), [feedback](components/world_feedback.md) |
-| Schedule or batch visual work | [Scheduling and batched effects](components/world_scheduling_and_batched_fx.md) |
-| Connect movement, camera and animation | [Movement/camera](components/gameplay_movement_camera.md), [animation](components/animation_integration.md), [camera feedback](components/camera_game_feel.md) |
+| Sample terrain/water or attach buoyancy | [Surfaces](addons/nucleus/components/world_surfaces.md), [buoyancy](addons/nucleus/components/world_buoyancy.md) |
+| Hex coordinates, neighbors or a board | [Shared topology and 2D](addons/nucleus/components/hex_grid_2d.md), [3D layers](addons/nucleus/components/hex_grid_3d.md) |
+| Decals, spatial fields or world feedback | [Decals](addons/nucleus/components/world_decals.md), [fields](addons/nucleus/components/world_fields.md), [feedback](addons/nucleus/components/world_feedback.md) |
+| Schedule or batch visual work | [Scheduling and batched effects](addons/nucleus/components/world_scheduling_and_batched_fx.md) |
+| Connect movement, camera and animation | [Movement/camera](addons/nucleus/components/gameplay_movement_camera.md), [animation](addons/nucleus/components/animation_integration.md), [camera feedback](addons/nucleus/components/camera_game_feel.md) |
 | Configure a physical skeleton | [Ragdoll quickstart](guides/ragdoll_authoring_quickstart.md) |
-| Bind HUD values or project labels from 3D | [UI bindings](components/ui_runtime_bindings.md), [world anchors](components/ui_world_anchors.md) |
-| Validate edits, spatial overlap or scene instantiation | [Action history](components/validated_action_history.md), [rectangle index](components/spatial_rect_index_2d.md), [scene preflight](modules/packed_scene_preflight.md) |
+| Bind HUD values or project labels from 3D | [UI bindings](addons/nucleus/components/ui_runtime_bindings.md), [world anchors](addons/nucleus/components/ui_world_anchors.md) |
+| Validate edits, spatial overlap or scene instantiation | [Action history](addons/nucleus/components/validated_action_history.md), [rectangle index](addons/nucleus/components/spatial_rect_index_2d.md), [scene preflight](addons/nucleus/modules/packed_scene_preflight.md) |
 
 Hex boards own axial occupancy; placement sessions validate free-form 3D
 transforms. Neither owns inventory costs, network permission or save slots.
@@ -151,7 +151,7 @@ guides/*_quickstart.md
 guides/tutorials/
     concrete build-along examples
 
-components/ and modules/
+addons/nucleus/components/ and addons/nucleus/modules/
     public behavior, limits, persistence/network/performance boundaries
 
 architecture/

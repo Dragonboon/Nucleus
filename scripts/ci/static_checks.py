@@ -48,42 +48,42 @@ MANIFEST_SUITE_RE = re.compile(
 NUCLEUS_OWNED_API_RULES = (
 	(
 		re.compile(r"\bInput\.mouse_mode\s*="),
-		frozenset({"core/input/cursor.gd"}),
+		frozenset({"addons/nucleus/core/input/cursor.gd"}),
 		"use NucleusCursor instead of assigning Input.mouse_mode directly",
 	),
 	(
 		re.compile(r"\bDisplayServer\.window_set_mode\s*\("),
-		frozenset({"core/settings/appliers/display_settings_applier.gd"}),
+		frozenset({"addons/nucleus/core/settings/appliers/display_settings_applier.gd"}),
 		"use NucleusSettings; display window mode is owned by its applier",
 	),
 	(
 		re.compile(r"\bDisplayServer\.window_set_vsync_mode\s*\("),
-		frozenset({"core/settings/appliers/display_settings_applier.gd"}),
+		frozenset({"addons/nucleus/core/settings/appliers/display_settings_applier.gd"}),
 		"use NucleusSettings; VSync is owned by its display applier",
 	),
 	(
 		re.compile(r"\bEngine\.max_fps\s*="),
-		frozenset({"core/settings/appliers/display_settings_applier.gd"}),
+		frozenset({"addons/nucleus/core/settings/appliers/display_settings_applier.gd"}),
 		"use NucleusSettings; the frame limit is owned by its display applier",
 	),
 	(
 		re.compile(r"\bProjectSettings\.load_resource_pack\s*\("),
-		frozenset({"modules/content_packs/content_pack_loader.gd"}),
+		frozenset({"addons/nucleus/modules/content_packs/content_pack_loader.gd"}),
 		"use the verified Content Packs loader before mounting resource packs",
 	),
 	(
 		re.compile(r"\bInput\.vibrate_handheld\s*\("),
-		frozenset({"core/input/haptics.gd"}),
+		frozenset({"addons/nucleus/core/input/haptics.gd"}),
 		"use NucleusHaptics so vibration settings apply across devices",
 	),
 	(
 		re.compile(r"\bDisplayServer\.screen_set_orientation\s*\("),
-		frozenset({"modules/mobile/orientation_policy.gd"}),
+		frozenset({"addons/nucleus/modules/mobile/orientation_policy.gd"}),
 		"use NucleusMobileOrientationPolicy for reusable orientation policy",
 	),
 	(
 		re.compile(r"\bOS\.request_permissions?\s*\("),
-		frozenset({"modules/mobile/mobile_permissions.gd"}),
+		frozenset({"addons/nucleus/modules/mobile/mobile_permissions.gd"}),
 		"use NucleusMobilePermissions at the user-visible permission boundary",
 	),
 )
@@ -130,7 +130,7 @@ def check_file(path: Path, repository_root: Path) -> list[str]:
 			)
 
 	if path.suffix == ".gd":
-		is_nucleus_source = relative.split("/", 1)[0] in NUCLEUS_SOURCE_DIRS
+		is_nucleus_source = relative.removeprefix("addons/nucleus/").split("/", 1)[0] in NUCLEUS_SOURCE_DIRS
 		for number, line in enumerate(lines, start=1):
 			if line.startswith(" "):
 				errors.append(
@@ -284,7 +284,9 @@ def main() -> int:
 	gd_count = sum(path.suffix == ".gd" for path in files)
 	owned_count = sum(
 		path.suffix == ".gd"
-		and path.relative_to(repository_root).parts[0] in NUCLEUS_SOURCE_DIRS
+		and path.relative_to(repository_root).as_posix().removeprefix(
+			"addons/nucleus/"
+		).split("/", 1)[0] in NUCLEUS_SOURCE_DIRS
 		for path in files
 	)
 	uid_count = sum(path.suffix == ".uid" for path in files)

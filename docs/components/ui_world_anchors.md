@@ -8,7 +8,7 @@ Target: Godot 4.7.2, GDScript. Scene-owned, renderer-neutral UI behavior.
 
 ## Scope and ownership
 
-The components in `components/ui/presentation/` project world-space positions
+The components in `addons/nucleus/components/ui/presentation/` project world-space positions
 into native `Control` widgets, then optionally separate overlapping widgets.
 
 | Class | Responsibility |

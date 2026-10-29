@@ -17,7 +17,7 @@ world or other independent systems need capture/restore callbacks.
 
 The effective root is `NucleusSave.profile.base_directory` **after** the
 Autoload has entered the scene tree and initialized. Nucleus ships with
-`core/save/defaults/default_save_profile.tres` assigned in `core/save/save.tscn`.
+`addons/nucleus/core/save/defaults/default_save_profile.tres` assigned in `addons/nucleus/core/save/save.tscn`.
 Its `base_directory` is empty, which resolves through
 `NucleusSaveProfile.get_base_directory()` to:
 

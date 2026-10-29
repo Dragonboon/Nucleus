@@ -1,0 +1,16 @@
+[gd_scene format=3 uid="uid://bohgvhafbps81"]
+
+[ext_resource type="Script" uid="uid://ctg0373e3dy8i" path="res://addons/nucleus/core/settings/settings_service.gd" id="1_service"]
+[ext_resource type="Resource" uid="uid://bgmb3nxv6w2l" path="res://addons/nucleus/core/settings/defaults/default_settings_catalog.tres" id="2_catalog"]
+[ext_resource type="Script" uid="uid://w1ouwthalugv" path="res://addons/nucleus/core/settings/appliers/display_settings_applier.gd" id="3_display_applier"]
+[ext_resource type="Script" path="res://addons/nucleus/core/settings/appliers/localization_settings_applier.gd" id="4_locale_applier"]
+
+[node name="NucleusSettings" type="Node" unique_id=1275647726]
+script = ExtResource("1_service")
+catalog = ExtResource("2_catalog")
+
+[node name="DisplaySettingsApplier" type="Node" parent="." unique_id=1446735382]
+script = ExtResource("3_display_applier")
+
+[node name="LocalizationSettingsApplier" type="Node" parent="."]
+script = ExtResource("4_locale_applier")

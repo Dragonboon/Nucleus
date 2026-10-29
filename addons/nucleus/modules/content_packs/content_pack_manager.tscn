@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://addons/nucleus/modules/content_packs/content_pack_manager.gd" id="1_manager"]
+
+[node name="ContentPackManager" type="Node"]
+script = ExtResource("1_manager")

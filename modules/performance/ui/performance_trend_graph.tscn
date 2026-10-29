@@ -1,8 +1,0 @@
-[gd_scene load_steps=2 format=3]
-
-[ext_resource type="Script" path="res://modules/performance/ui/performance_trend_graph.gd" id="1_graph"]
-
-[node name="PerformanceTrendGraph" type="Control"]
-custom_minimum_size = Vector2(0, 86)
-mouse_filter = 2
-script = ExtResource("1_graph")

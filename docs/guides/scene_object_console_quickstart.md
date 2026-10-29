@@ -9,7 +9,7 @@ a scene.
 Instance:
 
 ```text
-res://modules/development_tools/development_tools.tscn
+res://addons/nucleus/modules/development_tools/development_tools.tscn
 ```
 
 The shell has no physical toggle binding by default. Open it from game-owned

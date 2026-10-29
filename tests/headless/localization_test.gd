@@ -83,11 +83,11 @@ func run() -> Dictionary:
 	expect_equal(NucleusLocalizationProjectTools.register_translations([]), ERR_UNAVAILABLE,
 		"Runtime cannot rewrite project translation settings.")
 	var catalog: NucleusMessageCatalog = load(
-		"res://core/localization/defaults/common_messages.tres")
+		"res://addons/nucleus/core/localization/defaults/common_messages.tres")
 	expect_equal(NucleusTranslationTemplates.collect_resource(catalog).size(), 12,
 		"Resource catalog is available to tooling.")
-	var en := load("res://core/localization/translations/en.po") as Translation
-	var es := load("res://core/localization/translations/es.po") as Translation
+	var en := load("res://addons/nucleus/core/localization/translations/en.po") as Translation
+	var es := load("res://addons/nucleus/core/localization/translations/es.po") as Translation
 	for entry: NucleusLocalizedMessage in catalog.messages:
 		expect_false(en.get_message(entry.source).is_empty(), "English common message is translated.")
 		expect_false(es.get_message(entry.source).is_empty(), "Spanish common message is translated.")

@@ -1,6 +1,6 @@
 # Optional Probability / Loot Module
 
-`modules/loot` provides reusable loot-table semantics on top of Godot's native
+`addons/nucleus/modules/loot` provides reusable loot-table semantics on top of Godot's native
 `RandomNumberGenerator`. It does not wrap or replace general PRNG functionality.
 
 ## Architecture

@@ -2,10 +2,10 @@
 
 ## Release artifact
 
-Nucleus releases are **source-template packages**, not exported games.
+Nucleus releases are **Godot addon packages**, not exported games.
 
 Game exports in CI are smoke tests that prove project exportability. They are
-separate from the Nucleus source archive.
+separate from the Nucleus addon archive.
 
 Generate a package with:
 
@@ -24,7 +24,9 @@ The package version comes from the root `VERSION` file.
 
 ## Package contents
 
-The package is built from Git-tracked files only. This prevents local caches,
+The package contains only Git-tracked files under `addons/`, with no outer
+wrapper. Development documentation, examples, tests, labs and the root project
+are excluded. LICENSE and VERSION are included inside the main addon. This prevents local caches,
 untracked experiments, credentials, game prototypes, or editor state from
 entering a release.
 
@@ -39,7 +41,7 @@ dist/
 __pycache__/
 ```
 
-The archive includes `RELEASE_MANIFEST.json` with the Nucleus version, source
+The archive includes `addons/nucleus/RELEASE_MANIFEST.json` with the Nucleus version, source
 commit, dirty-state marker, Godot reference, file count, SHA-256, and size for
 every packaged source file.
 
@@ -97,8 +99,8 @@ not automatically publish a GitHub Release.
 8. Create concise GitHub Release notes from the shipped changes.
 9. Attach the ZIP plus checksum to the GitHub Release when publishing binaries.
 
-Nucleus does not keep iteration journals or a committed changelog in the source
-template. Git tags, pull requests, commits, and GitHub Release notes retain
+Nucleus does not keep iteration journals or a committed changelog in the addon
+source. Git tags, pull requests, commits, and GitHub Release notes retain
 history without mixing planning records into user documentation.
 
 ## Prereleases
@@ -117,5 +119,5 @@ is ready for a stable release.
 ## Consuming-game releases
 
 A game built on Nucleus owns its own versioning, export presets, store metadata,
-signing, and release process. Do not use the Nucleus template `VERSION` as the
+signing, and release process. Do not use the Nucleus addon `VERSION` as the
 game's version.

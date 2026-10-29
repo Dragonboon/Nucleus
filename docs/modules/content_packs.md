@@ -3,7 +3,7 @@
 ## Scope
 
 ```text
-modules/content_packs
+addons/nucleus/modules/content_packs
 scripts/content_packs
 ```
 

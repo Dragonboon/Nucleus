@@ -2,7 +2,7 @@
 
 ## Status
 
-`modules/world_state` is optional and is not loaded by default.
+`addons/nucleus/modules/world_state` is optional and is not loaded by default.
 
 It solves a specific cross-scene problem:
 
@@ -80,7 +80,7 @@ persistent GameSession
 or intentionally add:
 
 ```text
-modules/world_state/world_state.tscn
+addons/nucleus/modules/world_state/world_state.tscn
 ```
 
 as an opt-in Autoload such as:

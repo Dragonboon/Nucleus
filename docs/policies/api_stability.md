@@ -15,7 +15,7 @@ Unless a technical document says otherwise, these are public contracts:
 ```text
 Nucleus-prefixed class_name types
 mandatory default Autoload names and documented methods/signals
-documented public methods and signals on reusable components/resources
+documented public methods and signals on reusable addons/nucleus/components/resources
 documented exported properties whose values serialize into scenes/resources
 documented settings/save schema boundaries
 documented reusable scene/resource entry points
@@ -42,7 +42,7 @@ Internal code may change without deprecation when public behavior is preserved.
 
 ## File paths
 
-Nucleus is a project template, so paths sometimes matter through `project.godot`
+Nucleus is a Godot addon. Paths matter through `project.godot`
 or serialized Godot resources.
 
 Paths explicitly referenced by project configuration or public documentation are
@@ -73,8 +73,8 @@ contracts.
 
 ## Source ownership in a consuming game
 
-Nucleus is intended to be copied into a game repository and then owned by that
-project.
+Install Nucleus under `addons/nucleus/` in an existing or new game repository.
+Keep game-owned code outside the addon; prefer composition over editing vendor code.
 
 A consuming game may modify any source. Once it does, automatic upgrades from a
 newer Nucleus release are not guaranteed. Upgrades should be selective merges

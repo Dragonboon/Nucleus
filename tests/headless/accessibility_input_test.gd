@@ -1,7 +1,7 @@
 extends "res://tests/headless/test_case.gd"
 
 const DEFAULT_CATALOG := preload(
-	"res://core/settings/defaults/default_settings_catalog.tres"
+	"res://addons/nucleus/core/settings/defaults/default_settings_catalog.tres"
 )
 
 

@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="NucleusAutosavePolicy" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://addons/nucleus/core/save/autosave_policy.gd" id="1_policy"]
+
+[resource]
+script = ExtResource("1_policy")
+enabled = true
+interval_seconds = 120.0
+max_slots = 3
+save_on_application_pause = true
+save_on_application_quit = true
+save_on_focus_lost = false
+minimum_interval_seconds = 5.0

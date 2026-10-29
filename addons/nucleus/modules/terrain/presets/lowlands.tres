@@ -1,0 +1,20 @@
+[gd_resource type="Resource" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://addons/nucleus/modules/terrain/terrain_profile.gd" id="1_profile"]
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_lowlands"]
+seed = 3217
+frequency = 0.011
+fractal_octaves = 3
+fractal_lacunarity = 1.9
+fractal_gain = 0.42
+
+[resource]
+script = ExtResource("1_profile")
+size = Vector2(260, 260)
+resolution = 48
+height_scale = 17.0
+noise = SubResource("FastNoiseLite_lowlands")
+lod_levels = 2
+lod_distance_step = 110.0
+collision_resolution = 24

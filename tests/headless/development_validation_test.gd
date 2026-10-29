@@ -1,7 +1,7 @@
 extends "res://tests/headless/test_case.gd"
 
 const DevelopmentValidation := preload(
-	"res://modules/development_tools/validation/development_validation.gd"
+	"res://addons/nucleus/modules/development_tools/validation/development_validation.gd"
 )
 
 

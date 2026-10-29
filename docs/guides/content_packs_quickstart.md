@@ -37,7 +37,7 @@ GameSession
 Use:
 
 ```text
-res://modules/content_packs/content_pack_manager.tscn
+res://addons/nucleus/modules/content_packs/content_pack_manager.tscn
 ```
 
 Create a policy resource in the Inspector and set:

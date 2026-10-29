@@ -50,7 +50,7 @@ project-defined action when jumping is part of the game.
 Instance:
 
 ```text
-res://components/gameplay/camera/third_person_camera_rig_3d.tscn
+res://addons/nucleus/components/gameplay/camera/third_person_camera_rig_3d.tscn
 ```
 
 into the world/session:

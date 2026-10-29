@@ -3,12 +3,12 @@
 ## Scope
 
 ```text
-components/gameplay/resources
-components/gameplay/combat
-components/gameplay/interaction
-components/gameplay/timing
-components/gameplay/lifecycle
-components/gameplay/state
+addons/nucleus/components/gameplay/resources
+addons/nucleus/components/gameplay/combat
+addons/nucleus/components/gameplay/interaction
+addons/nucleus/components/gameplay/timing
+addons/nucleus/components/gameplay/lifecycle
+addons/nucleus/components/gameplay/state
 ```
 
 All systems in this document are scene-owned composition pieces. None requires a

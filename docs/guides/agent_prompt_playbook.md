@@ -64,7 +64,7 @@ Never claim that passing unit tests proves visuals, feel or performance.
 
 > [!IMPORTANT]
 > **Checkout matters.** A derivative game is not the Nucleus repository. Do
-> not change the shared template for game-specific content. Do not push or
+> not change the shared addon for game-specific content. Do not push or
 > trigger GitHub workflows without explicit authorization; a push to a
 > CI-enabled branch may itself trigger workflows, so check repository policy.
 

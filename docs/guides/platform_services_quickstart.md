@@ -5,7 +5,7 @@
 Add:
 
 ```text
-modules/platform_services/platform_service.tscn
+addons/nucleus/modules/platform_services/platform_service.tscn
 ```
 
 under a persistent game/session owner.

@@ -28,10 +28,10 @@ func _run() -> void:
 		"res://tests/fixtures/localization/es.po", "res://missing.po"])) != OK, "Bad batch rejects.")
 	_check(ProjectSettings.get_setting(key) == registered, "Failed registration preserves settings.")
 	_check(NucleusLocalizationProjectTools.add_source_folder(
-		"res://core/localization") == OK, "Source folder registers recursively.")
+		"res://addons/nucleus/core/localization") == OK, "Source folder registers recursively.")
 	var source_key := NucleusLocalizationProjectTools.SOURCES
 	var sources: PackedStringArray = ProjectSettings.get_setting(source_key)
-	_check(sources.has("res://core/localization/defaults/common_messages.tres"),
+	_check(sources.has("res://addons/nucleus/core/localization/defaults/common_messages.tres"),
 		"Source inventory includes Resource messages.")
 	var config := ConfigFile.new()
 	_check(config.load("res://project.godot") == OK, "Native settings saved.")
@@ -40,14 +40,14 @@ func _run() -> void:
 	var parser_script := load("res://addons/nucleus_localization/message_parser.gd") as Script
 	var parser: EditorTranslationParserPlugin = parser_script.new()
 	var entries: Array[PackedStringArray] = parser._parse_file(
-		"res://core/localization/defaults/common_messages.tres")
+		"res://addons/nucleus/core/localization/defaults/common_messages.tres")
 	_check(entries.size() == 12, "Native extraction plugin supplies twelve source entries.")
 	sources.append("res://tests/smoke/localization_smoke.tscn")
 	ProjectSettings.set_setting(source_key, sources)
 	var custom: Array[PackedStringArray] = parser._customize_strings([])
 	_check(custom.size() == 1 and custom[0][0] == "Hello {name}", "Scene enrichment works.")
 	var catalog: NucleusMessageCatalog = load(
-		"res://core/localization/defaults/common_messages.tres")
+		"res://addons/nucleus/core/localization/defaults/common_messages.tres")
 	var messages: Array[NucleusLocalizedMessage] = catalog.messages.duplicate()
 	var plural := NucleusLocalizedMessage.new()
 	plural.source = "{count} item"

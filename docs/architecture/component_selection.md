@@ -46,7 +46,7 @@ Player/designer-visible requirement
 
 ## Known limitations and deliberately unbundled work
 
-- Nucleus is a **template** that a developer must integrate with the game scene.
+- Nucleus is an **addon** that a developer must integrate with the game scene.
   It is not a visual behavior editor or a code-generation model.
 - No built-in quests, dialogue tree authoring, crafting balance, combat
   content, full MMO server, authoritative world simulation, or ready-made

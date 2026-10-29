@@ -18,16 +18,16 @@ config/icon="res://icon.svg"
 
 [audio]
 
-buses/default_bus_layout="res://default_bus_layout.tres"
+buses/default_bus_layout="res://addons/nucleus/core/audio/default_bus_layout.tres"
 
 [autoload]
 
-NucleusApp="*res://core/application/application.gd"
-NucleusSettings="*res://core/settings/settings.tscn"
-NucleusInput="*res://core/input/input_service.gd"
-NucleusAudio="*res://core/audio/audio.tscn"
-NucleusSave="*res://core/save/save.tscn"
-NucleusSceneFlow="*res://core/scene_flow/scene_flow_service.gd"
+NucleusApp="*res://addons/nucleus/core/application/application.gd"
+NucleusSettings="*res://addons/nucleus/core/settings/settings.tscn"
+NucleusInput="*res://addons/nucleus/core/input/input_service.gd"
+NucleusAudio="*res://addons/nucleus/core/audio/audio.tscn"
+NucleusSave="*res://addons/nucleus/core/save/save.tscn"
+NucleusSceneFlow="*res://addons/nucleus/core/scene_flow/scene_flow_service.gd"
 
 [display]
 
@@ -36,20 +36,20 @@ window/stretch/aspect="expand"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/nucleus_localization/plugin.cfg")
+enabled=PackedStringArray("res://addons/nucleus/plugin.cfg", "res://addons/nucleus_localization/plugin.cfg")
 
 [file_customization]
 
 folder_colors={
-"res://components/": "yellow",
-"res://components/ui/": "green",
-"res://core/": "purple",
-"res://modules/": "purple"
+"res://addons/nucleus/components/": "yellow",
+"res://addons/nucleus/components/ui/": "green",
+"res://addons/nucleus/core/": "purple",
+"res://addons/nucleus/modules/": "purple"
 }
 
 [gui]
 
-theme/custom="res://components/ui/theme/nucleus_base_theme.tres"
+theme/custom="res://addons/nucleus/components/ui/theme/nucleus_base_theme.tres"
 
 [input]
 
@@ -145,8 +145,12 @@ pause={
 
 [internationalization]
 
-locale/translations=PackedStringArray("res://core/localization/translations/en.po", "res://core/localization/translations/es.po")
-locale/translations_pot_files=PackedStringArray("res://core/localization/defaults/common_messages.tres")
+locale/translations=PackedStringArray("res://addons/nucleus/core/localization/translations/en.po", "res://addons/nucleus/core/localization/translations/es.po")
+locale/translations_pot_files=PackedStringArray("res://addons/nucleus/core/localization/defaults/common_messages.tres")
+
+[nucleus]
+
+integration/manage_project_preferences=true
 
 [physics]
 

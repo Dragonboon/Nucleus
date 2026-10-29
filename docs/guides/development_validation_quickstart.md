@@ -3,7 +3,7 @@
 Instance the existing Development Tools shell:
 
 ```text
-res://modules/development_tools/development_tools.tscn
+res://addons/nucleus/modules/development_tools/development_tools.tscn
 ```
 
 Then open the palette and run:

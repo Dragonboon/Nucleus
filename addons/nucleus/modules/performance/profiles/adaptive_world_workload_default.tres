@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="NucleusAdaptiveWorldWorkloadProfile" format=3]
+
+[ext_resource type="Script" path="res://addons/nucleus/modules/performance/adaptive_world_workload_profile.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+queue_fraction = 0.25
+scatter_fraction = 0.4
+background_load_fraction = 0.5
+terrain_build_fraction = 0.5
+minimum_queue_usec = 250

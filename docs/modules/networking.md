@@ -2,7 +2,7 @@
 
 ## Status
 
-`modules/networking` is optional and is not loaded by default.
+`addons/nucleus/modules/networking` is optional and is not loaded by default.
 
 It provides two deliberately separate layers:
 

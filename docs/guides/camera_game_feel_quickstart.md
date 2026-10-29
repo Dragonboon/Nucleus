@@ -117,7 +117,7 @@ Fire : NucleusGameplayAction
 Attach:
 
 ```text
-components/gameplay/feedback/camera_impulse_effect_3d.gd
+addons/nucleus/components/gameplay/feedback/camera_impulse_effect_3d.gd
 ```
 
 Assign:
