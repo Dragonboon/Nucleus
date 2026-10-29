@@ -1,7 +1,8 @@
 # Nucleus — agent operating contract
 
-> **Scope:** Nucleus is an agnostic, reusable Godot foundation. It is **not** a
-> game, a genre framework, a ready-made starter, or a substitute for Godot.
+> **Scope:** Nucleus is an installable, agnostic Godot addon for existing or new
+> projects. It is **not** a game, a project template, a complete genre framework
+> or a substitute for Godot.
 > An agent's job is to reuse, compose, and validate existing mechanisms—not to
 > maximize the amount of new code.
 
@@ -91,22 +92,57 @@ git status --short
 git branch --show-current
 git rev-parse HEAD
 cat VERSION
-rg -n 'RelevantNucleusSymbol|target_method|specific_error' core components modules
+cat addons/nucleus/VERSION
+cat addons/nucleus/plugin.cfg
+rg -n 'GODOT_VERSION' .github/workflows/nucleus-ci.yml
+rg -n 'RelevantNucleusSymbol|target_method|specific_error' \
+  addons/nucleus/core addons/nucleus/components addons/nucleus/modules
 ```
 
 Replace the example expression with actual behavior/API names; `rg` is a
 starting point, not a substitute for reading matching implementations. For a
 consuming game, inspect `game/` scenes and current `AGENTS.md` too. Never assume
 GitHub `main`, the local checkout, an older conversation or a downloaded overlay
-all refer to the same revision. Check authorization before changing branches,
-files, remotes or publishing commits.
+all refer to the same revision. Work from the intended base revision, preserve
+unrelated local edits and record the exact source revision of any consuming game.
+APIs present in an unmerged feature branch are not yet available in `main` or a
+published addon. Keep code, tests and agent instructions aligned to the same branch.
+Proceed within the user's authorized scope; branch updates, publication and merges
+must respect that scope. Never merge merely because local tests passed.
 
 ## Addon distribution boundary
 
-Installable code and assets live under `addons/`. The root `project.godot`,
+The distributable boundary is **`addons/nucleus/`**. The root `project.godot`,
 `AGENTS.md`, docs, examples, tests, scripts, tools and labs are development-only.
-Do not require them from an addon. Do not instruct users to clone a game template.
-Preserve host project policy and test installation into an existing project.
+Do not require them from an addon. A consuming game can install only the addon
+folder; a complete repository clone is not a runtime dependency.
+
+| Kind of change | Location / constraint |
+| --- | --- |
+| Baseline runtime services and utilities | `addons/nucleus/core/`; no optional-module dependency |
+| Scene-owned reusable adapters | `addons/nucleus/components/`; explicit references and signals |
+| Optional subsystems | `addons/nucleus/modules/`; absent modules must not break the baseline |
+| Plugin/dock/localization/package management | `addons/nucleus/plugin.gd`, `addons/nucleus/editor/`; editor lifetime only |
+| Validation, fixtures and examples | Root `tests/`, `examples/`, `scripts/`; never required by installed code |
+| A consuming game's content and policy | Outside the addon, normally `game/` in that repository |
+
+The Nucleus dock owns **Manage** and **Localization**. Do not recreate a separate
+`nucleus_localization` plugin or require development scripts to run the installed
+editor tools. Inspect [addon management](docs/guides/addon_management.md) before
+changing profiles, updates or rollback, and [installation](docs/guides/installation.md)
+before changing integration behavior.
+
+Preserve the host's main scene, InputMap, renderer, physics configuration, audio
+layout, settings and other plugins. Baseline Autoload registration must detect
+conflicts and remove only entries owned by this addon. Do not add global project
+preferences implicitly; opt-in integration is an explicit host decision.
+
+Full/2D/3D inventories are dependency-closed source profiles. Shared UI, core and
+editor code remain available in all profiles; a 3D game still needs 2D menus.
+Never infer that every `Node2D` or `Control` belongs exclusively to the 2D profile.
+Inspect existing class/resource references before introducing cross-profile links.
+Do not bypass modified-file checks, host-reference scans, hash/size verification,
+immutable update revisions or staged rollback to make an update succeed.
 
 ## 1. Architecture invariants
 
@@ -136,10 +172,12 @@ Preserve host project policy and test installation into an existing project.
 
 | Need | Inspect first | Read alongside source |
 | --- | --- | --- |
-| Movement, facing, camera | `addons/nucleus/components/gameplay/movement/`, `control/`, `camera/` | `docs/components/gameplay_movement_camera.md`; `docs/guides/tutorials/third_person_3d.md` |
+| Movement, facing, camera | `addons/nucleus/components/gameplay/movement/`, `addons/nucleus/components/gameplay/control/`, `addons/nucleus/components/gameplay/camera/` | `docs/components/gameplay_movement_camera.md`; `docs/guides/tutorials/third_person_3d.md` |
 | Animation, humanoids, ragdoll | `addons/nucleus/components/gameplay/animation/` | `docs/components/animation_integration.md`; `docs/components/ragdoll_authoring_3d.md` |
 | Input, preferences, UI | `addons/nucleus/core/input/`, `addons/nucleus/core/settings/`, `addons/nucleus/components/ui/` | `docs/guides/settings_input_quickstart.md`; `docs/guides/ui_quickstart.md` |
-| Interactions and actions | `addons/nucleus/components/gameplay/interaction/`, `actions/` | `docs/components/gameplay_foundation.md`; `docs/components/gameplay_actions_attributes_status.md` |
+| Interactions and actions | `addons/nucleus/components/gameplay/interaction/`, `addons/nucleus/components/gameplay/actions/` | `docs/components/gameplay_foundation.md`; `docs/components/gameplay_actions_attributes_status.md` |
+| Image-based interaction and navigation | `addons/nucleus/components/ui/interaction/`, `addons/nucleus/components/ui/effects/` | `docs/components/image_screen_interaction.md`; `tests/smoke/point_click_smoke.tscn` |
+| Addon/editor/distribution | `addons/nucleus/plugin.gd`, `addons/nucleus/editor/`, `scripts/package_release.py` | `docs/guides/addon_management.md`; `docs/guides/installation.md` |
 | Audio, save, scenes | `addons/nucleus/core/audio/`, `addons/nucleus/core/save/`, `addons/nucleus/core/scene_flow/` | `docs/components/audio_save_scene_localization.md`; `docs/components/save_system.md` |
 | AI, navigation | `addons/nucleus/modules/ai/` | `docs/modules/ai_navigation.md` |
 | Terrain, streaming, oceans | `addons/nucleus/modules/terrain/`, `addons/nucleus/components/world/` | `docs/components/world_surfaces.md`; `docs/components/world_buoyancy.md` |
@@ -156,9 +194,11 @@ report the mismatch; do not invent an interface.
 
 Reference: the Godot release pinned in `.github/workflows/nucleus-ci.yml` and
 `docs/policies/godot_compatibility.md` (currently `4.7.2-stable`). The current
-project uses Forward Plus and Jolt Physics. Do not substitute 4.6, Godot 3,
-engine `master`, or incompatible GDExtension assumptions. Verify unfamiliar
-methods, enums and properties against the pinned engine/API.
+development project uses Forward Plus and Jolt Physics; those are not settings to
+impose on a consuming project. Re-read the pin rather than treating this paragraph
+as an engine upgrade instruction. Do not substitute 4.6, Godot 3, engine `master`,
+or incompatible GDExtension assumptions. Verify unfamiliar methods, enums and
+properties against the pinned engine/API and an actual engine run.
 
 - Use explicit GDScript types for uncertain `Variant`/`Error` returns, dynamic
   indexing and `Object.get()`; do not conceal parser warnings with suppressions.
@@ -169,9 +209,14 @@ methods, enums and properties against the pinned engine/API.
 - `_init()` cannot assume SceneTree, viewport, physics space, imported assets
   or Autoload readiness. Children initialize before their parent's `_ready()`;
   wire dependencies accordingly. Disconnect stale signals and check potentially
-  freed references before use.
+  freed references before use. `_ready()` does not automatically run again when
+  an existing Node re-enters the tree: pair teardown with an explicit rebind or a
+  deliberate `request_ready()` policy. Test remove/re-add and pending callbacks.
 - Do not mutate shared `Resource` objects as if each actor had a private copy.
-  Duplicate runtime profiles/materials when independent state is required.
+  Duplicate runtime profiles/materials when independent state is required. Validate
+  external IDs, targets and prerequisites before irreversible effects; guard signal
+  reentry while committing. Do not describe a multi-owner operation as atomic unless
+  failure/rollback tests establish that contract.
 - Editor `@tool` generation must preserve authored content, avoid duplicate
   children, use correct saved `owner`, and integrate with native UndoRedo when
   appropriate. Do not fabricate `.uid` values or lose scene references.
@@ -186,6 +231,44 @@ methods, enums and properties against the pinned engine/API.
 - Separate world-clock authority, scene lights, procedural fields, presentation
   budgets, and render quality policy. Avoid multiple components writing the
   same settings. Prefer measured `MINIMAL/REDUCED/FULL` visual-quality modes.
+
+### Image interaction, multiple resolutions and devices
+
+For image-driven views, reuse `NucleusImageScreen`, `NucleusScreenHotspot`,
+`NucleusAdventurePage` and `NucleusAdventureSession`. Read their source, docs and
+callers first. These are optional adapters, not a mandatory game shell.
+
+- `NucleusImageScreen` owns image rectangles, hit tests and gesture/focus lifetime.
+  Use normalized coordinates relative to the authored image. `_gui_input` already
+  supplies local coordinates; use `normalized_viewport_point` for viewport input
+  and `image_local_point` for local overlay placement. Do not apply the inverse
+  transform twice or maintain independent formulas for hover and activation.
+- Keep interactive art, world-item visuals and hotspots under one transform when
+  zooming/breathing. Compose `NucleusUISafeArea` for HUD/cutout layout. Keep HUD and
+  hardware cursors outside world shader passes. Pixel-displacing shaders still
+  require an explicit hit-alignment decision by the game.
+- Pages can declare explicit `back_page`, `left_page`, `right_page` links and
+  optional navigation bands. Bands default off. Return policy, target sizes,
+  priorities, arrows and shortcuts belong to the consumer. Never infer a return
+  target from history when the authored contract requires a deterministic link.
+- Use `validate_configuration()` before playtesting; opt into return-path checks
+  only when the game requires them. Structural reachability does not establish
+  conditional puzzle solvability or the correctness of game-resolved aliases.
+- Use `auto_activate_hotspots = false` and `hotspot_requested` when game policy
+  must intercept an action. Do not run a second activation handler alongside
+  automatic activation. Check known consumer subclasses before adding a public
+  method, export or signal: even an additive name can collide with a subclass.
+- Modal presentation must disable world interaction, block native GUI propagation
+  and transfer focus deliberately. Test held-press cancellation across modal,
+  page, resize, hide/show, focus-loss and teardown transitions. A second finger or
+  an emulated mouse event must not produce an extra action.
+- Rebuild the active hotspot list for conditional content instead of merely
+  hiding a marker. Pointer, keyboard and joypad must agree about availability.
+  Do not mutate shared page/Resource data as per-player state.
+- Exercise actual `Viewport.push_input` dispatch with transformed/nested Controls,
+  letterboxing, portrait, widescreen, ultrawide, mouse, touch and joypad events.
+  Calling a navigation method or a private hit-test helper alone is insufficient.
+  Synthetic events prove routing, not physical-device usability or visual polish.
 
 ## 3. Security, trust and Nucleus-owned APIs
 
@@ -238,30 +321,69 @@ code from existing input, settings or content-loading ownership rules.
 6. Add new `tests/headless/*_test.gd` to `tests/headless/test_manifest.gd`;
    extend `tests/headless/test_case.gd`, implement `run() -> Dictionary` and
    `return finish()` using repository `expect_*` helpers.
-7. Update contracts, quickstarts, the use-case catalog or
+7. Update contracts, quickstarts, the use-case registry/catalog or
    `docs/documentation_coverage.json` when the affected public interface or
-   subsystem changes. Documentation-only changes do not need a version bump.
-8. Run relevant tests, then report **executed** evidence, observed results and
-   what remained unavailable. Never invent engine, visual or CI success.
+   subsystem changes. New public behavior needs usage and failure/migration notes.
+   Follow the version policy; if changing the addon version, keep `VERSION`,
+   `addons/nucleus/VERSION` and `addons/nucleus/plugin.cfg` consistent.
+   Documentation-only changes do not need a version bump.
+8. After runtime/editor/resource/UID/version changes under the addon, run
+   `python3 scripts/ci/build_addon_manifest.py`, then its `--check` gate. Do not
+   hand-edit generated hashes, inventories or dependency lists. Regenerate the
+   use-case catalog with its existing builder when its registry changes.
+9. Run checks appropriate to the changed owners, then report **executed** evidence,
+   observed results and what remained unavailable. A subprocess exit code of zero
+   alone does not prove that Godot scripts compiled. Never invent engine, visual,
+   device, export or remote-CI success.
 
-### Baseline checks (run from the repository root)
+### Validation selection (repository root)
+
+Scale verification to the change; do not rebuild every platform for a wording fix.
+
+| Change | Required local evidence where tools are available |
+| --- | --- |
+| Documentation/agent instructions only | Relevant audits, local links/paths/commands, `git diff --check`; no runtime tests solely for prose |
+| Runtime/resource/public API | Static/docs/manifest checks, headless suite and the affected real composition smoke |
+| Image interaction/navigation | Above plus `tests/smoke/point_click_smoke.tscn`; isolated known-consumer composition when relevant |
+| Editor/install/update/profile behavior | Native editor lifecycle and packaged-addon installation; relevant management/localization checks from CI |
+| Release/engine compatibility | Full `.github/workflows/nucleus-ci.yml`, clean package and required target exports; report device/GPU gaps |
+
+Static and documentation gates:
 
 ```bash
 python3 scripts/ci/static_checks.py
+python3 scripts/ci/build_addon_manifest.py --check
 python3 scripts/ci/documentation_audit.py
 python3 scripts/ci/productization_audit.py
 python3 scripts/ci/use_case_audit.py
-godot --headless --path . --import
-godot --headless --path . res://tests/headless/test_runner.tscn
-godot --headless --path . res://tests/smoke/smoke_main.tscn
-godot --headless --path . res://tests/smoke/resource_loading_smoke.tscn
+python3 scripts/ci/build_use_case_catalog.py --check
+git diff --check
+```
+
+For runtime changes, select the pinned executable already installed or follow
+`scripts/ci/install_godot.sh`. Example with `godot` on PATH:
+
+```bash
+python3 scripts/ci/run_godot_checked.py godot --headless --path . --import
+python3 scripts/ci/run_godot_checked.py godot --headless --path . \
+  res://tests/headless/test_runner.tscn
+python3 scripts/ci/run_godot_checked.py godot --headless --path . \
+  res://tests/smoke/smoke_main.tscn
+python3 scripts/ci/run_godot_checked.py godot --headless --path . \
+  res://tests/smoke/resource_loading_smoke.tscn
+# Include when image interaction/navigation is affected:
+python3 scripts/ci/run_godot_checked.py godot --headless --path . \
+  res://tests/smoke/point_click_smoke.tscn
 ```
 
 Use the *project scene* test runner so Autoloads exist, not standalone
 `godot --script tests/headless/test_runner.gd`. For scene composition, run a
 smoke test that instantiates the real consuming scene and asserts the expected
 Nucleus components are present, connected and uniquely own their responsibilities.
-A static search for `Nucleus` strings alone is not sufficient.
+A static search for `Nucleus` strings alone is not sufficient. When deriving a fix
+from a consuming game, pin its actual branch/revision and test in an isolated copy;
+do not silently edit that game's vendor files. Report whether the evidence used
+a source overlay, a packaged addon or an unchanged released dependency.
 
 For gameplay, camera, animation, physics, networking, accessibility and visual
 work, also run the relevant **real scene/manual/device** tests; a successful
@@ -271,6 +393,24 @@ follow `.github/workflows/nucleus-ci.yml` and smoke-export appropriate targets;
 source-template export validation is not a release-grade game distribution test.
 If the engine, assets, hardware or export templates are unavailable, explicitly
 report those checks as **not run**.
+
+### Packaging and integration proof
+
+`python3 scripts/package_release.py` produces a Git-tracked, addon-only ZIP and
+SHA-256 sidecar. Stage intended new files before making a local test package so
+Git-based packaging does not omit them. `--allow-dirty` is for local tests, not a
+reviewed release; a release must identify the exact clean revision tested.
+
+Run installation checks against the **actual archive**, not the development tree:
+
+```bash
+python3 scripts/ci/check_addon_installation.py godot \
+  "dist/releases/Nucleus-$(cat VERSION).zip"
+```
+
+Use the pinned executable and the archive actually generated for this checkout.
+Keep root development files out of the installable ZIP. Do not publish a catalog
+listing, release, tag or claim release readiness just because packaging succeeded.
 
 ### Completion / delivery
 
