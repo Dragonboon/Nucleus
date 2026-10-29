@@ -67,3 +67,10 @@ The localization parser, panel and cancellable jobs follow the same plugin lifec
 Pin a release or commit. Upgrade by replacing the addon directories, preserving
 `.uid` files; keep game content outside them. Before deleting or upgrading, inspect
 scene/resource references and follow [migration](addon_migration.md).
+
+## Asset Store / AssetLib availability
+
+See the root README for verified distribution links. No public listing ID has
+been recorded yet. Once approved, install from the editor catalog into the open
+project, verify Dragonboon/Nucleus as the source, then enable Nucleus in Plugins.
+See [publication](asset_store_publication.md) for release and submission details.

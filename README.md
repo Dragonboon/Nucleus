@@ -5,13 +5,13 @@
 <h1 align="center">Nucleus</h1>
 
 <p align="center">
-  A production-oriented Godot project foundation: small core services,
+  An installable Godot addon for existing and new projects: small core services,
   composable gameplay systems, optional production modules, and executable validation.
 </p>
 
 <p align="center">
-  <a href="https://github.com/sempitern0/Nucleus/actions/workflows/nucleus-ci.yml">
-    <img alt="Nucleus CI" src="https://github.com/sempitern0/Nucleus/actions/workflows/nucleus-ci.yml/badge.svg?branch=main">
+  <a href="https://github.com/Dragonboon/Nucleus/actions/workflows/nucleus-ci.yml">
+    <img alt="Nucleus CI" src="https://github.com/Dragonboon/Nucleus/actions/workflows/nucleus-ci.yml/badge.svg?branch=main">
   </a>
   <img alt="Godot 4.7.2" src="https://img.shields.io/badge/Godot-4.7.2-478CBF?logo=godot-engine&logoColor=white">
   <img alt="Godot addon" src="https://img.shields.io/badge/type-Godot%20addon-6D5DFB">
@@ -33,6 +33,31 @@ small Nucleus service/component contracts
         ↓
 game-owned rules, content, art and product policy
 ```
+
+## Download and install
+
+**Current distribution:** the addon is prepared for store submission. No verified
+public Nucleus Asset Store/Asset Library listing is linked yet; do not confuse
+similarly named assets with this repository.
+
+Download a versioned ZIP and its checksum from
+[GitHub Releases](https://github.com/Dragonboon/Nucleus/releases), when published.
+Until a release is published, use the **Nucleus Release Package** workflow's
+versioned artifact, or copy `addons/nucleus/` from a pinned source checkout.
+Extract the addon ZIP into your existing project and enable **Nucleus** under
+**Project > Project Settings > Plugins**. Keep your existing `project.godot`.
+
+Once the official listing is approved, search **Nucleus** in the editor's
+**Asset Store / AssetLib** tab, verify the repository is **Dragonboon/Nucleus**,
+then download/install `addons/nucleus/` and enable the plugin. This is an addon
+for the open project, not a Project Manager template.
+
+The **Nucleus** dock integrates **Manage** and **Localization**. Manage previews
+physical **Full / 2D / 3D** profiles, protects host references, keeps rollback
+copies and stages verified updates from successful `main` CI commits.
+See [installation](docs/guides/installation.md),
+[addon management](docs/guides/addon_management.md) and
+[store publication](docs/guides/asset_store_publication.md).
 
 ## Integration readiness
 

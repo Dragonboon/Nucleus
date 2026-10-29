@@ -100,3 +100,7 @@ Dockerfile      text eol=lf
 *.sqlite        binary
 *.sqlite3       binary
 *.db            binary
+# Installable source archives for the Godot catalog; clones retain development files.
+/** export-ignore
+/addons !export-ignore
+/addons/** !export-ignore
