@@ -77,7 +77,9 @@ python3 tools/development/nucleus_dev.py plan --base HEAD
 python3 tools/development/nucleus_dev.py plan --base HEAD --run --engine godot
 ```
 
-Use the PR base to cover committed changes, not only the last local edit. Selection
+Use the PR base to cover committed changes, not only the last local edit.
+For a direct-main task, record the starting commit SHA and use it as the base;
+`HEAD` alone after committing can miss the change you intended to validate. Selection
 is local feedback, not a replacement for full CI. If behavior affects the actual
 composition, test the real scene and signal/binding lifetime; use native viewport
 input for UI. Do not count class-name references as composition proof.
@@ -92,7 +94,9 @@ python3 tools/development/nucleus_dev.py api
 python3 tools/development/nucleus_dev.py api-diff --base origin/main
 ```
 
-Do not edit generated inventories by hand. Compatibility decisions for changed/
+Do not edit generated inventories by hand. The API inventory is a declaration
+index, not proof of semantic compatibility: also review defaults, signal order,
+Resource/save formats and actual consumers. Compatibility decisions for changed/
 removed declarations must cover version, migration and consumer evidence. New
 subsystems/routes update the existing coverage/use-case registries and builders.
 Docs-only changes need links/audits, not runtime retests. Release/editor changes
@@ -100,6 +104,8 @@ need the applicable full CI, packaged-addon/editor/host and export checks.
 `--allow-dirty` packages are local tests, not reviewed releases.
 
 Report owner selected → actual wiring → changed contract → executed checks →
-limitations → next action. State skipped tests and partial failures plainly.
+limitations → next action. Compare any claimed improvement against the same
+baseline task and conditions; never turn an aspirational productivity target
+into a reported measurement. State skipped tests and partial failures plainly.
 Do not commit/publish/merge beyond user authorization; never merge merely because
 local tests passed. [Detailed commands and release boundaries](docs/guides/agent_development_contract.md#4-required-change-procedure-and-proof).
